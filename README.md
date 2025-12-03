@@ -4,7 +4,7 @@ This is the repo for the data and code for paper “Voxel-Based GPU-Empowered 3D
 Packing Stream with Metaheuristics for Tokamak
 Fusion Reactor Decommissioning”
 
-<img src="https://github.com/Yifuwei/3D_irregular_packing_stream/blob/main/novel_benchmark_merged.png" width="300" >
+<img src="https://github.com/Yifuwei/3D_irregular_packing_stream/blob/main/novel_benchmark_merged.png" width="500" >
 
 ## Features
 
