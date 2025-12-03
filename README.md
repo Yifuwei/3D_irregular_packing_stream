@@ -8,12 +8,12 @@ Fusion Reactor Decommissioning”
 
 ## Features
 
-- Fast and efficient constructive algorithm based on voxel, considering orientation
+- Fast and efficient constructive algorithm based on voxel representation, considering orientation.
 - Fast no-fit voxel calculation is empowered by parallel computation on GPU (cuda framework).
-- Cylinder and Cubic containers. 
-- nfv and ifv pool
-- Robust and efficient accessibility check
-- Efficient metaheuristics, Neighbour is the object orientation.
+- Support cylinder and cubic containers. 
+- NFV and IFV pool techniques.
+- Robust and efficient accessibility check.
+- Efficient metaheuristics, neighbour is the piece orientation.
 
 ## Usage
 
