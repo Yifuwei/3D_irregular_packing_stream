@@ -29,11 +29,10 @@ python code_launcher.py
 ├── src/ # source code
 
 - binvox_rw.py - for reading binvox file into 3D binary array.
-- function_lib.py - tools lib, contains Feasible Region/NFV/IFV calculation. nfv/ifv pool..
-- iter_local_search.py -  main logic of ILS.
-- packing_iter_ls - main logic of sequential packing, considering orientation, first fit.
+- function_lib.py - tools lib, contains Feasible Region/NFV/IFV calculation, nfv/ifv pool and visualisation.
+- new_ILS_southampton.py -  main logic of ILS/GRASP/GRASP-ILS.
+- packing_iter_ls - main logic of constructive algorithm.
 - SCH_iter_ls - main logic of Selection of Candidates Heuristic (SCH) in packing, mainly for select packing position out of Feasible Region.
-- summary_results.py - get the full computational results of Algorithm
 
 ├── test/ # launch the code
 
@@ -47,4 +46,6 @@ python code_launcher.py
 
 - numerical - for tables
 - visualisation - for images
+
+├── instances/  # instances info for all experiments
 
