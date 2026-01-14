@@ -834,6 +834,7 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
 
         overall_n_packing += 1
         # this is for the ILS to select the 
+        CA_iter = overall_n_packing 
         initial_orientations_list_no_bin = []
 
         for each_piece in range(len(object_info_total)):
@@ -940,7 +941,7 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
                 # this is one iteration to repack
                 # this is the local search based on the orientation
                 layout, topos_layout, radio_layout, pieces_order = repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_pool, global_best_orientations_list_no_bin, data_pool, 
-                                                                                     global_best_iteration, ils_orientations, container_size,
+                                                                                     CA_iter, ils_orientations, container_size,
                                                                                     container_shape, rho, max_radio, 
                                                                                     packing_alg, orien_evaluation,
                                                                                     SCH_nesting_strategy, density = 5, axis = 'z', 

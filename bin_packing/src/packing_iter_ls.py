@@ -1053,7 +1053,7 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
     return current_layout, topos_layout, radio_list, pieces_order
 
 
-def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_pool, best_orientations_list_no_bin, old_data_pool, global_best_iter, orientation, container_size, 
+def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_pool, best_orientations_list_no_bin, old_data_pool, CA_iter, orientation, container_size, 
                         container_shape, rho, max_radio, 
                         packing_alg, _evaluation,
                         SCH_nesting_strategy, density, axis, 
@@ -1089,7 +1089,7 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
 
     # This is for loading the current best solution as the input of the next iteration.
 
-    filtered_data = old_data_pool[old_data_pool["iteration"] == global_best_iter]
+    filtered_data = old_data_pool[old_data_pool["iteration"] == CA_iter]
     
     best_current_layout = filtered_data["bin_real_layout"].iloc[0] 
     # real_layout is a list filled with object_info
