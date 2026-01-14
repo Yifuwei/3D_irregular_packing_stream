@@ -834,7 +834,7 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
 
         overall_n_packing += 1
         # this is for the ILS to select the 
-        CA_iter = overall_n_packing 
+        CA_iteration = overall_n_packing 
         initial_orientations_list_no_bin = []
 
         for each_piece in range(len(object_info_total)):
@@ -871,7 +871,7 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
         # print(f"Replicated NFVs: {nfv_pool.rep_nfv_cal/nfv_pool.all_nfv_cal * 100} %")
         
         # ==========================================================================================================
-        trace("Local Search started!")
+        
         # local_best_iteration = overall_n_packing
         # global_best_iteration = overall_n_packing
 
@@ -888,12 +888,12 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
             # global_best_orientations_list_no_bin[selected_index] = each_orientation
             global_best_orientations_list_no_bin = initial_orientations_list_no_bin
 
-            trace(f"A new GLOBAL best result is found in iteration - {overall_n_packing}") 
+            trace(f"A new GLOBAL best result is found in iteration - {CA_iteration}") 
             trace(f"Previous best (N-U*) is {old_best}, now is {perform_this_iter}")
             # trace(f"Now best orientations of pieces are: {global_best_orientations_list_no_bin}")
             # n_iter += 1 
             data_pool = update_data(data_pool, layout, topos_layout, radio_layout,
-                        pieces_order, U_star, perform_this_iter, T, selected_info = "None", iteration= overall_n_packing)   
+                        pieces_order, U_star, perform_this_iter, T, selected_info = "None", iteration= CA_iteration)   
                    
             trace("Database updated!")
 
@@ -902,9 +902,20 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
             
         else:
             # n_iter += 1 
+            data_pool = update_data(data_pool, layout, topos_layout, radio_layout,
+                            pieces_order, U_star, perform_this_iter, T, selected_info = "None", iteration= CA_iteration)   
+
+            global_best_orientations_list_no_bin = initial_orientations_list_no_bin
             trace("This iteration NOT makes result better!")  
         
-        ALG_stop = False
+        if overall_time_cost > time_limit:
+            trace("Has reached the time limit, stop!")
+            ALG_stop = True
+            break
+
+        else: 
+            ALG_stop = False
+        
         
 
         # local_best_orientations_list_no_bin = initial_orientations_list_no_bin 
@@ -915,7 +926,7 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
         n_iter = 1 # this is to track the num of iter in each GRASP iter
         
         original_object_info_total = copy.deepcopy(object_info_total) # re-initialise
-
+        trace("Local Search started!")
         while keep_this_iter:
 
             # decide which piece
@@ -941,12 +952,12 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
                 # this is one iteration to repack
                 # this is the local search based on the orientation
                 layout, topos_layout, radio_layout, pieces_order = repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_pool, global_best_orientations_list_no_bin, data_pool, 
-                                                                                     CA_iter, ils_orientations, container_size,
-                                                                                    container_shape, rho, max_radio, 
-                                                                                    packing_alg, orien_evaluation,
-                                                                                    SCH_nesting_strategy, density = 5, axis = 'z', 
-                                                                                    _type = "bounding_box",_accessible_check = accessible_check, _encourage_dbl = True, 
-                                                                                    _select_range = selection_range, flag_NFV_POOL = flag_NFV_POOL,  _TRACE = False)
+                                                                                     CA_iteration, ils_orientations, container_size,
+                                                                                        container_shape, rho, max_radio, 
+                                                                                        packing_alg, orien_evaluation,
+                                                                                        SCH_nesting_strategy, density = 5, axis = 'z', 
+                                                                                        _type = "bounding_box",_accessible_check = accessible_check, _encourage_dbl = True, 
+                                                                                        _select_range = selection_range, flag_NFV_POOL = flag_NFV_POOL,  _TRACE = False)
 
                 end = time.time()
 
