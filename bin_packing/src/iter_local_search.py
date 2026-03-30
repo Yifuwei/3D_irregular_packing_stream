@@ -242,312 +242,312 @@ def find_element_index(nested_list, target, path=None):
     
     return None
 
-def iter_local_search(object_total, _pieces_radio, max_radio, rho, orientations,
-                      packing_alg, selection_type, selection_range, accessible_check,
-                      SCH_nesting_strategy, orien_evaluation,
-                      container_size,container_shape,
-                      iteration_limit, time_limit, alpha, neighbour_type, visualisation, _TRACE):
-    global TRACE 
+# def iter_local_search(object_total, _pieces_radio, max_radio, rho, orientations,
+#                       packing_alg, selection_type, selection_range, accessible_check,
+#                       SCH_nesting_strategy, orien_evaluation,
+#                       container_size,container_shape,
+#                       iteration_limit, time_limit, alpha, neighbour_type, visualisation, _TRACE):
+#     global TRACE 
 
-    TRACE = _TRACE
+#     TRACE = _TRACE
     
-    df = {"iteration":[], 
-             "bin_real_layout":[], 
-             "bin_topos_layout":[], 
-             "pieces_order":[],
-             "pieces_packing_position":[],
-             "pieces_packing_position_pool":[],
-             "pieces_orientation":[],
-             "pieces_orientation_value_pool":[],
-             "performance_U_star":[],
-             "performance_N_U_star":[],
-             "time":[],
-             "neighbour_type":[],
-             "selected_pool":[],
-             "radio_layout":[]
-             }
+#     df = {"iteration":[], 
+#              "bin_real_layout":[], 
+#              "bin_topos_layout":[], 
+#              "pieces_order":[],
+#              "pieces_packing_position":[],
+#              "pieces_packing_position_pool":[],
+#              "pieces_orientation":[],
+#              "pieces_orientation_value_pool":[],
+#              "performance_U_star":[],
+#              "performance_N_U_star":[],
+#              "time":[],
+#              "neighbour_type":[],
+#              "selected_pool":[],
+#              "radio_layout":[]
+#              }
     
-    data_pool = pd.DataFrame(df)
+#     data_pool = pd.DataFrame(df)
     
-    # trace("============================================================")
-    trace(f"Objects number: {len(object_total)}")
-    trace(f"The container type: {container_shape}")
-    trace(f"Container size is: {container_size}")
-    trace(f"Packing algorithm is {packing_alg}") 
-    trace(f"Nesting Strategy is: {SCH_nesting_strategy}")
-    trace(f"Evaluation for orientation is {orien_evaluation}")
-    trace("Accessibility check is True")
-    trace("============================================================")
+#     # trace("============================================================")
+#     trace(f"Objects number: {len(object_total)}")
+#     trace(f"The container type: {container_shape}")
+#     trace(f"Container size is: {container_size}")
+#     trace(f"Packing algorithm is {packing_alg}") 
+#     trace(f"Nesting Strategy is: {SCH_nesting_strategy}")
+#     trace(f"Evaluation for orientation is {orien_evaluation}")
+#     trace("Accessibility check is True")
+#     trace("============================================================")
 
-    # ============================================================================
-    # Constructive algortithm
-    trace("Solution loading..")
+#     # ============================================================================
+#     # Constructive algortithm
+#     trace("Solution loading..")
     
-    check_1 = time.time()
-    # orientations_start = ([0,90],["x"])
-    layout, topos_layout, radio_list, pieces_order, pieces_orientation, pieces_orientation_value_pool, pieces_packing_position, pieces_packing_position_pool = packing_3D_voxel_lookback(object_total, orientations, container_size,
-                                                                                                                                                            container_shape, rho, _pieces_radio, max_radio, 
-                                                                                                                                                            packing_alg, orien_evaluation,
-                                                                                                                                                            SCH_nesting_strategy = "minimum volume of AABB", density = 5, axis = 'z', 
-                                                                                                                                                            _type = selection_type, _accessible_check = accessible_check, _encourage_dbl = True, 
-                                                                                                                                                            _select_range = selection_range, _TRACE = False) # for SCH
+#     check_1 = time.time()
+#     # orientations_start = ([0,90],["x"])
+#     layout, topos_layout, radio_list, pieces_order, pieces_orientation, pieces_orientation_value_pool, pieces_packing_position, pieces_packing_position_pool = packing_3D_voxel_lookback(object_total, orientations, container_size,
+#                                                                                                                                                             container_shape, rho, _pieces_radio, max_radio, 
+#                                                                                                                                                             packing_alg, orien_evaluation,
+#                                                                                                                                                             SCH_nesting_strategy = "minimum volume of AABB", density = 5, axis = 'z', 
+#                                                                                                                                                             _type = selection_type, _accessible_check = accessible_check, _encourage_dbl = True, 
+#                                                                                                                                                             _select_range = selection_range, _TRACE = False) # for SCH
 
     
-    check_2 = time.time()   
+#     check_2 = time.time()   
 
-    # print('pieces orientation pool is: ',pieces_orientation)
-    # print('pieces order pool is: ',pieces_order)
+#     # print('pieces orientation pool is: ',pieces_orientation)
+#     # print('pieces order pool is: ',pieces_order)
     
-    # this is for the ILS to select the 
-    # pieces_order_no_bin = []
-    # for each_piece in range(len(object_total)):
-    #     index = find_element_index(pieces_order, each_piece, path=None)
-    #     pieces_order_no_bin.append(pieces_orientation[index[0]][index[1]])
+#     # this is for the ILS to select the 
+#     # pieces_order_no_bin = []
+#     # for each_piece in range(len(object_total)):
+#     #     index = find_element_index(pieces_order, each_piece, path=None)
+#     #     pieces_order_no_bin.append(pieces_orientation[index[0]][index[1]])
 
-    if visualisation:
-        visualize_voxel_model(layout, pieces_order, container_size, container_shape)
+#     if visualisation:
+#         visualize_voxel_model(layout, pieces_order, container_size, container_shape)
     
-    N, U, U_star = get_final_performance(object_total,container_size, container_shape, topos_layout)
+#     N, U, U_star = get_final_performance(object_total,container_size, container_shape, topos_layout)
 
-    T = check_2 - check_1
+#     T = check_2 - check_1
     
     
-    # =============================================
-    # ## overlap checking
-    # no_overlap = True
-    # for bin_idx, each_bin in enumerate(topos_layout):
-    #     overlap_voxels = np.argwhere(each_bin > 1.5)
-    #     if overlap_voxels.size > 0:
-    #         no_overlap = False
-    #         print(f"⚠️ Bin {bin_idx} finds overlapping voxels")
-    #         for voxel in overlap_voxels:
-    #             print(f"  - coordinate: {tuple(voxel)}, voxel value: {each_bin[tuple(voxel)]}")
-    # =============================================  
+#     # =============================================
+#     # ## overlap checking
+#     # no_overlap = True
+#     # for bin_idx, each_bin in enumerate(topos_layout):
+#     #     overlap_voxels = np.argwhere(each_bin > 1.5)
+#     #     if overlap_voxels.size > 0:
+#     #         no_overlap = False
+#     #         print(f"⚠️ Bin {bin_idx} finds overlapping voxels")
+#     #         for voxel in overlap_voxels:
+#     #             print(f"  - coordinate: {tuple(voxel)}, voxel value: {each_bin[tuple(voxel)]}")
+#     # =============================================  
 
-    # print(f"Constructive algorithm finished, cost {T} s in total, {N} bins are used, U_star is {U_star}")         
-    trace(f"Constructive algorithm finished, cost {T} s in total, {N} bins are used, U_star is {U_star}")
+#     # print(f"Constructive algorithm finished, cost {T} s in total, {N} bins are used, U_star is {U_star}")         
+#     trace(f"Constructive algorithm finished, cost {T} s in total, {N} bins are used, U_star is {U_star}")
     
-    no_overlap = all(np.all(each_bin <= 1.5) for each_bin in topos_layout)
-    trace(f"Constructive algorithm - Overlap: {'No' if no_overlap else 'Yes'}")
+#     no_overlap = all(np.all(each_bin <= 1.5) for each_bin in topos_layout)
+#     trace(f"Constructive algorithm - Overlap: {'No' if no_overlap else 'Yes'}")
     
-    if U_star == None: 
-        U_star = U
+#     if U_star == None: 
+#         U_star = U
         
-    N_U = N - U_star
+#     N_U = N - U_star
     
         
-    data_pool = update_data(data_pool, layout, topos_layout, radio_list,
-                        pieces_order, pieces_orientation, pieces_orientation_value_pool, 
-                        pieces_packing_position, pieces_packing_position_pool,
-                        U_star, N_U, T, selected_info = "None", iteration="origin", neighbour_type= "None")
+#     data_pool = update_data(data_pool, layout, topos_layout, radio_list,
+#                         pieces_order, pieces_orientation, pieces_orientation_value_pool, 
+#                         pieces_packing_position, pieces_packing_position_pool,
+#                         U_star, N_U, T, selected_info = "None", iteration="origin", neighbour_type= "None")
     
-    # data_pool, layout, topos_layout, radio_list,
-    # pieces_order, pieces_orientation, pieces_orientation_value_pool, 
-    # pieces_packing_position, pieces_packing_position_pool,
-    # U_star, N_U, T, selected_info, iteration, neighbour_type
+#     # data_pool, layout, topos_layout, radio_list,
+#     # pieces_order, pieces_orientation, pieces_orientation_value_pool, 
+#     # pieces_packing_position, pieces_packing_position_pool,
+#     # U_star, N_U, T, selected_info, iteration, neighbour_type
     
-    # ==========================================================================================================
-    trace("Iterative Local Search started!")
+#     # ==========================================================================================================
+#     trace("Iterative Local Search started!")
     
-    best_iteration = "origin"
-    best_perform = N_U
-    n_iter = 1
-    overall_time_cost = 0 
-    nonstop = True
+#     best_iteration = "origin"
+#     best_perform = N_U
+#     n_iter = 1
+#     overall_time_cost = 0 
+#     nonstop = True
     
-    aabb_volume_list = [get_aabb_volume(i) for i in object_total]
-    aabb_sorted = np.argsort(aabb_volume_list)[::-1]
+#     aabb_volume_list = [get_aabb_volume(i) for i in object_total]
+#     aabb_sorted = np.argsort(aabb_volume_list)[::-1]
 
-    # to track the orientaions of constructive algorithm
-    initial_selected_info = []
-    for each_piece in range(len(object_total)):
-        index = find_element_index(pieces_order,each_piece)
-        initial_selected_info.append((each_piece,pieces_orientation[index[0]][index[1]]))
+#     # to track the orientaions of constructive algorithm
+#     initial_selected_info = []
+#     for each_piece in range(len(object_total)):
+#         index = find_element_index(pieces_order,each_piece)
+#         initial_selected_info.append((each_piece,pieces_orientation[index[0]][index[1]]))
 
-    while nonstop:
-        trace(f"=====================Iteration {n_iter}=========================")
-        # use alpha to control the tendancy to choose the large object
-        # ==================================================================
-        # to select a piece and its orientation and packing position
-        # ideally
-        # | alpha      | preference                |
-        # | ---------- | ------------------- |
-        # | 0          | random              |
-        # | 1          | slightly prefer bigger aabb             |
-        # | 1-10       | largerly prefer bigger aabb             |
-        # | 10+        | biggest only        |
+#     while nonstop:
+#         trace(f"=====================Iteration {n_iter}=========================")
+#         # use alpha to control the tendancy to choose the large object
+#         # ==================================================================
+#         # to select a piece and its orientation and packing position
+#         # ideally
+#         # | alpha      | preference                |
+#         # | ---------- | ------------------- |
+#         # | 0          | random              |
+#         # | 1          | slightly prefer bigger aabb             |
+#         # | 1-10       | largerly prefer bigger aabb             |
+#         # | 10+        | biggest only        |
 
-        not_valid_trial = True
-        max_sample = 100
-        trial = 0
+#         not_valid_trial = True
+#         max_sample = 100
+#         trial = 0
         
-        best_data = data_pool[data_pool["iteration"] == best_iteration]
+#         best_data = data_pool[data_pool["iteration"] == best_iteration]
         
-        # read existing selected info
-        seen_selected_info = set(tuple(x) for x in data_pool["selected_pool"].values)
-        selected_info = 0
+#         # read existing selected info
+#         seen_selected_info = set(tuple(x) for x in data_pool["selected_pool"].values)
+#         selected_info = 0
         
-        # this is for avoiding the replicated neighbor, prefer to select the larger object to change the orientation
-        while not_valid_trial:
+#         # this is for avoiding the replicated neighbor, prefer to select the larger object to change the orientation
+#         while not_valid_trial:
             
-            filter_data = data_pool[data_pool["iteration"] == best_iteration]
-            pieces_order = filter_data["pieces_order"].iloc[0]
+#             filter_data = data_pool[data_pool["iteration"] == best_iteration]
+#             pieces_order = filter_data["pieces_order"].iloc[0]
 
-            # decide which piece
-            selected_index = pieces_selection_ls(object_total, alpha = alpha, seed = 42)
+#             # decide which piece
+#             selected_index = pieces_selection_ls(object_total, alpha = alpha, seed = 42)
             
-            # decide which orientation
-            selected_orientation = orientation_selection_ls(orientations)
-            volume_rank = list(aabb_sorted).index(selected_index) 
+#             # decide which orientation
+#             selected_orientation = orientation_selection_ls(orientations)
+#             volume_rank = list(aabb_sorted).index(selected_index) 
 
-            # To know the position of the selected piece in the sequence 
-            index = find_element_index(pieces_order, selected_index)
+#             # To know the position of the selected piece in the sequence 
+#             index = find_element_index(pieces_order, selected_index)
                  
-            # tem = pieces_packing_position_pool[index[0]][index[1]]
+#             # tem = pieces_packing_position_pool[index[0]][index[1]]
             
-            # pieces_packing_position_pool
-            #  # to track other packing positions sort them from best to worst [(orien, [sorted_packing_position]),(),(),...]
-            # 
-            # for each_group in tem:  
-            #     if each_group[0] == selected_orientation:
-            #         # just select the best packing position
-            #         # it can be adjustable!
-            #         selected_position = each_group[1][0] 
+#             # pieces_packing_position_pool
+#             #  # to track other packing positions sort them from best to worst [(orien, [sorted_packing_position]),(),(),...]
+#             # 
+#             # for each_group in tem:  
+#             #     if each_group[0] == selected_orientation:
+#             #         # just select the best packing position
+#             #         # it can be adjustable!
+#             #         selected_position = each_group[1][0] 
             
-            selected_info = (selected_index, selected_orientation)
+#             selected_info = (selected_index, selected_orientation)
             
-            if selected_info in seen_selected_info or selected_info in initial_selected_info:
-                not_valid_trial = True
+#             if selected_info in seen_selected_info or selected_info in initial_selected_info:
+#                 not_valid_trial = True
                 
-            else:
-                trace(f"The selected piece is {selected_index}")
-                trace(f"It has {volume_rank} largest aabb, it's piece {index[1]} in bin {index[0]}, in the best solution") 
-                not_valid_trial= False
+#             else:
+#                 trace(f"The selected piece is {selected_index}")
+#                 trace(f"It has {volume_rank} largest aabb, it's piece {index[1]} in bin {index[0]}, in the best solution") 
+#                 not_valid_trial= False
                 
-            if trial>= max_sample:
-                not_valid_trial= False
-                trace("Can find a valid neighbor, end ILS!")
-                nonstop = False
+#             if trial>= max_sample:
+#                 not_valid_trial= False
+#                 trace("Can find a valid neighbor, end ILS!")
+#                 nonstop = False
                 
-            trial += 1
+#             trial += 1
                
-        trace(f"selected info is: {selected_info} Current best iteration is: {best_iteration}")
+#         trace(f"selected info is: {selected_info} Current best iteration is: {best_iteration}")
         
         
-        start = time.time()
+#         start = time.time()
         
-        layout, topos_layout, radio_list, pieces_order, pieces_orientation, pieces_orientation_value_pool, pieces_packing_position, pieces_packing_position_pool = repacking_ls_per_iteration(selected_info, data_pool, best_iteration, object_total, orientations, container_size,
-                                                                                                                                                                                            container_shape, rho, _pieces_radio, max_radio, 
-                                                                                                                                                                                            packing_alg, orien_evaluation,
-                                                                                                                                                                                            SCH_nesting_strategy = "minimum volume of AABB", density = 5, axis = 'z', 
-                                                                                                                                                                                            _type = "bounding_box",_accessible_check = True, _encourage_dbl = True, 
-                                                                                                                                                                                            _select_range = "bottom_top", _neighbor_type = neighbour_type,  _TRACE = False)
+#         layout, topos_layout, radio_list, pieces_order, pieces_orientation, pieces_orientation_value_pool, pieces_packing_position, pieces_packing_position_pool = repacking_ls_per_iteration(selected_info, data_pool, best_iteration, object_total, orientations, container_size,
+#                                                                                                                                                                                             container_shape, rho, _pieces_radio, max_radio, 
+#                                                                                                                                                                                             packing_alg, orien_evaluation,
+#                                                                                                                                                                                             SCH_nesting_strategy = "minimum volume of AABB", density = 5, axis = 'z', 
+#                                                                                                                                                                                             _type = "bounding_box",_accessible_check = True, _encourage_dbl = True, 
+#                                                                                                                                                                                             _select_range = "bottom_top", _neighbor_type = neighbour_type,  _TRACE = False)
         
-        end = time.time()
+#         end = time.time()
 
 
-        T = end - start
-        overall_time_cost += T
+#         T = end - start
+#         overall_time_cost += T
         
-        trace(f"=== Re-pack finished! Cost {T} s in this iteration, It takes {overall_time_cost} s overall ===")
-        # trace(pieces_order)
-        no_overlap = all(np.all(each_bin <= 1.5) for each_bin in topos_layout)
-        trace(f"Repack - Overlap: {'No' if no_overlap else 'Yes'}")
+#         trace(f"=== Re-pack finished! Cost {T} s in this iteration, It takes {overall_time_cost} s overall ===")
+#         # trace(pieces_order)
+#         no_overlap = all(np.all(each_bin <= 1.5) for each_bin in topos_layout)
+#         trace(f"Repack - Overlap: {'No' if no_overlap else 'Yes'}")
         
-        if overall_time_cost > time_limit:
-            trace("Has reached the time limit, stop!")
-            nonstop = False
+#         if overall_time_cost > time_limit:
+#             trace("Has reached the time limit, stop!")
+#             nonstop = False
         
-        elif n_iter == iteration_limit and overall_time_cost < time_limit:
+#         elif n_iter == iteration_limit and overall_time_cost < time_limit:
             
             
-            N, U, U_star = get_final_performance(object_total,container_size, container_shape, topos_layout)
+#             N, U, U_star = get_final_performance(object_total,container_size, container_shape, topos_layout)
             
-            if U_star == None: 
-                U_star = U
+#             if U_star == None: 
+#                 U_star = U
                 
-            perform_this_iter = N - U_star
+#             perform_this_iter = N - U_star
               
-            data_pool = update_data(data_pool, layout, topos_layout,radio_list,
-                        pieces_order, pieces_orientation, pieces_orientation_value_pool, 
-                        pieces_packing_position, pieces_packing_position_pool,
-                        U_star, perform_this_iter, T, selected_info, iteration=n_iter, neighbour_type=neighbour_type)
+#             data_pool = update_data(data_pool, layout, topos_layout,radio_list,
+#                         pieces_order, pieces_orientation, pieces_orientation_value_pool, 
+#                         pieces_packing_position, pieces_packing_position_pool,
+#                         U_star, perform_this_iter, T, selected_info, iteration=n_iter, neighbour_type=neighbour_type)
             
-            trace("Database updated!")
-            trace("Has reached the iteration limit, stop!")
-            nonstop = False
+#             trace("Database updated!")
+#             trace("Has reached the iteration limit, stop!")
+#             nonstop = False
         
-        else:
+#         else:
             
-            N, U, U_star = get_final_performance(object_total,container_size, container_shape, topos_layout)
+#             N, U, U_star = get_final_performance(object_total,container_size, container_shape, topos_layout)
             
-            if U_star == None: 
-                U_star = U
+#             if U_star == None: 
+#                 U_star = U
                 
-            perform_this_iter = N - U_star
+#             perform_this_iter = N - U_star
                 
-            data_pool = update_data(data_pool, layout, topos_layout,radio_list,
-                        pieces_order, pieces_orientation, pieces_orientation_value_pool, 
-                        pieces_packing_position, pieces_packing_position_pool,
-                        U_star, perform_this_iter, T, selected_info, iteration=n_iter, neighbour_type=neighbour_type)
+#             data_pool = update_data(data_pool, layout, topos_layout,radio_list,
+#                         pieces_order, pieces_orientation, pieces_orientation_value_pool, 
+#                         pieces_packing_position, pieces_packing_position_pool,
+#                         U_star, perform_this_iter, T, selected_info, iteration=n_iter, neighbour_type=neighbour_type)
             
-            trace("Database updated!")
+#             trace("Database updated!")
 
-        if perform_this_iter < best_perform: 
-        # smaller values are better 
-            old_best = best_perform
-            best_iteration = n_iter
-            best_perform = perform_this_iter
-            trace(f"A better result is found by iteration {n_iter}")
-            trace(f"Previous best (N-U*) is {old_best}, now is {best_perform}")
+#         if perform_this_iter < best_perform: 
+#         # smaller values are better 
+#             old_best = best_perform
+#             best_iteration = n_iter
+#             best_perform = perform_this_iter
+#             trace(f"A better result is found by iteration {n_iter}")
+#             trace(f"Previous best (N-U*) is {old_best}, now is {best_perform}")
             
-        else:
-            trace("This iteration NOT makes result better!")
+#         else:
+#             trace("This iteration NOT makes result better!")
             
-        n_iter += 1  
+#         n_iter += 1  
         
         
-    # ==================================================================================
-    # read the final results
-    best_data = data_pool[data_pool["iteration"] == best_iteration]
-    original_data = data_pool[data_pool["iteration"] == "origin"]
+#     # ==================================================================================
+#     # read the final results
+#     best_data = data_pool[data_pool["iteration"] == best_iteration]
+#     original_data = data_pool[data_pool["iteration"] == "origin"]
     
-    best_pieces_order = best_data["pieces_order"].iloc[0]
-    best_topos_layout = best_data["bin_topos_layout"].iloc[0]
-    origin_topos_layout = original_data["bin_topos_layout"].iloc[0]
+#     best_pieces_order = best_data["pieces_order"].iloc[0]
+#     best_topos_layout = best_data["bin_topos_layout"].iloc[0]
+#     origin_topos_layout = original_data["bin_topos_layout"].iloc[0]
     
-    best_current_layout = best_data["bin_real_layout"].iloc[0]
-    origin_current_layout = original_data["bin_real_layout"].iloc[0]
+#     best_current_layout = best_data["bin_real_layout"].iloc[0]
+#     origin_current_layout = original_data["bin_real_layout"].iloc[0]
     
-    # best_visual_layout = best_data["bin_real_layout"].iloc[0]
+#     # best_visual_layout = best_data["bin_real_layout"].iloc[0]
     
 
-    best_N, best_U, best_U_star = get_final_performance(object_total,container_size, container_shape, best_topos_layout)
-    origin_N, origin_U, origin_U_star = get_final_performance(object_total,container_size, container_shape, origin_topos_layout)
+#     best_N, best_U, best_U_star = get_final_performance(object_total,container_size, container_shape, best_topos_layout)
+#     origin_N, origin_U, origin_U_star = get_final_performance(object_total,container_size, container_shape, origin_topos_layout)
     
-    if best_U_star == None: 
-        best_U_star = best_U
-    if origin_U_star == None: 
-        origin_U_star = origin_U
+#     if best_U_star == None: 
+#         best_U_star = best_U
+#     if origin_U_star == None: 
+#         origin_U_star = origin_U
         
-    # trace("============================================================")
-    # trace(f"ILS finished, cost {overall_time_cost} s, num of iterations is {n_iter}")
-    # trace(f"Time limit is {time_limit} s, iteration limit is {iteration_limit}")
-    # trace(f"Best iteration is {best_iteration}")
-    # trace(f"Constructive algorithm, {origin_N} bins are used, U_star is {origin_U_star}")
-    # trace(f"After ILS, {best_N} bins are used, U_star is {best_U_star}")
-    # trace(f" U_star Improvement: {(best_U_star-origin_U_star)/origin_U_star * 100}%")
-    # trace(f" U Improvement: {(best_U-origin_U)/origin_U * 100}%")
-    # trace("============================================================")
+#     # trace("============================================================")
+#     # trace(f"ILS finished, cost {overall_time_cost} s, num of iterations is {n_iter}")
+#     # trace(f"Time limit is {time_limit} s, iteration limit is {iteration_limit}")
+#     # trace(f"Best iteration is {best_iteration}")
+#     # trace(f"Constructive algorithm, {origin_N} bins are used, U_star is {origin_U_star}")
+#     # trace(f"After ILS, {best_N} bins are used, U_star is {best_U_star}")
+#     # trace(f" U_star Improvement: {(best_U_star-origin_U_star)/origin_U_star * 100}%")
+#     # trace(f" U Improvement: {(best_U-origin_U)/origin_U * 100}%")
+#     # trace("============================================================")
 
-    print(f"After ILS, {best_N} bins are used, U_star is {best_U_star}")   
-    print(f" U_star Improvement: {(best_U_star-origin_U_star)/origin_U_star * 100}%")
-    print(f" U Improvement: {(best_U-origin_U)/origin_U * 100}%")
+#     print(f"After ILS, {best_N} bins are used, U_star is {best_U_star}")   
+#     print(f" U_star Improvement: {(best_U_star-origin_U_star)/origin_U_star * 100}%")
+#     print(f" U Improvement: {(best_U-origin_U)/origin_U * 100}%")
     
-    if visualisation:
-        visualize_voxel_model(best_current_layout,best_pieces_order, container_size, container_shape)
+#     if visualisation:
+#         visualize_voxel_model(best_current_layout,best_pieces_order, container_size, container_shape)
     
-    return best_N, best_U, best_U_star, origin_N, origin_U, origin_U_star, best_current_layout, origin_current_layout, best_topos_layout, origin_topos_layout, best_pieces_order
+#     return best_N, best_U, best_U_star, origin_N, origin_U, origin_U_star, best_current_layout, origin_current_layout, best_topos_layout, origin_topos_layout, best_pieces_order
     
-    # df = pd.DataFrame(data_pool)
-# ============================================================================
+#     # df = pd.DataFrame(data_pool)
+# # ============================================================================

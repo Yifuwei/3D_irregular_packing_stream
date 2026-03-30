@@ -391,6 +391,7 @@ class IFV_POOL():
 
         if isinstance(trial1,bool):
             # no ifv in the pool, get the new one
+            # print("check key:", container_size)
 
             ifv = self.get_ifv(ongoing_info, container_size, container_type)
             self.val_ifv_cal += 1
@@ -399,6 +400,22 @@ class IFV_POOL():
         
         else:
             self.rep_ifv_cal += 1
+            # size_tem = np.shape(trial1)
+
+            # if size_tem[2] < container_size[2]:
+            #     pad_width = (
+            #                 (0, 0),  
+            #                 (0, 0),  
+            #                 (0, container_size[2] - trial1.shape[2])  # change Z only
+            #             )
+            #     trial_modified = np.pad(trial1, pad_width)
+
+            # elif size_tem[2] > container_size[2]:
+            #     trial_modified = trial1[:,:,:container_size[2]]
+
+            # else:
+            #     return trial1
+
             return trial1
         
     def store_ifv(self, key, ifv):
@@ -407,7 +424,7 @@ class IFV_POOL():
         
 
     def retrieve_ifv(self, ongoing_info, container_size, container_type):
-
+        # print("retrieve_ifv:", container_size)
         self.all_ifv_cal += 1
         key = self.get_key(ongoing_info)
         tem = self.check_key(key, ongoing_info, container_size, container_type)
@@ -423,8 +440,9 @@ class IFV_POOL():
 
         elif container_type == "cylinder":
             obj_length, obj_width, obj_height = aabb_rotate(ongoing_info["aabb"], ongoing_info["orientation"])  
-
-            return njit_get_ifv_cylinder(ongoing_info["array"],obj_length, obj_width, obj_height , container_size)
+            # print("get_ifv", container_size)
+            # exit(-1)
+            return njit_get_ifv_cylinder(ongoing_info["array"], obj_length, obj_width, obj_height, container_size)
 
     def get_ifv_cube(self, ongoing_info, container_size): 
             
@@ -552,8 +570,13 @@ def accessibility_check(ongoing_info, nfv, ifv, container_size):
         the small component that allows a accessible route from the top of the container
 
     """
+
     nfv_star = 1 - nfv # Get complement of nfv
+    # print(type(nfv_star), type(ifv))
+    # print(np.shape(nfv_star),np.shape(ifv))
+
     all_feasible_region = (nfv_star & ifv).astype(np.uint8) # get intersection of nfv* and ifv
+
 
     # build the stucture element for multi-connectivity check
     st = np.zeros((3,3,3), dtype=np.uint8)
@@ -564,7 +587,14 @@ def accessibility_check(ongoing_info, nfv, ifv, container_size):
     st[1,1,0] = st[1,1,2] = 1  # ±z
 
     # aabb  = ongoing_info["aabb"]
-    aabb_x,aabb_y,aabb_z = aabb_rotate(ongoing_info["aabb"],ongoing_info["orientation"])
+    aabb_x, aabb_y, aabb_z = aabb_rotate(ongoing_info["aabb"],ongoing_info["orientation"])
+
+    # create a larger container 
+    # W_new, L_new, H_new = container_size
+    # H_new = H_new + aabb_z
+    
+    # top_mask = np.zeros((W_new, L_new, H_new), dtype=bool)
+    # top_mask[:, :, container_size[2]-1] = True
 
     # =========================================================
     # Using binary_propagation, potentially quicker
@@ -601,6 +631,122 @@ def accessibility_check(ongoing_info, nfv, ifv, container_size):
 
 
 # @profile
+
+def get_feasible_boundary_rigorous_acces(fixed, fixed_info, ongoing_info, container_size, container_type, nfv_pool, ifv_pool, flag_NFV_POOL):
+    # new function for a more rigorous accessibility check 
+    
+    L, W, H = container_size
+
+    x1, y1, z1 = aabb_rotate(ongoing_info["aabb"],ongoing_info["orientation"])
+
+    H_larger =  H + z1 - 1
+
+    # if flag_NFV_POOL: 
+    #     # if use NFV_pool 
+        
+    #     nfv = np.zeros((L,W, H_larger), dtype=bool)
+    #     # tem_list = []
+
+    #     for each_packed_object_info in fixed_info:
+
+    #         fixed_packing_position = each_packed_object_info["translation"]
+        
+    #         #check_nfv_0 = time.time()
+    #         original_nfv = nfv_pool.retrieve_nfv(each_packed_object_info, ongoing_info)
+            
+            
+    #         steps = (fixed_packing_position[0]-x1, fixed_packing_position[1]-y1, fixed_packing_position[2]-z1)
+
+    #         # insert nfv on the right position
+    #         nfv = insert_add(nfv, original_nfv, steps)
+
+    # else: 
+    # if not use NFV_pool
+    L_bc, W_bc, H_bc = get_bounding_box_njit_translation(fixed)
+    # max_x, max_y, max_z = get_max_translation_nfv(ongoing_info, (L,W, H_larger)) 
+    # # # max_x, max_y, max_z = get_max_translation_njit(ongoing_info["array"])
+
+    # range_x = min(max_x, L_bc)
+    # range_y = min(max_y, W_bc)
+    # range_z = min(max_z, H_bc)
+
+    # # # check_nfv_0 = time.time()
+    # nfv_larger = get_nfv_gpu(fixed, ongoing_info["array"], (L,W, H_larger), (range_x,range_y,range_z))
+
+    max_x, max_y, max_z = get_max_translation_nfv(ongoing_info, container_size) 
+    # # max_x, max_y, max_z = get_max_translation_njit(ongoing_info["array"])
+
+    range_x = min(max_x, L_bc)
+    range_y = min(max_y, W_bc)
+    range_z = min(max_z, H_bc)
+
+    nfv_original = get_nfv_gpu(fixed, ongoing_info["array"], container_size, (range_x,range_y,range_z))
+
+    nfv_larger = np.pad(nfv_original, (
+                            (0, 0),  
+                            (0, 0),  
+                            (0, H_larger - H)  # change Z only
+                        ))
+    # print("nfv shape", np.shape(nfv))
+
+
+    if np.all(nfv_original == 0) == True: 
+        # if can't get a nfv
+        # return None directly
+        return False
+    
+    else: 
+
+        # check_ifv1 = time.time()
+        # ifv = get_ifv(ongoing_info, container_size, container_type)
+
+        # print("main function", (L, W, H_larger))
+        if container_type == "cylinder": 
+
+            ifv_larger = njit_get_ifv_cylinder(ongoing_info["array"], x1, y1, z1, (L,W, H_larger))
+
+        elif container_type == "cube": 
+
+            available_x  = L - x1
+            available_y  = W - y1 
+            available_z  = H_larger - z1
+
+            ifv_larger = np.zeros((L,W,H_larger), dtype=np.uint8)
+            ifv_larger[:available_x, :available_y, :available_z] += 1
+
+        ifv_original = ifv_pool.retrieve_ifv(ongoing_info, container_size, container_type)
+
+        #check_ifv2 = time.time()
+        
+        #print("ifv cost", check_ifv2 - check_ifv1)
+        
+        structure = np.ones((3, 3, 3), dtype=bool)
+        dilated_voxel = binary_dilation(nfv_original, structure)   
+        shell =  dilated_voxel ^ ifv_original
+        intersection = np.logical_and(shell, ifv_original).astype(int)
+        
+        if np.all(intersection < 0.5):
+             # if there is no intersection, no feasible positions 
+            return False
+        
+        accessible_region = accessibility_check(ongoing_info, nfv_larger, ifv_larger, (L,W, H_larger))
+
+        if type(accessible_region) == bool:
+            return False
+        
+        else: 
+            _intersection = accessible_region[:,:,:H] & intersection
+
+
+            if not _intersection.any():  
+                return False
+
+            return _intersection
+        
+        #check2 = time.time()
+        #print("FR costs,", check2 - check1)
+        # visualize_single_object(intersection,np.shape(intersection))
+
 def get_feasible_boundary(fixed, fixed_info, ongoing_info, container_size, container_type, nfv_pool, ifv_pool, flag_NFV_POOL, _accessible_check):
     
     """_summary_
@@ -681,7 +827,7 @@ def get_feasible_boundary(fixed, fixed_info, ongoing_info, container_size, conta
     # # L_bc, W_bc, H_bc = get_bounding_box_np(fixed)
     else:
         L_bc, W_bc, H_bc = get_bounding_box_njit_translation(fixed)
-        max_x, max_y, max_z = get_max_translation_nfv(ongoing_info,container_size) 
+        max_x, max_y, max_z = get_max_translation_nfv(ongoing_info, container_size) 
 
         # # max_x, max_y, max_z = get_max_translation_njit(ongoing_info["array"])
 
@@ -691,7 +837,7 @@ def get_feasible_boundary(fixed, fixed_info, ongoing_info, container_size, conta
 
     
         # # check_nfv_0 = time.time()
-        nfv = get_nfv_gpu(fixed, ongoing_info["array"], container_size,(range_x,range_y,range_z))    # fixed layout here is a merged partial solution
+        nfv = get_nfv_gpu(fixed, ongoing_info["array"], container_size, (range_x,range_y,range_z))    # fixed layout here is a merged partial solution
     # check_nfv_1 = time.time()
 
     # call_nfv_gpu_time += 1

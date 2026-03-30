@@ -4,7 +4,7 @@ import line_profiler
 from numba import njit
 # from scipy.ndimage import rotate
 from scipy.spatial import ConvexHull
-from function_lib import get_feasible_boundary, visualize_single_object, aabb_rotate
+from function_lib import get_feasible_boundary, get_feasible_boundary_rigorous_acces, visualize_single_object, aabb_rotate
 
 
 global TRACE # a switch for output
@@ -224,7 +224,10 @@ def SC_heuristic(nfv_pool, ifv_pool, ongoing_object_info, current_layout, topos_
     # print("getting feasible region")
     # check1 = time.time()
 
-    feasible_region = get_feasible_boundary(topos_layout[position_bin], current_layout[position_bin], ongoing_object_info, bin_size, container_shape, nfv_pool, ifv_pool, flag_NFV_POOL, _accessible_check)
+    # feasible_region = get_feasible_boundary(topos_layout[position_bin], current_layout[position_bin], ongoing_object_info, bin_size, container_shape, nfv_pool, ifv_pool, flag_NFV_POOL, _accessible_check)
+    
+    feasible_region = get_feasible_boundary_rigorous_acces(topos_layout[position_bin], current_layout[position_bin], ongoing_object_info, bin_size, container_shape, nfv_pool, ifv_pool, flag_NFV_POOL)
+    
     # visualize_single_object(feasible_region,np.shape(feasible_region))
 
     # check2 = time.time() 

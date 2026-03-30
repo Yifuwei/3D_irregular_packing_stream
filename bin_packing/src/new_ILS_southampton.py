@@ -832,9 +832,11 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
         
         check_2 = time.time()   
 
+        
         overall_n_packing += 1
-        # this is for the ILS to select the 
+
         CA_iteration = overall_n_packing 
+        # this is for the ILS to select the 
         initial_orientations_list_no_bin = []
 
         for each_piece in range(len(object_info_total)):
@@ -850,6 +852,8 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
         T = check_2 - check_1
         overall_time_cost += T # this time needs to be counted 
 
+        # global_best_orientations_list_no_bin = [i.orien for i in re_CA_packed_pieces]
+        
         # print(f"Constructive algorithm finished, cost {T} s in total, {N} bins are used, U_star is {U_star}")         
         trace(f"Constructive algorithm finished, cost {T} s in total, {N} bins are used, U is {U}, U_star is {U_star}")
         
@@ -871,7 +875,7 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
         # print(f"Replicated NFVs: {nfv_pool.rep_nfv_cal/nfv_pool.all_nfv_cal * 100} %")
         
         # ==========================================================================================================
-        
+
         # local_best_iteration = overall_n_packing
         # global_best_iteration = overall_n_packing
 
@@ -908,14 +912,14 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
             global_best_orientations_list_no_bin = initial_orientations_list_no_bin
             trace("This iteration NOT makes result better!")  
         
+
         if overall_time_cost > time_limit:
             trace("Has reached the time limit, stop!")
             ALG_stop = True
             break
-
+        
         else: 
             ALG_stop = False
-        
         
 
         # local_best_orientations_list_no_bin = initial_orientations_list_no_bin 
@@ -953,11 +957,11 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
                 # this is the local search based on the orientation
                 layout, topos_layout, radio_layout, pieces_order = repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_pool, global_best_orientations_list_no_bin, data_pool, 
                                                                                      CA_iteration, ils_orientations, container_size,
-                                                                                        container_shape, rho, max_radio, 
-                                                                                        packing_alg, orien_evaluation,
-                                                                                        SCH_nesting_strategy, density = 5, axis = 'z', 
-                                                                                        _type = "bounding_box",_accessible_check = accessible_check, _encourage_dbl = True, 
-                                                                                        _select_range = selection_range, flag_NFV_POOL = flag_NFV_POOL,  _TRACE = False)
+                                                                                    container_shape, rho, max_radio, 
+                                                                                    packing_alg, orien_evaluation,
+                                                                                    SCH_nesting_strategy, density = 5, axis = 'z', 
+                                                                                    _type = "bounding_box",_accessible_check = accessible_check, _encourage_dbl = True, 
+                                                                                    _select_range = selection_range, flag_NFV_POOL = flag_NFV_POOL,  _TRACE = False)
 
                 end = time.time()
 
