@@ -40,7 +40,7 @@ python code_launcher.py
 
 ├── test/  # launch the code
 
-- code_launcher.py
+- code_launcher.py     # in the main function, change the dataset/algorithm/random seed to configure the code
 
 ├── data/ 
 
