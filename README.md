@@ -24,6 +24,10 @@ python code_launcher.py
 
 ## Structure
 
+./open_dimension is for testing the algorithm in the benchmark datasets.
+
+./bin_packing is for the 3D bin packing problem.
+
 ./open_dimension or ./bin_packing
 
 ├── src/ # source code
@@ -34,7 +38,7 @@ python code_launcher.py
 - packing_iter_ls - main logic of constructive algorithm.
 - SCH_iter_ls - main logic of Selection of Candidates Heuristic (SCH) in packing, mainly for select packing position out of Feasible Region.
 
-├── test/ # launch the code
+├── test/  # launch the code
 
 - code_launcher.py
 
