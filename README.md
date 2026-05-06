@@ -8,12 +8,13 @@ Fusion Reactor Decommissioning”
 
 ## Features
 
-- Fast and efficient constructive algorithm based on voxel representation, considering orientation.
-- Fast no-fit voxel calculation is empowered by parallel computation on GPU (cuda framework).
-- Support cylinder and cubic containers. 
-- NFV and IFV pool techniques.
-- Robust and efficient accessibility check.
-- Efficient metaheuristics, neighbour is the piece orientation.
+- Fast and efficient constructive algorithm based on voxel representation, considering orientation, achieving new benchmark performance. 
+- Algortihms can fit 3D irregular bin packing and 3D irregular strip packing problem, and support cylinder and cubic containers. 
+- Fast No-Fit Voxel (NFV) calculation in real time, empowered by parallel computation on GPU (cuda framework).
+- Quick and robust morphological techniques to reduce the packing candidates by only consider touching positions.
+- NFV and Inner-Fit Voxel (IFV) pool techniques to reduce NFV calculation.
+- Robust and efficient accessibility check procedure.
+- Efficient metaheuristics, neighbor is the novel piece orientation.
 
 ## Usage
 
