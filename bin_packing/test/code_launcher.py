@@ -16,7 +16,7 @@ from scipy.ndimage import binary_fill_holes
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 
 import binvox_rw
-from iter_local_search import iter_local_search, bin_lower_bound, pieces_selection_ls
+# from iter_local_search import iter_local_search, bin_lower_bound, pieces_selection_ls
 from new_ILS_southampton import ILS_from_the_first_piece, GRASP, GRASP_ILS
 from function_lib import save_voxel_model, NFV_POOL, IFV_POOL, get_bounding_box
 
@@ -438,7 +438,7 @@ def load_instance(instance_id, input_dir="../instances"):
 
         return container_shape, container_size, int(max_radio), int(max_weight), object_info_total
     
-def testing(list_datasets_name, seq_seed_list, ALG_list):
+def testing(list_datasets_name, seq_seed_list, ALG_list, container_shape_list):
 
     # =======================================================================================
     # key --      value                     --    value example
@@ -477,7 +477,7 @@ def testing(list_datasets_name, seq_seed_list, ALG_list):
     #                 "st05_e2"]
 
     # seq_seed_list = [13] # for sequence
-    container_shape_list = ["cylinder"]
+    # container_shape_list = ["cylinder"]
     max_radio_list = [999999]
     max_rho_list = [1]
     result_list = []
@@ -490,6 +490,7 @@ def testing(list_datasets_name, seq_seed_list, ALG_list):
     # GRASP_ILS: activate ILS and GRASP
     U_star_overall = 0
     T_overall = 0
+    accessible_check = False
 
     for each_name in name_list: 
         for seq_seed in seq_seed_list:
@@ -506,7 +507,7 @@ def testing(list_datasets_name, seq_seed_list, ALG_list):
                                 packing_alg  = "SCH"
                                 selection_type = "bounding_box"
                                 selection_range = "bottom"
-                                SCH_nesting_strategy = "maximum connected space"
+                                SCH_nesting_strategy = "maximum_connected_space"
                                 _evaluation = "minimum_bb_volume"   
 
                             # for cylinder
@@ -514,18 +515,17 @@ def testing(list_datasets_name, seq_seed_list, ALG_list):
                                 packing_alg  = "SCH"
                                 selection_type = "bounding_box"
                                 selection_range = "bottom_top"
-                                SCH_nesting_strategy = "minimum volume of AABB"
+                                SCH_nesting_strategy = "minimum_volume_of_AABB"
                                 _evaluation = "waste_overlap_distance"   
 
 
                             # This can be done in a more realistic way! 
-                            accessible_check = True
+                            
                             flag_NFV_POOL = False 
                             # =================================================
                             
                             # ========================================================================
                         
-                            
                             # Database for all nfv
                             # this might needs to be a Class to pack all functions and shared variable. 
 
@@ -640,7 +640,7 @@ def testing(list_datasets_name, seq_seed_list, ALG_list):
                                                                                                                                                             packing_alg, selection_type, selection_range, accessible_check,
                                                                                                                                                             SCH_nesting_strategy, _evaluation, ALG,
                                                                                                                                                             container_size, container_shape,
-                                                                                                                                                            iteration_limit= iteration_limit, time_limit=time_limit, alpha=alpha, kick_trigger_time=kick_trigger_time, kick_level=kick_level, flag_NFV_POOL=False, visualisation = False, _TRACE = True)
+                                                                                                                                                            iteration_limit= iteration_limit, time_limit=time_limit, alpha=alpha, kick_trigger_time=kick_trigger_time, kick_level=kick_level, flag_NFV_POOL=False, visualisation = True, _TRACE = True)
                                                                                                                                                                                                             
                                                                                                                                                 # def ILS_from_the_first_piece(object_info, nfv_pool, max_radio, rho, orientations, ils_orientations, orientations_list,
                                                                                                                                                 #             packing_alg, selection_type, selection_range, accessible_check,
@@ -733,11 +733,13 @@ def testing(list_datasets_name, seq_seed_list, ALG_list):
 
 def __main__():
 
-    list_datasets_name = ["shapesnew"] 
-    ALG_list = ["BLF"]
+    list_datasets_name = ["st04_Example2_normal"] 
+    ALG_list = ["fixed_CA"]
     seq_seed_list = [13]
+    container_shape_list = ["cube"]
+
     # instance_generator() 
-    testing(list_datasets_name,seq_seed_list,ALG_list)
+    testing(list_datasets_name,seq_seed_list,ALG_list,container_shape_list)
 
     # columns =  ["dataset","piece_num", "seed", "ALG", "best_N", "best_U_star", "origin_N", "origin_U_star","U improve (%)", "U_star improve (%)", "T (s)"]
     # list_datasets_name = ["chess"] 
