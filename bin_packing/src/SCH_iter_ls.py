@@ -141,53 +141,59 @@ def nesting_evaluation(ongoing, partial_solution_in_the_bin, packing_position_li
     best_position = (-1,-1,-1)
     best_value = np.inf
     value_list_pairs = []
-    
-    for each_position in packing_position_list: 
 
-        # This is for evaluation 
-        translated_test = np.roll(ongoing, shift=each_position, axis=(0, 1, 2))
-        # translated_test = translation_njit(ongoing,each_position)
-        
-        bin_test = partial_solution_in_the_bin + translated_test
-        
+    _L, _W, _H = ongoing.shape
+    translated_test = np.zeros((_L, _W, _H), dtype=ongoing.dtype)
+    bin_test = np.empty((_L, _W, _H), dtype=partial_solution_in_the_bin.dtype)
+
+    for each_position in packing_position_list:
+        sx, sy, sz = each_position
+
+        # In-place translation: no allocation per iteration, no wrap-around
+        # (safe because feasible positions are always within bin bounds)
+        translated_test[:] = 0
+        src = (slice(max(0, -sx), _L - max(0, sx)),
+               slice(max(0, -sy), _W - max(0, sy)),
+               slice(max(0, -sz), _H - max(0, sz)))
+        dst = (slice(max(0,  sx), _L - max(0, -sx)),
+               slice(max(0,  sy), _W - max(0, -sy)),
+               slice(max(0,  sz), _H - max(0, -sz)))
+        translated_test[dst] = ongoing[src]
+        np.add(partial_solution_in_the_bin, translated_test, out=bin_test)
+
         # distance to the original point, add to the value to select the point which is closer to (0,0,0)
-        # smaller the value, is better. 
+        # smaller the value, is better.
         distance_to_0 = 0
-        
+
         if encourage_dbl:
-            distance_to_0 =  (each_position[0])**2 + (each_position[1])**2 + (each_position[2])**2
+            distance_to_0 = sx**2 + sy**2 + sz**2
             # trace(f"Distance to original point {distance_to_0}")
-            
-        # accessible = accessibility_check(translated_test, position_bin, topos_partial_solution, bin_size)
-        # trace(f"The accessibility check is finished")
-        # if accessible:
-        # print(f"The packing position is accessible vertically.")
 
         x,y,z = get_bounding_box(bin_test)
-        
-        if nesting == 1: 
-            
+
+        if nesting == 1:
+
             value = x * y * z + distance_to_0
-            
-        elif nesting == 2: 
+
+        elif nesting == 2:
             # smaller value is better
             value = 4 * (x + y + z) + distance_to_0
-            
-        elif nesting == 3: 
+
+        elif nesting == 3:
             # as smaller value is better, so a negative mark is required
-            value = - max(bin_size[0]*bin_size[1]*(bin_size[2]-z), 
-                        bin_size[0]*(bin_size[1]-y)*bin_size[2], 
+            value = - max(bin_size[0]*bin_size[1]*(bin_size[2]-z),
+                        bin_size[0]*(bin_size[1]-y)*bin_size[2],
                         (bin_size[0]-x)*bin_size[1]*bin_size[2]) + distance_to_0
-        
+
         value_list_pairs.append((each_position,value))
 
         if value < best_value:
             best_value = value
             best_position = each_position
-            
-            
+
+
     # sorted_positions = [pos for pos, value in sorted(value_list_pairs,key=lambda x:x[1])]
-            
+
     return best_position
 
 def SC_heuristic(nfv_pool, ifv_pool, ongoing_object_info, current_layout, topos_layout, position_bin, 
@@ -255,15 +261,15 @@ def SC_heuristic(nfv_pool, ifv_pool, ongoing_object_info, current_layout, topos_
 
         return selection_process_bottom_left_filling(feasible_region)  
     # print("Packing position candidates are: ", packing_position_list)
-    if nesting_strategy == "minimum volume of AABB": 
+    if nesting_strategy == "minimum_volume_of_AABB": 
         
         nesting = 1
         
-    elif nesting_strategy == "minimum length of edges of AABB": 
+    elif nesting_strategy == "minimum_length_of_edges_of_AABB": 
         # smaller value is better
         nesting = 2
         
-    elif nesting_strategy == "maximum connected space": 
+    elif nesting_strategy == "maximum_connected_space": 
         # as smaller value is better, so a negative mark is required
         nesting = 3
         

@@ -27,9 +27,10 @@ from scipy.ndimage import binary_fill_holes, binary_dilation, label, binary_prop
 
 class NFV_POOL:
 
-    def __init__(self):
+    def __init__(self, max_size=3000):
 
         self.nfv_pool = {}
+        self.max_size = max_size
         self.all_nfv_cal = 0
         self.val_nfv_cal = 0
         self.rep_nfv_cal = 0
@@ -360,7 +361,8 @@ class NFV_POOL:
         return nfv
     
     def store_nfv(self, key, NFV):
-
+        if len(self.nfv_pool) >= self.max_size:
+            self.nfv_pool.pop(next(iter(self.nfv_pool)))
         self.nfv_pool[key] = NFV
 
     def __str__(self):
@@ -370,8 +372,9 @@ class NFV_POOL:
 
 class IFV_POOL():
 
-    def __init__(self):
+    def __init__(self, max_size=1000):
         self.ifv_pool = {}
+        self.max_size = max_size
         self.all_ifv_cal = 0
         self.val_ifv_cal = 0
         self.rep_ifv_cal = 0
@@ -419,7 +422,8 @@ class IFV_POOL():
             return trial1
         
     def store_ifv(self, key, ifv):
-
+        if len(self.ifv_pool) >= self.max_size:
+            self.ifv_pool.pop(next(iter(self.ifv_pool)))
         self.ifv_pool[key] = ifv
         
 
@@ -939,7 +943,6 @@ def normalised(data):
     data = translate_voxel_quick(data,(-x_normal,-y_normal,-z_normal))
 
     return data 
-import numpy as np
 
 def translate_voxel_quick(arr, shift):
     """

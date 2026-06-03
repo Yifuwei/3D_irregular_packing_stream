@@ -4,7 +4,6 @@ import csv
 import time 
 import numpy as np
 import math
-import pandas as pd
 import copy
 import matplotlib.pyplot as plt
 import line_profiler
@@ -96,27 +95,25 @@ def get_final_performance(object_info_total, container_size, container_shape, la
 
 # data structure for the local search algorithm
 
-def update_data(data_pool, layout,topos_layout, radio_layout,
+def update_data(data_pool, layout, topos_layout, radio_layout,
                 pieces_order, U_star, N_U, T, selected_info, iteration):
-    
-    # selected_info = (pieces_index, orientation, packing_position)
-    
-    new_row = pd.DataFrame([{
-        "iteration": iteration,
+    data_pool[iteration] = {
         "bin_real_layout": layout,
         "bin_topos_layout": topos_layout,
         "pieces_order": pieces_order,
         "performance_U_star": U_star,
-        "performance_N_U_star": N_U,    
+        "performance_N_U_star": N_U,
         "time": T,
-        # "neighbour_type":neighbour_type,
-        "selected_pool":selected_info, # We might care more about a list of orientation for all pieces 
-        "radio_layout":radio_layout
-    }])
-    
-    data_pool = pd.concat([data_pool, new_row], ignore_index=True)
-    
+        "selected_pool": selected_info,
+        "radio_layout": radio_layout
+    }
     return data_pool
+
+def prune_data_pool(data_pool, *keep_keys):
+    keep = set(keep_keys)
+    for k in list(data_pool.keys()):
+        if k not in keep:
+            del data_pool[k]
 
 def get_new_bin_position(object_total): 
     """_summary_
@@ -273,20 +270,8 @@ def ILS_from_the_first_piece(object_info_total, nfv_pool, ifv_pool, max_radio, r
     # =======================================================================================
     original_object_info_total = copy.deepcopy(object_info_total)
 
-    df = {"iteration":[], 
-            "bin_real_layout":[], 
-            "bin_topos_layout":[],
-            "pieces_order":[],
-            "performance_U_star":[],
-            "performance_N_U_star":[],
-            "time":[],
-            # "neighbour_type":[],
-            "selected_pool":[],
-            "radio_layout":[]
-            }
-    
-    data_pool = pd.DataFrame(df)
-    
+    data_pool = {}
+
     # trace("============================================================")
     trace(f"Algorithm is {ALG}")
     trace(f"Objects number: {len(object_info_total)}")
@@ -295,7 +280,7 @@ def ILS_from_the_first_piece(object_info_total, nfv_pool, ifv_pool, max_radio, r
     trace(f"Packing algorithm is {packing_alg}") 
     trace(f"Nesting Strategy is: {SCH_nesting_strategy}")
     trace(f"Evaluation for orientation is {orien_evaluation}")
-    trace("Accessibility check is True")
+    trace(f"Accessibility check is {accessible_check}")
     trace("============================================================")
 
     # ============================================================================
@@ -448,7 +433,7 @@ def ILS_from_the_first_piece(object_info_total, nfv_pool, ifv_pool, max_radio, r
         # decide which orientation
         # selected_orientation = orientation_selection_ls(orientations)
 
-        other_orientations = list(copy.deepcopy(orientations_list))
+        other_orientations = list(orientations_list)
         other_orientations.remove(local_best_orientations_list_no_bin[selected_index])
 
         for each_orientation in other_orientations: 
@@ -530,9 +515,9 @@ def ILS_from_the_first_piece(object_info_total, nfv_pool, ifv_pool, max_radio, r
 
                     data_pool = update_data(data_pool, layout, topos_layout, radio_layout,
                             pieces_order, U_star, perform_this_iter, T, selected_info, iteration=n_iter)
-
+                    prune_data_pool(data_pool, "origin", local_best_iteration, global_best_iteration)
                     trace("Database updated!")
-                    
+
                 trace("Has reached the iteration limit, stop!")
                 nonstop = False
                 break
@@ -580,10 +565,10 @@ def ILS_from_the_first_piece(object_info_total, nfv_pool, ifv_pool, max_radio, r
 
                 data_pool = update_data(data_pool, layout, topos_layout, radio_layout,
                             pieces_order, U_star, perform_this_iter, T, selected_info, iteration=n_iter)
-                
+                prune_data_pool(data_pool, "origin", local_best_iteration, global_best_iteration)
                 trace("Database updated!")
 
-                n_iter += 1 
+                n_iter += 1
                 break # break to the next pieces
                 
             else:
@@ -607,7 +592,7 @@ def ILS_from_the_first_piece(object_info_total, nfv_pool, ifv_pool, max_radio, r
                 # if after an amount of time, the solution is unchanged
                 # we give a kick to the orientations
 
-                tem = copy.deepcopy(global_best_orientations_list_no_bin)
+                tem = list(global_best_orientations_list_no_bin)
 
                 if kick_level == "small":
                     change_n = int(np.ceil(len(object_info_total)/4))
@@ -652,13 +637,13 @@ def ILS_from_the_first_piece(object_info_total, nfv_pool, ifv_pool, max_radio, r
                 # kick data must be the local best for the new iterations
                 data_pool = update_data(data_pool, layout, topos_layout, radio_layout,
                             pieces_order, U_star, perform_this_iter, "kick", selected_info = "None", iteration=n_iter)
-                
-                trace("Database updated!")
 
                 local_best_list.append(local_best_perform)
                 local_change_iter_list.append(kick_iteration-1)
 
                 local_best_iteration = kick_iteration
+                prune_data_pool(data_pool, "origin", local_best_iteration, global_best_iteration)
+                trace("Database updated!")
                 
                 local_best_list.append(perform_this_iter)
                 local_change_iter_list.append(local_best_iteration)
@@ -685,28 +670,26 @@ def ILS_from_the_first_piece(object_info_total, nfv_pool, ifv_pool, max_radio, r
         
     # ==================================================================================
     # read the final results
-    best_data = data_pool[data_pool["iteration"] == global_best_iteration]
-    original_data = data_pool[data_pool["iteration"] == "origin"]
-    
-    best_pieces_order = best_data["pieces_order"].iloc[0]
-    best_topos_layout = best_data["bin_topos_layout"].iloc[0]
-    # origin_topos_layout = original_data["bin_topos_layout"].iloc[0]
-    
-    best_current_layout = best_data["bin_real_layout"].iloc[0]
-    origin_current_layout = original_data["bin_real_layout"].iloc[0]
-    
-    # best_visual_layout = best_data["bin_real_layout"].iloc[0]
-    
+    best_data = data_pool[global_best_iteration]
+    original_data = data_pool["origin"]
+
+    best_pieces_order = best_data["pieces_order"]
+    best_topos_layout = best_data["bin_topos_layout"]
+    # origin_topos_layout = original_data["bin_topos_layout"]
+
+    best_current_layout = best_data["bin_real_layout"]
+    origin_current_layout = original_data["bin_real_layout"]
+
 
     best_N, best_U, best_U_star = get_final_performance(object_info_total, container_size, container_shape, best_current_layout)
     origin_N, origin_U, origin_U_star = get_final_performance(object_info_total, container_size, container_shape, origin_current_layout)
-    
-    if best_U_star == None: 
+
+    if best_U_star == None:
         best_U_star = best_U
 
-    if origin_U_star == None: 
+    if origin_U_star == None:
         origin_U_star = origin_U
-        
+
     # trace("============================================================")
     # trace(f"ILS finished, cost {overall_time_cost} s, num of iterations is {n_iter}")
     # trace(f"Time limit is {time_limit} s, iteration limit is {iteration_limit}")
@@ -769,25 +752,13 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
 
     
 
-    df = {"iteration":[], 
-            "bin_layout":[], 
-            "bin_topos_layout":[],
-            "pieces_order":[],
-            "performance_U_star":[],
-            "performance_N_U_star":[],
-            "time":[],
-            # "neighbour_type":[],
-            "selected_pool":[],
-            "radio_layout":[]
-            }
-    
-    data_pool = pd.DataFrame(df)
-    
+    data_pool = {}
+
     # trace("============================================================")
     trace(f"Objects number: {len(object_info_total)}")
     trace(f"The container type: {container_shape}")
     trace(f"Container size is: {container_size}")
-    trace(f"Packing algorithm is {packing_alg}") 
+    trace(f"Packing algorithm is {packing_alg}")
     trace(f"Nesting Strategy is: {SCH_nesting_strategy}")
     trace(f"Evaluation for orientation is {orien_evaluation}")
     trace("Accessibility check is True")
@@ -804,7 +775,7 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
     GRASP_LOOP = True
     n_iter_GRASP = 1
     overall_n_packing = 0
-    overall_time_cost = 0 
+    overall_time_cost = 0
     global_best_perform = 999
 
     while GRASP_LOOP:
@@ -820,7 +791,7 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
                                                                                     packing_alg, orien_evaluation,
                                                                                     SCH_nesting_strategy, density = 5, axis = 'z', 
                                                                                     _type = selection_type, _accessible_check = accessible_check, _encourage_dbl = True, 
-                                                                                    _select_range = selection_range, random_CA= random_CA, random_CA_threshold = random_CA_threshold,flag_NFV_POOL=flag_NFV_POOL, _TRACE = False) # for SCH
+                                                                                    _select_range = selection_range, random_CA= random_CA, random_CA_threshold = random_CA_threshold, flag_NFV_POOL=flag_NFV_POOL, _TRACE = False) # for SCH
         
                                                                                                                                                 # def packing_3D_voxel_lookback(polobject_info_total, nfv_pool, orientation, container_size, 
                                                                                                                                                 #                         container_shape, rho, max_radio, 
@@ -897,38 +868,35 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
             # trace(f"Now best orientations of pieces are: {global_best_orientations_list_no_bin}")
             # n_iter += 1 
             data_pool = update_data(data_pool, layout, topos_layout, radio_layout,
-                        pieces_order, U_star, perform_this_iter, T, selected_info = "None", iteration= CA_iteration)   
-                   
+                        pieces_order, U_star, perform_this_iter, T, selected_info = "None", iteration= CA_iteration)
+            prune_data_pool(data_pool, 1, global_best_iteration, CA_iteration)
             trace("Database updated!")
 
             keep_this_iter = False
             # break # break to the next GRASP iteration
-            
-        else:
-            # n_iter += 1 
-            data_pool = update_data(data_pool, layout, topos_layout, radio_layout,
-                            pieces_order, U_star, perform_this_iter, T, selected_info = "None", iteration= CA_iteration)   
 
+        else:
+            # n_iter += 1
+            data_pool = update_data(data_pool, layout, topos_layout, radio_layout,
+                            pieces_order, U_star, perform_this_iter, T, selected_info = "None", iteration= CA_iteration)
+            prune_data_pool(data_pool, 1, global_best_iteration, CA_iteration)
             global_best_orientations_list_no_bin = initial_orientations_list_no_bin
-            trace("This iteration NOT makes result better!")  
-        
+            trace("This iteration NOT makes result better!")
+
 
         if overall_time_cost > time_limit:
             trace("Has reached the time limit, stop!")
             ALG_stop = True
             break
-        
-        else: 
-            ALG_stop = False
-        
 
-        # local_best_orientations_list_no_bin = initial_orientations_list_no_bin 
-        
-        
+        else:
+            ALG_stop = False
+
+
         keep_this_iter = True
 
         n_iter = 1 # this is to track the num of iter in each GRASP iter
-        
+
         original_object_info_total = copy.deepcopy(object_info_total) # re-initialise
         trace("Local Search started!")
         while keep_this_iter:
@@ -939,7 +907,7 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
             # decide which orientation
             # selected_orientation = orientation_selection_ls(orientations)
 
-            other_orientations = list(copy.deepcopy(orientations_list))
+            other_orientations = list(orientations_list)
             other_orientations.remove(global_best_orientations_list_no_bin[selected_index])     
 
             for each_orientation in other_orientations: 
@@ -1037,59 +1005,35 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
         if ALG_stop:
             # jump out the overall loop
             break
-        
-        
-        
+
+
+
     # ==================================================================================
     # read the final results
-    best_data = data_pool[data_pool["iteration"] == global_best_iteration]
-    original_data = data_pool[data_pool["iteration"] == 1]
-    
-    best_pieces_order = best_data["pieces_order"].iloc[0]
-    best_topos_layout = best_data["bin_topos_layout"].iloc[0]
-    # origin_topos_layout = original_data["bin_topos_layout"].iloc[0]
-    
-    best_current_layout = best_data["bin_real_layout"].iloc[0]
-    origin_current_layout = original_data["bin_real_layout"].iloc[0]
-    
-    # best_visual_layout = best_data["bin_real_layout"].iloc[0]
-    
+    best_data = data_pool[global_best_iteration]
+    original_data = data_pool[1]
+
+    best_pieces_order = best_data["pieces_order"]
+    best_topos_layout = best_data["bin_topos_layout"]
+    # origin_topos_layout = original_data["bin_topos_layout"]
+
+    best_current_layout = best_data["bin_real_layout"]
+    origin_current_layout = original_data["bin_real_layout"]
+
 
     best_N, best_U, best_U_star = get_final_performance(object_info_total, container_size, container_shape, best_current_layout)
     origin_N, origin_U, origin_U_star = get_final_performance(object_info_total, container_size, container_shape, origin_current_layout)
-    
-    if best_U_star == None: 
+
+    if best_U_star == None:
         best_U_star = best_U
 
-    if origin_U_star == None: 
+    if origin_U_star == None:
         origin_U_star = origin_U
-        
-    # trace("============================================================")
-    # trace(f"ILS finished, cost {overall_time_cost} s, num of iterations is {n_iter}")
-    # trace(f"Time limit is {time_limit} s, iteration limit is {iteration_limit}")
-    # trace(f"Best iteration is {best_iteration}")
-    # trace(f"Constructive algorithm, {origin_N} bins are used, U_star is {origin_U_star}")
-    # trace(f"After ILS, {best_N} bins are used, U_star is {best_U_star}")
-    # trace(f" U_star Improvement: {(best_U_star-origin_U_star)/origin_U_star * 100}%")
-    # trace(f" U Improvement: {(best_U-origin_U)/origin_U * 100}%")
-    # trace("============================================================")
 
-    
+
     if visualisation:
         visualize_voxel_model(best_current_layout,best_pieces_order, container_size, container_shape)
-    
 
-    # draw the bar chart for the nfv
-    # x_labels = [str(k) for k in nfv_pool.keys()]
-    # y_values = list(nfv_pool.values())
-    # plt.figure(figsize=(6, 4))
-    # plt.bar(x_labels, y_values)
-    # plt.xlabel("Tuple keys")
-    # plt.ylabel("calculation times")
-    # plt.title(f"NFV calculation times {sum(y_values)}")
-    # plt.xticks(rotation=30)
-    # plt.tight_layout()
-    # plt.show()
 
     return best_N, best_U, best_U_star, origin_N, origin_U, origin_U_star,  \
             best_current_layout, origin_current_layout, best_topos_layout,  \
@@ -1123,25 +1067,13 @@ def GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientation
 
     
 
-    df = {"iteration":[], 
-            "bin_real_layout":[], 
-            "bin_topos_layout":[],
-            "pieces_order":[],
-            "performance_U_star":[],
-            "performance_N_U_star":[],
-            "time":[],
-            # "neighbour_type":[],
-            "selected_pool":[],
-            "radio_layout":[]
-            }
-    
-    data_pool = pd.DataFrame(df)
-    
+    data_pool = {}
+
     # trace("============================================================")
     trace(f"Objects number: {len(object_info_total)}")
     trace(f"The container type: {container_shape}")
     trace(f"Container size is: {container_size}")
-    trace(f"Packing algorithm is {packing_alg}") 
+    trace(f"Packing algorithm is {packing_alg}")
     trace(f"Nesting Strategy is: {SCH_nesting_strategy}")
     trace(f"Evaluation for orientation is {orien_evaluation}")
     trace("Accessibility check is True")
@@ -1158,7 +1090,7 @@ def GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientation
     GRASP_LOOP = True
     n_iter_GRASP = 1
     overall_n_packing = 0
-    overall_time_cost = 0 
+    overall_time_cost = 0
     global_best_perform = 999
     local_best_perform = 999
 
@@ -1270,24 +1202,21 @@ def GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientation
             
             data_pool = update_data(data_pool, layout, topos_layout, radio_layout,
                             pieces_order, U_star, perform_this_iter, T, selected_info = "None", iteration= overall_n_packing)
-            
+            prune_data_pool(data_pool, 1, local_best_iteration, global_best_iteration)
             trace("Database updated!")
 
         else:
-            # n_iter += 1 
+            # n_iter += 1
             no_change_time += 1
-            trace("This iteration NOT makes result better!")  
-        
-        ALG_stop = False
-        
+            trace("This iteration NOT makes result better!")
 
-        # local_best_orientations_list_no_bin = initial_orientations_list_no_bin 
-        
-        
+        ALG_stop = False
+
+
         keep_this_iter = True
 
         n_iter = 1 # this is to track the num of iter in each GRASP iter
-        
+
         original_object_info_total = copy.deepcopy(object_info_total) # re-initialise
         no_change_time = 0
         n_kick = 1
@@ -1300,7 +1229,7 @@ def GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientation
             # decide which orientation
             # selected_orientation = orientation_selection_ls(orientations)
 
-            other_orientations = list(copy.deepcopy(orientations_list))
+            other_orientations = list(orientations_list)
             other_orientations.remove(global_best_orientations_list_no_bin[selected_index])     
 
             for each_orientation in other_orientations: 
@@ -1389,13 +1318,13 @@ def GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientation
 
                     data_pool = update_data(data_pool, layout, topos_layout, radio_layout,
                                 pieces_order, U_star, perform_this_iter, T, selected_info, iteration=overall_n_packing)
-                    
+                    prune_data_pool(data_pool, 1, local_best_iteration, global_best_iteration)
                     trace("Database updated!")
-             
+
                 else:
-                    # n_iter += 1 
+                    # n_iter += 1
                     no_change_time += 1
-                    trace("This iteration NOT makes result better!")   
+                    trace("This iteration NOT makes result better!")
                     trace(f"No-improvement Rep - {no_change_time}")        
 
                 # judge if the iteration time iter_limit_per_iter
@@ -1420,26 +1349,26 @@ def GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientation
                     # if after an amount of time, the solution is unchanged
                     # we give a kick to the orientations
 
-                    tem = copy.deepcopy(global_best_orientations_list_no_bin)
+                    tem = list(global_best_orientations_list_no_bin)
 
                     if kick_level == "small":
                         change_n = int(np.ceil(len(object_info_total)/4))
-                        change_position = np.random.choice(len(object_info_total), size=change_n, replace=False)   
+                        change_position = np.random.choice(len(object_info_total), size=change_n, replace=False)
                         for each_position in change_position:
                             tem[each_position] = np.random.choice(orientations_list)
 
                     elif kick_level == "medium":
                         change_n = int(np.ceil(len(object_info_total)/2))
-                        change_position = np.random.choice(len(object_info_total), size=change_n, replace=False)   
+                        change_position = np.random.choice(len(object_info_total), size=change_n, replace=False)
                         for each_position in change_position:
                             tem[each_position] = np.random.choice(orientations_list)
 
                     elif kick_level == "large":
                         change_n = int(np.ceil(3*len(object_info_total)/4))
-                        change_position = np.random.choice(len(object_info_total), size=change_n, replace=False)   
+                        change_position = np.random.choice(len(object_info_total), size=change_n, replace=False)
                         for each_position in change_position:
                             tem[each_position] = np.random.choice(orientations_list)
-                    
+
                     local_best_orientations_list_no_bin = tem
 
                     trace("Kick repacking started")
@@ -1465,13 +1394,10 @@ def GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientation
                     
                     data_pool = update_data(data_pool, layout, topos_layout, radio_layout,
                                 pieces_order, U_star, perform_this_iter, "kick", selected_info, iteration=overall_n_packing)
-                    
-                    trace("Database updated!")
-
-                    # local_best_list.append(local_best_perform)
-                    # local_change_iter_list.append(kick_iteration-1)
 
                     local_best_iteration = overall_n_packing
+                    prune_data_pool(data_pool, 1, local_best_iteration, global_best_iteration)
+                    trace("Database updated!")
                     
                     # local_best_list.append(perform_this_iter)
                     # local_change_iter_list.append(local_best_iteration)
@@ -1508,54 +1434,30 @@ def GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientation
         
     # ==================================================================================
     # read the final results
-    best_data = data_pool[data_pool["iteration"] == global_best_iteration]
-    original_data = data_pool[data_pool["iteration"] == 1]
-    
-    best_pieces_order = best_data["pieces_order"].iloc[0]
-    best_topos_layout = best_data["bin_topos_layout"].iloc[0]
-    # origin_topos_layout = original_data["bin_topos_layout"].iloc[0]
-    
-    best_current_layout = best_data["bin_real_layout"].iloc[0]
-    origin_current_layout = original_data["bin_real_layout"].iloc[0]
-    
-    # best_visual_layout = best_data["bin_real_layout"].iloc[0]
-    
+    best_data = data_pool[global_best_iteration]
+    original_data = data_pool[1]
+
+    best_pieces_order = best_data["pieces_order"]
+    best_topos_layout = best_data["bin_topos_layout"]
+    # origin_topos_layout = original_data["bin_topos_layout"]
+
+    best_current_layout = best_data["bin_real_layout"]
+    origin_current_layout = original_data["bin_real_layout"]
+
 
     best_N, best_U, best_U_star = get_final_performance(object_info_total, container_size, container_shape, best_current_layout)
     origin_N, origin_U, origin_U_star = get_final_performance(object_info_total, container_size, container_shape, origin_current_layout)
-    
-    if best_U_star == None: 
+
+    if best_U_star == None:
         best_U_star = best_U
 
-    if origin_U_star == None: 
+    if origin_U_star == None:
         origin_U_star = origin_U
-        
-    # trace("============================================================")
-    # trace(f"ILS finished, cost {overall_time_cost} s, num of iterations is {n_iter}")
-    # trace(f"Time limit is {time_limit} s, iteration limit is {iteration_limit}")
-    # trace(f"Best iteration is {best_iteration}")
-    # trace(f"Constructive algorithm, {origin_N} bins are used, U_star is {origin_U_star}")
-    # trace(f"After ILS, {best_N} bins are used, U_star is {best_U_star}")
-    # trace(f" U_star Improvement: {(best_U_star-origin_U_star)/origin_U_star * 100}%")
-    # trace(f" U Improvement: {(best_U-origin_U)/origin_U * 100}%")
-    # trace("============================================================")
 
-    
+
     if visualisation:
         visualize_voxel_model(best_current_layout,best_pieces_order, container_size, container_shape)
-    
 
-    # draw the bar chart for the nfv
-    # x_labels = [str(k) for k in nfv_pool.keys()]
-    # y_values = list(nfv_pool.values())
-    # plt.figure(figsize=(6, 4))
-    # plt.bar(x_labels, y_values)
-    # plt.xlabel("Tuple keys")
-    # plt.ylabel("calculation times")
-    # plt.title(f"NFV calculation times {sum(y_values)}")
-    # plt.xticks(rotation=30)
-    # plt.tight_layout()
-    # plt.show()
 
     return best_N, best_U, best_U_star, origin_N, origin_U, origin_U_star,  \
             best_current_layout, origin_current_layout, best_topos_layout,  \

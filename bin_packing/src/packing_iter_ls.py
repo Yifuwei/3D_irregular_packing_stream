@@ -221,7 +221,7 @@ def evaluation(topos_layout_test, current_layout_test, translated_test, _evaluat
         # The larger value of Evaluation represents a better performance. 
         return waste - overlap + distance
     
-    elif _evaluation == "maximum connected space": 
+    elif _evaluation == "maximum_connected_space": 
 
         bin_size = topos_layout_test.shape
         
@@ -334,10 +334,8 @@ def open_a_new_bin(ifv_pool, current_layout, topos_layout, orientation, each_obj
                 orientation_str = each_axis + '_' + str(each_degree)
                 trace(f"Try next axis {each_axis}")
                 # for each orientation of the object       
-                tem = copy.deepcopy(each_object_info)
-                # origin_array = back_to_origin(tem)
-
-                tem['array'] = rotate_voxel(tem["array"], each_degree, each_axis)
+                tem = {**each_object_info}
+                tem['array'] = rotate_voxel(each_object_info["array"], each_degree, each_axis)
                 tem["orientation"] = orientation_str
 
                 # rotated_shape = rotate_voxel(tem["array"],each_degree,each_axis)
@@ -622,7 +620,7 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
                                 # for each orientation of the object
                                 
                                 # to track the value for each orientation
-                                try_info_tem = copy.deepcopy(each_object_info)
+                                try_info_tem = {**each_object_info}
                                 try_info_tem["array"] = rotate_voxel(try_info_tem["array"],each_degree,each_axis)
                                 try_info_tem["orientation"] = each_axis + "_" + str(each_degree)
 
@@ -641,7 +639,7 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
                                     
 
                                     # This is for evaluation 
-                                    current_layout_test = copy.deepcopy(current_layout[each_bin])
+                                    current_layout_test = list(current_layout[each_bin])
                                     translated_test = translate_voxel(try_info_tem["array"], packing_position)
                                     topos_layout_test = topos_layout[each_bin] + translated_test
 
@@ -673,7 +671,7 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
                             # packing_position = quick_nfv(position_bin, topos_layout, each_object, container_size)
                             # time_check1 = time.time() 
 
-                            try_info_tem = copy.deepcopy(each_object_info)
+                            try_info_tem = {**each_object_info}
                             # try_info_tem = copy.deepcopy(original_object_info_total[num_piece])
 
                             packing_position = SC_heuristic(nfv_pool,ifv_pool, try_info_tem, current_layout, topos_layout, each_bin, 
@@ -690,7 +688,7 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
                                 # temporary nesting strategy: basic bottom-back
 
                                 # This is for evaluation 
-                                current_layout_test = copy.deepcopy(current_layout[each_bin])                                
+                                current_layout_test = list(current_layout[each_bin])                                
                                 translated_test = translate_voxel(try_info_tem["array"],packing_position)
                                 topos_layout_test = topos_layout[each_bin] + translated_test
 
@@ -794,7 +792,7 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
                                     # orientation_str = each_axis + "_" + str(each_degree)
                                     # for each orientation of the object
                                     
-                                    try_info_tem = copy.deepcopy(each_object_info)
+                                    try_info_tem = {**each_object_info}
                                     try_info_tem["array"] = rotate_voxel(try_info_tem["array"], each_degree, each_axis)
                                     try_info_tem["orientation"] = each_axis + "_" + str(each_degree)
 
@@ -837,7 +835,7 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
                                 
                                 # if we don't rotate it, don't need to read axis
                                 # orientation_str = "x_0"
-                                try_info_tem = copy.deepcopy(each_object_info)
+                                try_info_tem = {**each_object_info}
                                 x,y,z = np.where(try_info_tem["array"] == 1)                
                                 
                                 # To pack as low as possible    
@@ -887,7 +885,7 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
                                     # orientation_str = each_axis + "_" + str(each_degree)
                                     # rotated_shape = rotate_voxel(each_object_info["array"],each_degree,each_axis)
 
-                                    try_info_tem = copy.deepcopy(each_object_info)
+                                    try_info_tem = {**each_object_info}
                                     try_info_tem["array"] = rotate_voxel(try_info_tem["array"],each_degree,each_axis)
                                     try_info_tem["orientation"] = each_axis + "_" + str(each_degree)
                                     # x,y,z = np.where(rotated_shape == 1) # index of where space is occupied
@@ -910,7 +908,7 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
                                     if isinstance(packing_position,tuple): 
 
                                         # This is for evaluation 
-                                        current_layout_test = copy.deepcopy(current_layout[position_bin])                                       
+                                        current_layout_test = list(current_layout[position_bin])                                       
                                         translated_test = translate_voxel(try_info_tem["array"],packing_position)
                                         topos_layout_test = topos_layout[position_bin] + translated_test
 
@@ -937,8 +935,8 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
                             else: 
                                 # if we don't rotate it, don't need to read axis
                                 # orientation_str = "x_0"
-                                # try_info_tem = copy.deepcopy(each_object_info)
-                                try_info_tem = copy.deepcopy(each_object_info)
+                                # try_info_tem = {**each_object_info}
+                                try_info_tem = {**each_object_info}
                                 # =================================================================================================
 
                                 # time_check1 = time.time() 
@@ -956,7 +954,7 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
                                 if isinstance(packing_position, tuple): 
 
                                     # This is for evaluation 
-                                    current_layout_test = copy.deepcopy(current_layout[position_bin])                                   
+                                    current_layout_test = list(current_layout[position_bin])                                   
                                     translated_test = translate_voxel(try_info_tem["array"], packing_position)                             
                                     topos_layout_test = topos_layout[position_bin] + translated_test                                
                                                     
@@ -1089,12 +1087,12 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
 
     # This is for loading the current best solution as the input of the next iteration.
 
-    filtered_data = old_data_pool[old_data_pool["iteration"] == CA_iter]
-    
-    best_current_layout = filtered_data["bin_real_layout"].iloc[0] 
+    filtered_data = old_data_pool[CA_iter]
+
+    best_current_layout = filtered_data["bin_real_layout"]
     # real_layout is a list filled with object_info
 
-    best_radio_layout = filtered_data["radio_layout"].iloc[0]
+    best_radio_layout = filtered_data["radio_layout"]
 
 
     # initialisation
@@ -1110,7 +1108,7 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
     
     n_bin = 0
     
-    pieces_order_matrix = filtered_data["pieces_order"].iloc[0]
+    pieces_order_matrix = filtered_data["pieces_order"]
     # #print(pieces_order_matrix)
     
     first_flag = False
@@ -1219,7 +1217,7 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
                                 
                                 # print(try_info_tem)
                                 # origin_array = back_to_origin(try_info_tem) # this is for getting the origin orientation
-                                try_info_tem = copy.deepcopy(each_object_info)
+                                try_info_tem = {**each_object_info}
                                 try_info_tem["array"] = rotate_voxel(try_info_tem["array"], each_degree, each_axis)
                                 try_info_tem["orientation"] = each_axis + "_" + str(each_degree)  
                                 # print(try_info_tem)  
@@ -1240,7 +1238,7 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
                                 if isinstance(packing_position,tuple):  
 
                                     # This is for evaluation 
-                                    current_layout_test = copy.deepcopy(current_layout[each_bin])
+                                    current_layout_test = list(current_layout[each_bin])
                                     
                                     translated_test = translate_voxel(try_info_tem["array"], packing_position)
                                     topos_layout_test = topos_layout[each_bin] + translated_test
@@ -1265,12 +1263,12 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
                         else: 
                             # if we don't rotate it, don't need to read axis
                             # orientation_str = "x_0"
-                            # try_info_tem = copy.deepcopy(each_object_info)
-                            # try_info_tem = copy.deepcopy(each_object_info)
+                            # try_info_tem = {**each_object_info}
+                            # try_info_tem = {**each_object_info}
                             # try_info_tem["array"] = back_to_origin(try_info_tem) # this is for getting the origin orientation
                             
                             # try_info_tem["orientation"] = "x_0"
-                            try_info_tem = copy.deepcopy(each_object_info)
+                            try_info_tem = {**each_object_info}
 
                             # =================================================================================================
 
@@ -1286,7 +1284,7 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
                             if isinstance(packing_position,tuple): 
 
                                 # This is for evaluation 
-                                current_layout_test = copy.deepcopy(current_layout[each_bin])
+                                current_layout_test = list(current_layout[each_bin])
 
                                 translated_test = translate_voxel(try_info_tem["array"], packing_position)
                                 topos_layout_test = topos_layout[each_bin] + translated_test
@@ -1333,16 +1331,15 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
                         trace(f"For piece {num_piece}, it has been packed in the bin {each_bin}")    
 
                         # origin_array = back_to_origin(each_object_info)
-                        packed_tem = copy.deepcopy(each_object_info)
-                        packed_tem["array"] = rotate_voxel(packed_tem["array"], best_degree, best_axis)
-
-                        packed_tem["array"] = translate_voxel(packed_tem["array"] , best_translation)
+                        packed_tem = {**each_object_info}
+                        packed_tem["array"] = rotate_voxel(each_object_info["array"], best_degree, best_axis)
+                        packed_tem["array"] = translate_voxel(packed_tem["array"], best_translation)
                         packed_tem["translation"] = best_translation
                         packed_tem["orientation"] = best_axis + "_" + str(best_degree)
                         packed_tem["bin_position"] = each_bin
 
                         current_layout[each_bin].append(packed_tem)
-                        topos_layout[each_bin] += packed_tem["array"] 
+                        topos_layout[each_bin] += packed_tem["array"]
                         radio_list[each_bin].append(packed_tem["radio"])
                         pieces_order[each_bin].append(num_piece)
                         
@@ -1364,7 +1361,7 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
                     if first_flag == True:
                         trace("It is the first object in this bin")
 
-                        # try_info_tem = copy.deepcopy(each_object_info)
+                        # try_info_tem = {**each_object_info}
 
                         # if it is the first item, pack as low as possible
                         for each_degree in degrees:
@@ -1377,10 +1374,10 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
                                     trace(f"Try next axis {each_axis}")
                                     # for each orientation of the object
 
-                                    # try_info_tem = copy.deepcopy(each_object_info)
+                                    # try_info_tem = {**each_object_info}
 
                                     # origin_array = back_to_origin(try_info_tem)
-                                    try_info_tem = copy.deepcopy(each_object_info)
+                                    try_info_tem = {**each_object_info}
                                     try_info_tem["array"] = rotate_voxel(try_info_tem["array"], each_degree, each_axis)
                                     try_info_tem["orientation"] = each_axis + "_" + str(each_degree)
 
@@ -1417,10 +1414,10 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
                             else: 
                                 # if we don't rotate it
 
-                                # try_info_tem = copy.deepcopy(each_object_info)
+                                # try_info_tem = {**each_object_info}
                                 # try_info_tem["array"] = back_to_origin(try_info_tem) # this is for getting the origin orientation
                                 # try_info_tem["orientation"] = "x_0"
-                                try_info_tem = copy.deepcopy(each_object_info)
+                                try_info_tem = {**each_object_info}
                                 # if we don't rotate it, don't need to read axis
                                 # orientation_str = "x_0"
                                 x,y,z = np.where(try_info_tem["array"]  == 1)                
@@ -1458,7 +1455,7 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
                         # if it is not the first item in this bin
                         # print("It is not the first object")
                         
-                        # try_info_tem = copy.deepcopy(each_object_info)
+                        # try_info_tem = {**each_object_info}
 
                         for each_degree in degrees:
                             trace(f"Try next degree {each_degree}")
@@ -1475,9 +1472,9 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
                                     # x,y,z = np.where(rotated_shape == 1) # index of where space is occupied
                                     
                                     # =================================================================================================
-                                    # try_info_tem = copy.deepcopy(each_object_info)
+                                    # try_info_tem = {**each_object_info}
                                     # origin_array = back_to_origin(try_info_tem)
-                                    try_info_tem = copy.deepcopy(each_object_info)
+                                    try_info_tem = {**each_object_info}
                                     try_info_tem["array"] = rotate_voxel(try_info_tem["array"],each_degree,each_axis)
                                     try_info_tem["orientation"] = each_axis + "_" + str(each_degree)
                                     
@@ -1493,7 +1490,7 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
                                     if isinstance(packing_position,tuple): 
 
                                         # This is for evaluation 
-                                        current_layout_test = copy.deepcopy(current_layout[position_bin])                                       
+                                        current_layout_test = list(current_layout[position_bin])                                       
                                         translated_test = translate_voxel(try_info_tem["array"],packing_position)
                                         topos_layout_test = topos_layout[position_bin] + translated_test
 
@@ -1522,11 +1519,11 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
                                 # when orientation = "x_0"
                                 # don't need to call rotate function
 
-                                # try_info_tem = copy.deepcopy(each_object_info)
+                                # try_info_tem = {**each_object_info}
                                 # try_info_tem["array"] = back_to_origin(try_info_tem) # this is for getting the origin orientation
                                 # try_info_tem["orientation"] = "x_0"
                                 
-                                try_info_tem = copy.deepcopy(each_object_info)
+                                try_info_tem = {**each_object_info}
                                 # =================================================================================================
 
                                 # time_check1 = time.time() 
@@ -1543,7 +1540,7 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
                                 if isinstance(packing_position,tuple): 
 
                                     # This is for evaluation 
-                                    current_layout_test = copy.deepcopy(current_layout[position_bin])                                   
+                                    current_layout_test = list(current_layout[position_bin])                                   
                                     translated_test = translate_voxel(try_info_tem["array"], packing_position)                             
                                     topos_layout_test = topos_layout[position_bin] + translated_test                                
                                                     
@@ -1586,17 +1583,15 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
                 # info updating     
                    
                 # origin_array = back_to_origin(each_object_info)
-                packed_tem = copy.deepcopy(each_object_info)
-                packed_tem["array"] = rotate_voxel(packed_tem["array"], best_degree, best_axis)
-                # tem = rotate_voxel(each_object_info["array"],best_degree,best_axis)
-
+                packed_tem = {**each_object_info}
+                packed_tem["array"] = rotate_voxel(each_object_info["array"], best_degree, best_axis)
                 packed_tem["array"] = translate_voxel(packed_tem["array"], best_translation)
                 packed_tem["translation"] = best_translation
                 packed_tem["orientation"] = best_axis + "_" + str(best_degree)
                 packed_tem["bin_position"] = position_bin
 
                 current_layout[position_bin].append(packed_tem)
-                topos_layout[position_bin] += packed_tem["array"] 
+                topos_layout[position_bin] += packed_tem["array"]
                 radio_list[position_bin].append(packed_tem["radio"])
                 pieces_order[position_bin].append(num_piece)
 
@@ -1696,7 +1691,7 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
                                 # rotated_shape = rotate_voxel(each_object_info["array"] ,each_degree,each_axis)
                                 
                                 # origin_array = back_to_origin(try_info_tem)
-                                try_info_tem = copy.deepcopy(each_object_info)
+                                try_info_tem = {**each_object_info}
                                 try_info_tem["array"] = rotate_voxel(try_info_tem["array"], each_degree, each_axis)
                                 try_info_tem["orientation"] = each_axis + "_" + str(each_degree)
                                 
@@ -1716,7 +1711,7 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
                                     
 
                                     # This is for evaluation 
-                                    current_layout_test = copy.deepcopy(current_layout[each_bin])
+                                    current_layout_test = list(current_layout[each_bin])
                                     
                                     translated_test = translate_voxel(try_info_tem["array"],packing_position)
                                     topos_layout_test = topos_layout[each_bin] + translated_test
@@ -1741,10 +1736,10 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
                         else: 
                             # if we don't rotate it, don't need to read axis
                             # orientation_str = "x_0"
-                            # try_info_tem = copy.deepcopy(each_object_info)
+                            # try_info_tem = {**each_object_info}
                             # try_info_tem["array"] = back_to_origin(try_info_tem) # this is for getting the origin orientation
                             # try_info_tem["orientation"] = "x_0"
-                            try_info_tem = copy.deepcopy(each_object_info)
+                            try_info_tem = {**each_object_info}
                             # =================================================================================================
                             # a quicker nfv method
                             # packing_position = quick_nfv(position_bin, topos_layout, each_object, container_size)
@@ -1764,7 +1759,7 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
                                 # temporary nesting strategy: basic bottom-back
 
                                 # This is for evaluation 
-                                current_layout_test = copy.deepcopy(current_layout[each_bin])
+                                current_layout_test = list(current_layout[each_bin])
                                 
                                 translated_test = translate_voxel(try_info_tem["array"],packing_position)
                                 topos_layout_test = topos_layout[each_bin] + translated_test
@@ -1796,17 +1791,15 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
                         trace(f"For piece {num_piece}, it has been packed in the bin {each_bin+1}")  
                         
                         # tem = rotate_voxel(each_object_info["array"],best_degree,best_axis)
-                        packed_tem = copy.deepcopy(each_object_info)
-                        # origin_array = back_to_origin(each_object_info)
-                        packed_tem["array"] = rotate_voxel(packed_tem["array"], best_degree, best_axis)
-
-                        packed_tem["array"] = translate_voxel(packed_tem["array"],best_translation)
+                        packed_tem = {**each_object_info}
+                        packed_tem["array"] = rotate_voxel(each_object_info["array"], best_degree, best_axis)
+                        packed_tem["array"] = translate_voxel(packed_tem["array"], best_translation)
                         packed_tem["translation"] = best_translation
                         packed_tem["orientation"] = best_axis + "_" + str(best_degree)
                         packed_tem["bin_position"] = each_bin
 
                         current_layout[each_bin].append(packed_tem)
-                        topos_layout[each_bin] += packed_tem["array"] 
+                        topos_layout[each_bin] += packed_tem["array"]
                         radio_list[each_bin].append(packed_tem["radio"])
                         pieces_order[each_bin].append(num_piece)
 
@@ -1827,7 +1820,7 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
                     if first_flag == True:
                         trace("It is the first object in this bin")
 
-                        # try_info_tem = copy.deepcopy(each_object_info)
+                        # try_info_tem = {**each_object_info}
                         # if it is the first item, pack as low as possible
                         for each_degree in orientation[0]:
                             trace(f"Try next degree {each_degree}")
@@ -1841,7 +1834,7 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
 
                                     
                                     # origin_array = back_to_origin(try_info_tem)
-                                    try_info_tem = copy.deepcopy(each_object_info)
+                                    try_info_tem = {**each_object_info}
                                     try_info_tem["array"] = rotate_voxel(try_info_tem["array"],each_degree,each_axis)
                                     try_info_tem["orientation"] = each_axis + "_" + str(each_degree)
 
@@ -1877,12 +1870,12 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
                                         
                                         
                             else: 
-                                # try_info_tem = copy.deepcopy(each_object_info)
+                                # try_info_tem = {**each_object_info}
                                 # try_info_tem["array"] = back_to_origin(try_info_tem) # this is for getting the origin orientation
                                 # try_info_tem["orientation"] = "x_0"
                                 # if we don't rotate it, don't need to read axis
                                 # orientation_str = "x_0"
-                                try_info_tem = copy.deepcopy(each_object_info)
+                                try_info_tem = {**each_object_info}
                                 x,y,z = np.where(try_info_tem["array"] == 1)                
                                 # best_value = len(each_object[2])# the length of z axis 
                                 
@@ -1918,7 +1911,7 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
                         # if it is not the first item in this bin
                         # print("It is not the first object")
                         
-                        # try_info_tem = copy.deepcopy(each_object_info)
+                        # try_info_tem = {**each_object_info}
                         for each_degree in orientation[0]:
                             trace(f"Try next degree {each_degree}")
                             
@@ -1936,7 +1929,7 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
                                     # =================================================================================================
                                     
                                     # origin_array = back_to_origin(try_info_tem)
-                                    try_info_tem = copy.deepcopy(each_object_info)
+                                    try_info_tem = {**each_object_info}
 
                                     try_info_tem["array"] = rotate_voxel(try_info_tem["array"],each_degree,each_axis)
                                     try_info_tem["orientation"] = each_axis + "_" + str(each_degree)
@@ -1953,7 +1946,7 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
                                     if isinstance(packing_position,tuple): 
 
                                         # This is for evaluation 
-                                        current_layout_test = copy.deepcopy(current_layout[position_bin])                                       
+                                        current_layout_test = list(current_layout[position_bin])                                       
                                         translated_test = translate_voxel(try_info_tem["array"],packing_position)
                                         topos_layout_test = topos_layout[position_bin] + translated_test
 
@@ -1981,10 +1974,10 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
                             else: 
                                 # if we don't rotate it, don't need to read axis
                                 # orientation_str = "x_0"
-                                # try_info_tem = copy.deepcopy(each_object_info)
+                                # try_info_tem = {**each_object_info}
                                 # try_info_tem["array"] = back_to_origin(try_info_tem) # this is for getting the origin orientation
                                 # try_info_tem["orientation"] = "x_0"
-                                try_info_tem = copy.deepcopy(each_object_info)
+                                try_info_tem = {**each_object_info}
                                  # =================================================================================================
 
                                 time_check1 = time.time() 
@@ -2002,7 +1995,7 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
                                 if isinstance(packing_position,tuple): 
 
                                     # This is for evaluation 
-                                    current_layout_test = copy.deepcopy(current_layout[position_bin])                                   
+                                    current_layout_test = list(current_layout[position_bin])                                   
                                     translated_test = translate_voxel(try_info_tem["array"], packing_position)                             
                                     topos_layout_test = topos_layout[position_bin] + translated_test                                
                                                     
@@ -2046,16 +2039,15 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
                 # tem = rotate_voxel(each_object_info["array"],best_degree,best_axis)
                 # origin_array = back_to_origin(each_object_info)
                 
-                packed_tem = copy.deepcopy(each_object_info)
-                packed_tem["array"] = rotate_voxel(packed_tem["array"], best_degree, best_axis)
-
-                packed_tem["array"] = translate_voxel(packed_tem["array"],best_translation)
+                packed_tem = {**each_object_info}
+                packed_tem["array"] = rotate_voxel(each_object_info["array"], best_degree, best_axis)
+                packed_tem["array"] = translate_voxel(packed_tem["array"], best_translation)
                 packed_tem["translation"] = best_translation
                 packed_tem["orientation"] = best_axis + "_" + str(best_degree)
                 packed_tem["bin_position"] = position_bin
 
                 current_layout[position_bin].append(packed_tem)
-                topos_layout[position_bin] += packed_tem["array"] 
+                topos_layout[position_bin] += packed_tem["array"]
                 radio_list[position_bin].append(packed_tem["radio"])
                 pieces_order[position_bin].append(num_piece)
 
