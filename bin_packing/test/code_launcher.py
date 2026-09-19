@@ -491,206 +491,211 @@ def testing(list_datasets_name, seq_seed_list, ALG_list, container_shape_list):
     U_star_overall = 0
     T_overall = 0
     accessible_check = False
+    _evaluation = None 
+    packing_alg  = "SCH"
+    selection_type = "bounding_box"
 
     for each_name in name_list: 
         for seq_seed in seq_seed_list:
             for each_ALG in ALG_list:     
                 for each_container_shape in container_shape_list:
-                    for each_max_rho in max_rho_list:
-                        for each_max_radio in max_radio_list:
+                    for selection_range in ["bottom","bottom_top","all"]:
+                        for SCH_nesting_strategy in ["minimum_aabb_volume","minimum_aabb_edges_len","maximal_residual_box", "overlap_distance"]:
+                            for each_max_rho in max_rho_list:
+                                for each_max_radio in max_radio_list:
 
-                            instance_id = make_instance_id(each_name, seq_seed, each_container_shape, each_max_radio, each_max_rho)
-                            container_shape, container_size, max_radio, rho, object_info_total = load_instance(instance_id)
+                                    instance_id = make_instance_id(each_name, seq_seed, each_container_shape, each_max_radio, each_max_rho)
+                                    container_shape, container_size, max_radio, rho, object_info_total = load_instance(instance_id)
 
-                            # for cube
-                            if container_shape == "cube":
-                                packing_alg  = "SCH"
-                                selection_type = "bounding_box"
-                                selection_range = "bottom"
-                                SCH_nesting_strategy = "maximum_connected_space"
-                                _evaluation = "minimum_bb_volume"   
+                                    # # for cube
+                                    # if container_shape == "cube":
+                                    #     packing_alg  = "SCH"
+                                    #     selection_type = "bounding_box"
+                                    #     # selection_range = "bottom"
+                                    #     # SCH_nesting_strategy = "maximum_connected_space"
+                                    #     # _evaluation = "minimum_bb_volume"   
 
-                            # for cylinder
-                            elif container_shape == 'cylinder':
-                                packing_alg  = "SCH"
-                                selection_type = "bounding_box"
-                                selection_range = "bottom_top"
-                                SCH_nesting_strategy = "minimum_volume_of_AABB"
-                                _evaluation = "waste_overlap_distance"   
-
-
-                            # This can be done in a more realistic way! 
-                            
-                            flag_NFV_POOL = False 
-                            # =================================================
-                            
-                            # ========================================================================
-                        
-                            # Database for all nfv
-                            # this might needs to be a Class to pack all functions and shared variable. 
-
-                            # create the object for the nfv_pool
-                            nfv_pool = NFV_POOL() 
-                            ifv_pool = IFV_POOL()
-
-                            # switch for GRASP, this is for adding controllable randomness in the constructive alg
-                            # random_CA = True
-
-                            # switch for different algs, turn on only one alg or it will run fixed CA as default setting 
-
-                            ALG = each_ALG
-                            # input list
-                            # fixed_CA: only run CA
-                            # random_CA: only run random CA
-                            # ILS: activate ILS
-                            # GRASP: activate GRASP algorithm
-                            # GRASP_ILS: activate ILS and GRASP
-                            # random_CA = False # for constructive algorithm, select one randomly out of the 5 best packing position for each piece 
-                            # random_CA_threhold = 5   # depends on the orientations
+                                    # # for cylinder
+                                    # elif container_shape == 'cylinder':
+                                    #     packing_alg  = "SCH"
+                                    #     selection_type = "bounding_box"
+                                    #     # selection_range = "bottom_top"
+                                    #     # SCH_nesting_strategy = "minimum_volume_of_AABB"
+                                    #     # _evaluation = "waste_overlap_distance"   
 
 
-                            if ALG in ("fixed_CA","ILS","random_CA"): 
+                                    # This can be done in a more realistic way! 
+                                    
+                                    flag_NFV_POOL = False 
+                                    # =================================================
+                                    
+                                    # ========================================================================
                                 
-                                # define the parameter/effort level of ILS algorithm
-                                iteration_limit = 1000
-                                time_limit = 360000
-                                alpha = 1   
+                                    # Database for all nfv
+                                    # this might needs to be a Class to pack all functions and shared variable. 
 
-                                # to select a piece and its orientation and packing position
-                                # ideally
-                                # | alpha      | preference                |
-                                # | ---------- | ------------------- |
-                                # | 0          | random              |
-                                # | 1          | slightly prefer bigger aabb             |
-                                # | 1-10       | largerly prefer bigger aabb             |
-                                # | 10+        | biggest only        |
-                                #==================================================================  
+                                    # create the object for the nfv_pool
+                                    nfv_pool = NFV_POOL() 
+                                    ifv_pool = IFV_POOL()
 
-                                # kick_trigger_time = len(object_info_total) * 10 / 5 # ? when objects are 300, do we need 600 iters to trigger kick???
-                               
-                                kick_trigger_time = 120
-                                kick_level = "medium"
-                                # neighbour_type = "orientation_only"
+                                    # switch for GRASP, this is for adding controllable randomness in the constructive alg
+                                    # random_CA = True
 
-                            elif ALG == "GRASP": 
+                                    # switch for different algs, turn on only one alg or it will run fixed CA as default setting 
+
+                                    ALG = each_ALG
+                                    # input list
+                                    # fixed_CA: only run CA
+                                    # random_CA: only run random CA
+                                    # ILS: activate ILS
+                                    # GRASP: activate GRASP algorithm
+                                    # GRASP_ILS: activate ILS and GRASP
+                                    # random_CA = False # for constructive algorithm, select one randomly out of the 5 best packing position for each piece 
+                                    # random_CA_threhold = 5   # depends on the orientations
+
+
+                                    if ALG in ("fixed_CA","ILS","random_CA"): 
+                                        
+                                        # define the parameter/effort level of ILS algorithm
+                                        iteration_limit = 1000
+                                        time_limit = 360000
+                                        alpha = 1   
+
+                                        # to select a piece and its orientation and packing position
+                                        # ideally
+                                        # | alpha      | preference                |
+                                        # | ---------- | ------------------- |
+                                        # | 0          | random              |
+                                        # | 1          | slightly prefer bigger aabb             |
+                                        # | 1-10       | largerly prefer bigger aabb             |
+                                        # | 10+        | biggest only        |
+                                        #==================================================================  
+
+                                        # kick_trigger_time = len(object_info_total) * 10 / 5 # ? when objects are 300, do we need 600 iters to trigger kick???
+                                    
+                                        kick_trigger_time = 120
+                                        kick_level = "medium"
+                                        # neighbour_type = "orientation_only"
+
+                                    elif ALG == "GRASP": 
+                                        
+                                        # define the parameter/effort level of ILS algorithm
+                                        iter_limit_per_GRASP_iter = 100
+                                        time_limit = 3600
+                                        alpha = 1   
+                                        # to select a piece and its orientation and packing position
+                                        # ideally
+                                        # | alpha      | preference                |
+                                        # | ---------- | ------------------- |
+                                        # | 0          | random              |
+                                        # | 1          | slightly prefer bigger aabb             |
+                                        # | 1-10       | largerly prefer bigger aabb             |
+                                        # | 10+        | biggest only        |
+                                        #==================================================================  
+
+                                    elif ALG == "GRASP_ILS": 
+                                        
+                                        # define the parameter/effort level of ILS algorithm
+                                        iter_limit_per_GRASP_iter = 100
+                                        time_limit = 3600
+                                        alpha = 1   
+                                        # to select a piece and its orientation and packing position
+
+                                        kick_trigger_time = 50
+                                        kick_level = "medium"
+
+                                    elif ALG == "BLF":
+                                        selection_range = "bottom_left_filling"
+                                        _evaluation = "height_only"  
+
+                                        iteration_limit = None
+                                        time_limit = None
+                                        alpha = None   
+                                        kick_trigger_time = None
+                                        kick_level = None
+
+                                    #==================================================================
+
+                                    # use alpha to control the tendancy to choose the large object which has larger AABB
+                                    # alpha = 1     
+                                    # kick_trigger_time = len(object_info_total) * 10 / 5
+                                    # kick_level = "medium"
                                 
-                                # define the parameter/effort level of ILS algorithm
-                                iter_limit_per_GRASP_iter = 100
-                                time_limit = 3600
-                                alpha = 1   
-                                # to select a piece and its orientation and packing position
-                                # ideally
-                                # | alpha      | preference                |
-                                # | ---------- | ------------------- |
-                                # | 0          | random              |
-                                # | 1          | slightly prefer bigger aabb             |
-                                # | 1-10       | largerly prefer bigger aabb             |
-                                # | 10+        | biggest only        |
-                                #==================================================================  
+                                    print("======================= Alg started ======================= ")
+                                    print(f"Dataset is {each_name}")
+                                    print(f"Algorithm is {each_ALG}")
+                                    print(f"Rho is {rho}, max_radio is {max_radio}, {0.2 *100} % is ILW.")
+                                    print(f"Seed for sequence is {seq_seed}")
 
-                            elif ALG == "GRASP_ILS": 
-                                
-                                # define the parameter/effort level of ILS algorithm
-                                iter_limit_per_GRASP_iter = 100
-                                time_limit = 3600
-                                alpha = 1   
-                                # to select a piece and its orientation and packing position
+                                    check1 = time.time()
 
-                                kick_trigger_time = 50
-                                kick_level = "medium"
-
-                            elif ALG == "BLF":
-                                selection_range = "bottom_left_filling"
-                                _evaluation = "height_only"  
-
-                                iteration_limit = None
-                                time_limit = None
-                                alpha = None   
-                                kick_trigger_time = None
-                                kick_level = None
-
-                            #==================================================================
-
-                            # use alpha to control the tendancy to choose the large object which has larger AABB
-                            # alpha = 1     
-                            # kick_trigger_time = len(object_info_total) * 10 / 5
-                            # kick_level = "medium"
-                        
-                            print("======================= Alg started ======================= ")
-                            print(f"Dataset is {each_name}")
-                            print(f"Algorithm is {each_ALG}")
-                            print(f"Rho is {rho}, max_radio is {max_radio}, {0.2 *100} % is ILW.")
-                            print(f"Seed for sequence is {seq_seed}")
-
-                            check1 = time.time()
-
-                            # constructive algorithm is involved
-                            # best_N, best_U, best_U_star, origin_N, origin_U, origin_U_star, best_current_layout, origin_current_layout, best_topos_layout, origin_topos_layout, best_pieces_order = iter_local_search(object_total, _pieces_radio, max_radio, rho, orientations, 
-                            #                                                                                                                                                                                         packing_alg, selection_type, selection_range, accessible_check,
-                            #                                                                                                                                                                                         SCH_nesting_strategy, _evaluation,
-                            #                                                                                                                                                                                         container_size,container_shape,
-                            #                                                                                                                                                                                         iteration_limit, time_limit, alpha, neighbour_type, visualisation = False, _TRACE = True)
+                                    # constructive algorithm is involved
+                                    # best_N, best_U, best_U_star, origin_N, origin_U, origin_U_star, best_current_layout, origin_current_layout, best_topos_layout, origin_topos_layout, best_pieces_order = iter_local_search(object_total, _pieces_radio, max_radio, rho, orientations, 
+                                    #                                                                                                                                                                                         packing_alg, selection_type, selection_range, accessible_check,
+                                    #                                                                                                                                                                                         SCH_nesting_strategy, _evaluation,
+                                    #                                                                                                                                                                                         container_size,container_shape,
+                                    #                                                                                                                                                                                         iteration_limit, time_limit, alpha, neighbour_type, visualisation = False, _TRACE = True)
 
 
-                            if ALG in ("BLF", "fixed_CA", "ILS", "random_CA"):
-                                best_N, best_U, best_U_star, origin_N, origin_U, origin_U_star, \
-                                best_current_layout, origin_current_layout, best_topos_layout,\
-                                best_pieces_order, initial_orientations_list_no_bin,\
-                                best_orientations_list_no_bin, local_local_best_list, local_change_iter_list, overall_time_cost = ILS_from_the_first_piece(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, ils_orientations,  orientations_list,
-                                                                                                                                                            packing_alg, selection_type, selection_range, accessible_check,
-                                                                                                                                                            SCH_nesting_strategy, _evaluation, ALG,
-                                                                                                                                                            container_size, container_shape,
-                                                                                                                                                            iteration_limit= iteration_limit, time_limit=time_limit, alpha=alpha, kick_trigger_time=kick_trigger_time, kick_level=kick_level, flag_NFV_POOL=False, visualisation = True, _TRACE = True)
-                                                                                                                                                                                                            
-                                                                                                                                                # def ILS_from_the_first_piece(object_info, nfv_pool, max_radio, rho, orientations, ils_orientations, orientations_list,
-                                                                                                                                                #             packing_alg, selection_type, selection_range, accessible_check,
-                                                                                                                                                #             SCH_nesting_strategy, orien_evaluation, _GRASP, _GRASP_threhold,
-                                                                                                                                                #             container_size, container_shape,
-                                                                                                                                                #             iteration_limit, time_limit, alpha, neighbour_type, kick_trigger_time, kick_level, visualisation, _TRACE):
-                            
-                            elif ALG == "GRASP":
+                                    if ALG in ("BLF", "fixed_CA", "ILS", "random_CA"):
+                                        best_N, best_U, best_U_star, origin_N, origin_U, origin_U_star, \
+                                        best_current_layout, origin_current_layout, best_topos_layout,\
+                                        best_pieces_order, initial_orientations_list_no_bin,\
+                                        best_orientations_list_no_bin, local_local_best_list, local_change_iter_list, overall_time_cost = ILS_from_the_first_piece(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, ils_orientations,  orientations_list,
+                                                                                                                                                                    packing_alg, selection_type, selection_range, accessible_check,
+                                                                                                                                                                    SCH_nesting_strategy, _evaluation, ALG,
+                                                                                                                                                                    container_size, container_shape,
+                                                                                                                                                                    iteration_limit= iteration_limit, time_limit=time_limit, alpha=alpha, kick_trigger_time=kick_trigger_time, kick_level=kick_level, flag_NFV_POOL=False, visualisation = True, _TRACE = True)
+                                                                                                                                                                                                                    
+                                                                                                                                                        # def ILS_from_the_first_piece(object_info, nfv_pool, max_radio, rho, orientations, ils_orientations, orientations_list,
+                                                                                                                                                        #             packing_alg, selection_type, selection_range, accessible_check,
+                                                                                                                                                        #             SCH_nesting_strategy, orien_evaluation, _GRASP, _GRASP_threhold,
+                                                                                                                                                        #             container_size, container_shape,
+                                                                                                                                                        #             iteration_limit, time_limit, alpha, neighbour_type, kick_trigger_time, kick_level, visualisation, _TRACE):
+                                    
+                                    elif ALG == "GRASP":
 
-                                best_N, best_U, best_U_star, origin_N, origin_U, origin_U_star,  \
-                                best_current_layout, origin_current_layout, best_topos_layout, best_pieces_order, overall_time_cost = GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, ils_orientations, orientations_list,
+                                        best_N, best_U, best_U_star, origin_N, origin_U, origin_U_star,  \
+                                        best_current_layout, origin_current_layout, best_topos_layout, best_pieces_order, overall_time_cost = GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, ils_orientations, orientations_list,
+                                                                                                                                                                packing_alg, selection_type, selection_range, accessible_check,
+                                                                                                                                                                SCH_nesting_strategy, _evaluation,
+                                                                                                                                                                container_size, container_shape,
+                                                                                                                                                                iter_limit_per_GRASP_iter, time_limit, alpha, flag_NFV_POOL, visualisation = False, _TRACE = True)
+                                                                                                                                    
+                                    elif ALG == "GRASP_ILS":
+                                        best_N, best_U, best_U_star, origin_N, origin_U, origin_U_star,  \
+                                        best_current_layout, origin_current_layout, best_topos_layout, best_pieces_order, overall_time_cost = GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, ils_orientations, orientations_list,
                                                                                                                                                         packing_alg, selection_type, selection_range, accessible_check,
                                                                                                                                                         SCH_nesting_strategy, _evaluation,
                                                                                                                                                         container_size, container_shape,
-                                                                                                                                                        iter_limit_per_GRASP_iter, time_limit, alpha, flag_NFV_POOL, visualisation = False, _TRACE = True)
-                                                                                                                            
-                            elif ALG == "GRASP_ILS":
-                                best_N, best_U, best_U_star, origin_N, origin_U, origin_U_star,  \
-                                best_current_layout, origin_current_layout, best_topos_layout, best_pieces_order, overall_time_cost = GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, ils_orientations, orientations_list,
-                                                                                                                                                packing_alg, selection_type, selection_range, accessible_check,
-                                                                                                                                                SCH_nesting_strategy, _evaluation,
-                                                                                                                                                container_size, container_shape,
-                                                                                                                                                iter_limit_per_GRASP_iter, kick_trigger_time, kick_level, time_limit, alpha, flag_NFV_POOL, visualisation = False, _TRACE = True)
+                                                                                                                                                        iter_limit_per_GRASP_iter, kick_trigger_time, kick_level, time_limit, alpha, flag_NFV_POOL, visualisation = False, _TRACE = True)
 
-                            else:
-                                raise ValueError
-                            
-                            check2 = time.time()
+                                    else:
+                                        raise ValueError
+                                    
+                                    check2 = time.time()
 
-                            T = check2 - check1
+                                    T = check2 - check1
 
-                            result_list.append([each_name, len(object_info_total), seq_seed, each_ALG, best_N, best_U_star, origin_N, origin_U_star,(best_U-origin_U)/origin_U*100, (best_U_star-origin_U_star)/origin_U_star*100, overall_time_cost])
-                            no_overlap = all(np.all(each_bin <= 1.5) for each_bin in best_topos_layout)
+                                    result_list.append([each_name, len(object_info_total), seq_seed, each_ALG, best_N, best_U_star, origin_N, origin_U_star,(best_U-origin_U)/origin_U*100, (best_U_star-origin_U_star)/origin_U_star*100, overall_time_cost])
+                                    no_overlap = all(np.all(each_bin <= 1.5) for each_bin in best_topos_layout)
 
-                            # print(f"The final orientations are {best_orientations_list_no_bin}")
-                            
-                            # print(f"Random CA is {random_CA}")
-                            # print(f" GRASP IS {_GRASP}")
-                            print(f"Alg applied is {ALG}" )
-                            print(f"After ILS, {best_N} bins are used, U_star is {best_U_star}")   
-                            print(f" U_star Improvement: {(best_U_star-origin_U_star)/origin_U_star * 100}%")
-                            print(f" U Improvement: {(best_U-origin_U)/origin_U * 100}%")
-                            print(f"==== {ALG} Done - Bins: {best_N} | U*: {best_U_star} | Overlap test: {'Pass' if no_overlap else 'NOT Pass!'} ====")
-                            print(f"It takes {overall_time_cost} s, overall")
+                                    # print(f"The final orientations are {best_orientations_list_no_bin}")
+                                    
+                                    # print(f"Random CA is {random_CA}")
+                                    # print(f" GRASP IS {_GRASP}")
+                                    print(f"Alg applied is {ALG}" )
+                                    print(f"After ILS, {best_N} bins are used, U_star is {best_U_star}")   
+                                    print(f" U_star Improvement: {(best_U_star-origin_U_star)/origin_U_star * 100}%")
+                                    print(f" U Improvement: {(best_U-origin_U)/origin_U * 100}%")
+                                    print(f"==== {ALG} Done - Bins: {best_N} | U*: {best_U_star} | Overlap test: {'Pass' if no_overlap else 'NOT Pass!'} ====")
+                                    print(f"It takes {overall_time_cost} s, overall")
 
-                            # save_path = "D:/Carlos_project/3D_packing_voxel_ILS/result/visualisation/optimised.png"
-                            # save_voxel_model(best_current_layout, container_size, container_shape, result_list, best_pieces_order,  save_path=save_path, save_type="png")
+                                    # save_path = "D:/Carlos_project/3D_packing_voxel_ILS/result/visualisation/optimised.png"
+                                    # save_voxel_model(best_current_layout, container_size, container_shape, result_list, best_pieces_order,  save_path=save_path, save_type="png")
 
-                            U_star_overall += (best_U_star-origin_U_star)/origin_U_star * 100
-                            T_overall += (overall_time_cost)
+                                    U_star_overall += (best_U_star-origin_U_star)/origin_U_star * 100
+                                    T_overall += (overall_time_cost)
                             
                             # =========================================================================
                             # visualisation for the local_local_best_list, local_change_iter_list 
@@ -733,7 +738,7 @@ def testing(list_datasets_name, seq_seed_list, ALG_list, container_shape_list):
 
 def __main__():
 
-    list_datasets_name = ["st04_Example2_normal"] 
+    list_datasets_name = ["chess"] 
     ALG_list = ["fixed_CA"]
     seq_seed_list = [13]
     container_shape_list = ["cube"]

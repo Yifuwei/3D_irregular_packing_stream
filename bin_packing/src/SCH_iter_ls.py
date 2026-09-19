@@ -136,17 +136,45 @@ def voxel_floor(num):
 
 #     return result
 
-def nesting_evaluation(ongoing, partial_solution_in_the_bin, packing_position_list, nesting, bin_size, encourage_dbl):
+def get_intersection(object1, object2):
+    # Find max and min coordinates for each box
+    max_x1, max_y1, max_z1, min_x1, min_y1, min_z1 = find_max_xyz(object1)
+    max_x2, max_y2, max_z2, min_x2, min_y2, min_z2 = find_max_xyz(object2)
+    
+    # Check if there is no overlap
+    if min_x1 >= max_x2 or min_x2 >= max_x1 or min_y1 >= max_y2 or min_y2 >= max_y1 or min_z1 >= max_z2 or min_z2 >= max_z1:
+        return 0  # No intersection
+    
+    # Calculate overlapping volume
+    intersect_x = min(max_x1, max_x2) - max(min_x1, min_x2)
+    intersect_y = min(max_y1, max_y2) - max(min_y1, min_y2)
+    intersect_z = min(max_z1, max_z2) - max(min_z1, min_z2)
 
-    best_position = (-1,-1,-1)
+    intersect_volume = intersect_x * intersect_y * intersect_z
+    return intersect_volume
+
+def nesting_evaluation(ongoing, partial_solution_in_the_bin, current_layout, packing_position_list, nesting, bin_size, encourage_dbl):
+
+    best_position = None
     best_value = np.inf
     value_list_pairs = []
 
     _L, _W, _H = ongoing.shape
     translated_test = np.zeros((_L, _W, _H), dtype=ongoing.dtype)
     bin_test = np.empty((_L, _W, _H), dtype=partial_solution_in_the_bin.dtype)
+    occupied = np.argwhere(ongoing != 0)
+    if occupied.size == 0:
+        return False
+    lower, upper = occupied.min(axis=0), occupied.max(axis=0)
+    limits = np.minimum(ongoing.shape, bin_size)
 
     for each_position in packing_position_list:
+        # Check before slicing: truncation could otherwise make an invalid
+        # placement look smaller (and therefore better) to the objective.
+        shift = np.asarray(each_position)
+        if (shift.shape != (3,) or not np.issubdtype(shift.dtype, np.integer)
+                or np.any(lower + shift < 0) or np.any(upper + shift >= limits)):
+            continue
         sx, sy, sz = each_position
 
         # In-place translation: no allocation per iteration, no wrap-around
@@ -159,6 +187,8 @@ def nesting_evaluation(ongoing, partial_solution_in_the_bin, packing_position_li
                slice(max(0,  sy), _W - max(0, -sy)),
                slice(max(0,  sz), _H - max(0, -sz)))
         translated_test[dst] = ongoing[src]
+        if np.any((translated_test != 0) & (partial_solution_in_the_bin != 0)):
+            continue
         np.add(partial_solution_in_the_bin, translated_test, out=bin_test)
 
         # distance to the original point, add to the value to select the point which is closer to (0,0,0)
@@ -184,6 +214,27 @@ def nesting_evaluation(ongoing, partial_solution_in_the_bin, packing_position_li
             value = - max(bin_size[0]*bin_size[1]*(bin_size[2]-z),
                         bin_size[0]*(bin_size[1]-y)*bin_size[2],
                         (bin_size[0]-x)*bin_size[1]*bin_size[2]) + distance_to_0
+            
+        elif nesting == 4:
+            current_layout_test = list(current_layout)                                
+            topos_layout_test = bin_test
+
+            max_x, max_y, max_z, min_x, min_y, min_z = find_max_xyz(topos_layout_test)
+            max_x1, max_y1, max_z1, min_x1, min_y1, min_z1 = find_max_xyz(translated_test)
+              # overlap
+            overlap = 0
+            
+            for each_object_info in current_layout_test: 
+                # packed_polygon = Polygon(each_polygon)
+                overlap += get_intersection(translated_test,each_object_info["array"])
+                
+            # distance
+            center_layout = ((max_x + min_x)/2 , (max_y + min_y)/2, (max_z + min_z)/2)
+            center_next = ((max_x1 + min_x1)/2 , (max_y1 + min_y1)/2, (max_z1 + min_z1)/2)
+            
+            distance = math.sqrt((center_layout[0]-center_next[0])**2 + (center_layout[1]-center_next[1])**2 + (center_layout[2]-center_next[2])**2) 
+
+            value = -overlap + distance
 
         value_list_pairs.append((each_position,value))
 
@@ -194,7 +245,7 @@ def nesting_evaluation(ongoing, partial_solution_in_the_bin, packing_position_li
 
     # sorted_positions = [pos for pos, value in sorted(value_list_pairs,key=lambda x:x[1])]
 
-    return best_position
+    return False if best_position is None else (best_value, tuple(best_position))
 
 def SC_heuristic(nfv_pool, ifv_pool, ongoing_object_info, current_layout, topos_layout, position_bin, 
                  bin_size, nesting_strategy, density, axis, container_shape, 
@@ -216,8 +267,8 @@ def SC_heuristic(nfv_pool, ifv_pool, ongoing_object_info, current_layout, topos_
         _type (string): select voxel in the cross-section by 
         
     Output: 
-        Best_coord(tuple): The best (x,y,z) among all candidate according to the nesting strategy. 
-        packing_position_pool(list): The candidate pool of packing positions sorted from best to worst
+        (score, (x, y, z)), with smaller scores preferred, or False if no
+        feasible candidate exists. All selection modes use this contract.
     
     """
     global TRACE
@@ -239,7 +290,7 @@ def SC_heuristic(nfv_pool, ifv_pool, ongoing_object_info, current_layout, topos_
     # check2 = time.time() 
     # print(f"got feasible region, cost {check2 - check1} s")
     
-    if type(feasible_region) == bool:  
+    if isinstance(feasible_region, (bool, np.bool_)) or not np.any(feasible_region):
         # print("can't find a feasible position")
         
         return False
@@ -259,23 +310,32 @@ def SC_heuristic(nfv_pool, ifv_pool, ongoing_object_info, current_layout, topos_
     elif select_range == "bottom_left_filling":
         # only select voxels from the bottom and top of fr
 
-        return selection_process_bottom_left_filling(feasible_region)  
+        position = selection_process_bottom_left_filling(feasible_region)
+        packing_position_list = [] if position is None else [position]
+    else:
+        raise ValueError(f"Unknown selection range: {select_range}")
+    
     # print("Packing position candidates are: ", packing_position_list)
-    if nesting_strategy == "minimum_volume_of_AABB": 
+    if nesting_strategy == "minimum_volume_of_AABB" or nesting_strategy == "minimum_aabb_volume": 
         
         nesting = 1
         
-    elif nesting_strategy == "minimum_length_of_edges_of_AABB": 
+    elif nesting_strategy == "minimum_length_of_edges_of_AABB" or nesting_strategy == "minimum_aabb_edges_len": 
         # smaller value is better
         nesting = 2
         
-    elif nesting_strategy == "maximum_connected_space": 
+    elif nesting_strategy == "maximum_connected_space" or nesting_strategy == "maximal_residual_box": 
         # as smaller value is better, so a negative mark is required
         nesting = 3
-        
-    best_position = nesting_evaluation(ongoing_object_info["array"], topos_layout[position_bin], packing_position_list, nesting, bin_size, _encourage_dbl)
+
+    elif nesting_strategy == "overlap_distance":
+        nesting = 4
+    else:
+        raise ValueError(f"Unknown nesting strategy: {nesting_strategy}")
+
+    best_position_and_value = nesting_evaluation(ongoing_object_info["array"], topos_layout[position_bin], current_layout[position_bin], packing_position_list, nesting, bin_size, _encourage_dbl)
             
-    return best_position
+    return best_position_and_value
 
   
 
@@ -424,190 +484,45 @@ def selection_process_bottom_top_only(feasible_region, _type):
     return packing_position_list 
 
 
-def selection_process(ini_feasible_region, density, axis, _type): 
-    
-    packing_position_list = []
-    
-    voxel_x, voxel_y, voxel_z = np.where(ini_feasible_region == 1)
-    length, width, height = get_bounding_box(ini_feasible_region)
-        
-    if axis == "z": 
-        voxel_coord = []
-        step = height/density
-        tem = min(voxel_z)
-        
-        for each_step in range(density):
-            tem += step
-            voxel_coord.append(voxel_floor(tem))
-        
-        for each_crosection in voxel_coord:
-            cross_section = ini_feasible_region[:, :, each_crosection] 
-            x, y = np.where(cross_section == 1) # if it has no point there, it will return a empty array 
-            
-            if x.size == 0:
-                coords = []
-            
+def selection_process(ini_feasible_region, density, axis, _type):
+    """Sample occupied cross-sections, returning coordinates in x/y/z order."""
+    if axis not in ("x", "y", "z"):
+        raise ValueError(f"Unknown selection axis: {axis}")
+    if not isinstance(density, (int, np.integer)) or density <= 0:
+        raise ValueError("density must be a positive integer")
+    if _type not in ("bounding_box", "convexhull"):
+        raise ValueError(f"Unknown candidate selection type: {_type}")
+    occupied = np.argwhere(ini_feasible_region == 1)
+    if occupied.size == 0:
+        return []
+    axis_index = ("x", "y", "z").index(axis)
+    other_axes = [i for i in range(3) if i != axis_index]
+    low, high = occupied[:, axis_index].min(), occupied[:, axis_index].max()
+    step = (high - low + 1) / density
+    layers = dict.fromkeys(min(int(high), math.floor(low + step * i))
+                           for i in range(1, density + 1))
+    candidates = []
+    for layer in layers:
+        points = np.argwhere(np.take(ini_feasible_region, layer, axis=axis_index) == 1)
+        if len(points) == 0:
+            continue
+        if len(points) > 4:
+            if _type == "convexhull" and np.linalg.matrix_rank(points - points[0]) == 2:
+                points = points[ConvexHull(points).vertices]
             else:
-                
-                if x.size <= 4: 
-                    z = np.full_like(x,each_crosection)
-                    coords = list(zip(x,y,z))
-                    
-                    for each_point in coords:    # add to the overall list
-                        packing_position_list.append(each_point)  
-                        
-                elif _type == "bounding_box":
-                    # inter-points with bounding box
-                    min_x = min(x)
-                    max_x = max(x)
-                    min_y = min(y)
-                    max_y = max(y)
-                
-                    x_max_index = np.where(x == max_x)[0]
-                    x_min_index = np.where(x == min_x)[0]
-                    y_max_index = np.where(y == max_y)[0]
-                    y_min_index = np.where(y == min_y)[0]
-                    
-                    x = np.array((max_x,max_x,min_x,min_x,min(x[y_max_index]),max(x[y_max_index]),min(x[y_min_index]),max(x[y_min_index])))
-                    y = np.array((min(y[x_max_index]),max(y[x_max_index]),min(y[x_min_index]),max(y[x_min_index]),max_y,max_y,min_y,min_y))
-                    z = np.full_like(x,each_crosection)
-                    
-                    # coords = list(zip(x,y,z))
-                    coords = list(dict.fromkeys(zip(x, y, z))) # get rid of replicated elements 
-                    
-                    for each_point in coords:    # add to the overall list
-                        packing_position_list.append(each_point)  
-                    
-                elif _type == "convexhull":
-                    # inter-points with convex hull
-                    points = np.column_stack((x, y))
-                    hull = ConvexHull(points)
-                    coords = points[hull.vertices]
-                    
-                    for each_point in coords:    # add to the overall list
-                        point = list(each_point)
-                        point.append(each_crosection)
-                        packing_position_list.append(point)
-                    
-                    
-        if axis == "y": 
-            
-            voxel_coord = []
-            step = width/density
-            tem = min(voxel_y)
-            
-            for each_step in range(density):
-                tem += step
-                voxel_coord.append(voxel_floor(tem))
-            
-            for each_crosection in voxel_coord:
-                cross_section = ini_feasible_region[:, each_crosection, :] 
-                x, z = np.where(cross_section == 1) # if it has no point there, it will return a empty array 
-                
-                if x.size == 0:
-                    coords = []
-
-                else:
-                    
-                    if x.size <= 4: 
-                        y = np.full_like(x,each_crosection)
-                        coords = list(zip(x,y,z))
-                        for each_point in coords:    # add to the overall list
-                            packing_position_list.append(each_point)  
-                        
-                    elif _type == "bounding_box":
-                        # inter-points with bounding box
-                        min_x = min(x)
-                        max_x = max(x)
-                        min_z = min(z)
-                        max_z = max(z)
-                    
-                        x_max_index = np.where(x == max_x)[0]
-                        x_min_index = np.where(x == min_x)[0]
-                        z_max_index = np.where(z == max_z)[0]
-                        z_min_index = np.where(z == min_z)[0]
-                        
-                        x = np.array(max_x,max_x,min_x,min_x,min(x[z_max_index]),max(x[z_max_index]),min(x[z_min_index]),max(x[z_min_index]))
-                        z = np.array(min(z[x_max_index]),max(z[x_max_index]),min(z[x_min_index]),max(z[x_min_index]),max_z,max_z,min_z,min_z)  
-                        
-                        y = np.full_like(x,each_crosection)
-                        # coords = list(zip(x,y,z))
-                        coords = list(dict.fromkeys(zip(x, y, z))) # get rid of replicated elements 
-                        
-                        for each_point in coords:    # add to the overall list
-                            
-                            packing_position_list.append(each_point)  
-                            
-                    elif _type == "convexhull":
-                        # inter-points with convex hull
-                        points = np.column_stack((x, z))
-                        hull = ConvexHull(points)
-                        coords = points[hull.vertices]
-                        
-                        for each_point in coords:    # add to the overall list
-                            point = list(each_point)
-                            point.append(each_crosection)
-                            packing_position_list.append(point)
-                            
-                    
-        if axis == "x": 
-                
-            voxel_coord = []
-            step = length/density
-            tem = min(voxel_x)
-            
-            for each_step in range(density):
-                tem += step
-                voxel_coord.append(voxel_floor(tem))
-            
-            for each_crosection in voxel_coord:
-                
-                cross_section = ini_feasible_region[each_crosection, :, :] 
-                y, z = np.where(cross_section == 1) # if it has no point there, it will return a empty array 
-                
-                if y.size == 0:
-                    coords = []
-                
-                else:
-                    
-                    if y.size <= 4: 
-                        x = np.full_like(y,each_crosection)
-                        coords = list(zip(x,y,z))
-                        for each_point in coords:    # add to the overall list
-                            packing_position_list.append(each_point)  
-                        
-                    elif _type == "bounding_box":
-                        # inter-points with bounding box
-                        min_z = min(z)
-                        max_z = max(z)
-                        min_y = min(y)
-                        max_y = max(y)
-                    
-                        z_max_index = np.where(z == max_z)[0]
-                        z_min_index = np.where(z == min_z)[0]
-                        y_max_index = np.where(y == max_y)[0]
-                        y_min_index = np.where(y == min_y)[0]
-                        
-                        y = np.array(max_y,max_y,min_y,min_y,min(y[z_max_index]),max(y[z_max_index]),min(y[z_min_index]),max(y[z_min_index]))
-                        z = np.array(min(z[y_max_index]),max(z[y_max_index]),min(z[y_min_index]),max(z[y_min_index]),max_z,max_z,min_z,min_z)  
-                        
-                        x = np.full_like(y,each_crosection)
-                        # coords = list(zip(x,y,z))
-                        coords = list(dict.fromkeys(zip(x, y, z))) # get rid of replicated elements 
-                        
-                        for each_point in coords:    # add to the overall list
-                            packing_position_list.append(each_point)      
-          
-                        
-                    elif _type == "convexhull":
-                        # inter-points with convex hull
-                        points = np.column_stack((y, z))
-                        hull = ConvexHull(points)
-                        coords = points[hull.vertices]
-                        
-                        for each_point in coords:    # add to the overall list
-                            point = list(each_point)
-                            point.append(each_crosection)
-                            packing_position_list.append(point) 
-          
-    return packing_position_list
+                # Endpoints of the occupied rows/columns at each extremum.
+                # Every selected point remains a member of the feasible region.
+                selected = []
+                for dim in range(2):
+                    for edge in (points[:, dim].min(), points[:, dim].max()):
+                        boundary = points[points[:, dim] == edge]
+                        selected.extend((boundary[boundary[:, 1-dim].argmin()],
+                                         boundary[boundary[:, 1-dim].argmax()]))
+                points = np.unique(selected, axis=0)
+        for point in points:
+            coordinate = [0, 0, 0]
+            coordinate[axis_index] = layer
+            for dim, value in zip(other_axes, point):
+                coordinate[dim] = int(value)
+            candidates.append(tuple(coordinate))
+    return list(dict.fromkeys(candidates))

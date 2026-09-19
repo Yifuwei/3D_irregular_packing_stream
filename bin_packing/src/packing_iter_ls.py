@@ -221,7 +221,7 @@ def evaluation(topos_layout_test, current_layout_test, translated_test, _evaluat
         # The larger value of Evaluation represents a better performance. 
         return waste - overlap + distance
     
-    elif _evaluation == "maximum_connected_space": 
+    elif _evaluation == "maximum_connected_space" or _evaluation == "maximal_residual_box": 
 
         bin_size = topos_layout_test.shape
         
@@ -233,7 +233,7 @@ def evaluation(topos_layout_test, current_layout_test, translated_test, _evaluat
         
         return residual_box
     
-    elif _evaluation == "minimum_bb_volume": 
+    elif _evaluation == "minimum_bb_volume" or _evaluation == "minimum_aabb_volume": 
 
         bin_size = topos_layout_test.shape
         
@@ -243,7 +243,7 @@ def evaluation(topos_layout_test, current_layout_test, translated_test, _evaluat
         
         return bb_volume
     
-    elif _evaluation == "minimum_bb_edges_len": 
+    elif _evaluation == "minimum_bb_edges_len" or _evaluation == "minimum_aabb_edges_len": 
 
         bin_size = topos_layout_test.shape
         
@@ -258,6 +258,36 @@ def evaluation(topos_layout_test, current_layout_test, translated_test, _evaluat
         x,y,z = np.where(topos_layout_test == 1)
 
         return -max(z)  
+
+    elif _evaluation == "overlap_distance":
+        max_x, max_y, max_z, min_x, min_y, min_z = find_max_xyz(topos_layout_test)
+        max_x1, max_y1, max_z1, min_x1, min_y1, min_z1 = find_max_xyz(translated_test)
+        
+        # vol_bound_rec = (max_x - min_x) * (max_y - min_y) * (max_z - min_z)
+        # occupied = get_volume(topos_layout_test)
+        # waste = vol_bound_rec - occupied
+
+        # overlap
+        overlap = 0
+        
+        for each_object_info in current_layout_test: 
+            # packed_polygon = Polygon(each_polygon)
+            overlap += get_intersection(translated_test,each_object_info["array"])
+            
+        # distance
+        center_layout = ((max_x - min_x)/2 , (max_y - min_y)/2, (max_z - min_z)/2) # the center of the bounding box of the merged layout
+        center_next = ((max_x1 - min_x1)/2 , (max_y1 - min_y1)/2, (max_z1 - min_z1)/2) # the center of the bounding box of the next object
+        
+        distance = math.sqrt((center_layout[0]-center_next[0])**2 + (center_layout[1]-center_next[1])**2 + (center_layout[2]-center_next[2])**2) 
+        # The Euclidean distance of the two centers
+        
+        # print("EVALUATION FINISED!!")
+        # print("THE WASTE IS:",waste)
+        # print("THE OVERLAP IS:",overlap)
+        # print("THE DISTANCE IS:",distance)
+        
+        # The larger value of Evaluation represents a better performance. 
+        return  -overlap + distance
 
 # This is for vertical only  
 # def accessibility_check(next_piece, bin_position, topos_layout, container_size):
@@ -627,7 +657,7 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
                                 # =================================================================================================
                                 # time_check1 = time.time()  
                                 
-                                packing_position = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, each_bin, 
+                                best_position_and_value = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, each_bin, 
                                                                 container_size, SCH_nesting_strategy, density, axis, container_shape, 
                                                                 _type, _accessible_check, _encourage_dbl, _select_range, flag_NFV_POOL, _TRACE)
             
@@ -635,15 +665,16 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
                                 
                                 # trace(f"packing position is found, cost {time_check2-time_check1} s")
                                 
-                                if isinstance(packing_position,tuple): 
+                                if isinstance(best_position_and_value,tuple): 
                                     
-
+                                    value = best_position_and_value[0]
+                                    packing_position = best_position_and_value[1]
                                     # This is for evaluation 
-                                    current_layout_test = list(current_layout[each_bin])
-                                    translated_test = translate_voxel(try_info_tem["array"], packing_position)
-                                    topos_layout_test = topos_layout[each_bin] + translated_test
+                                    # current_layout_test = list(current_layout[each_bin])
+                                    # translated_test = translate_voxel(try_info_tem["array"], packing_position)
+                                    # topos_layout_test = topos_layout[each_bin] + translated_test
 
-                                    value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
+                                    # value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
 
                                     # trace(f"The value of this position is {value} current best value is {best_value}") 
 
@@ -674,7 +705,7 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
                             try_info_tem = {**each_object_info}
                             # try_info_tem = copy.deepcopy(original_object_info_total[num_piece])
 
-                            packing_position = SC_heuristic(nfv_pool,ifv_pool, try_info_tem, current_layout, topos_layout, each_bin, 
+                            best_position_and_value = SC_heuristic(nfv_pool,ifv_pool, try_info_tem, current_layout, topos_layout, each_bin, 
                                                             container_size, SCH_nesting_strategy, density, axis, container_shape,
                                                             _type, _accessible_check, _encourage_dbl, _select_range,flag_NFV_POOL, _TRACE)
                                 
@@ -683,17 +714,18 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
                             # packing position pool has been sorted by the value of nesting strategy.
                            
                         
-                            if isinstance(packing_position,tuple): 
+                            if isinstance(best_position_and_value,tuple): 
                                 
                                 # temporary nesting strategy: basic bottom-back
 
                                 # This is for evaluation 
-                                current_layout_test = list(current_layout[each_bin])                                
-                                translated_test = translate_voxel(try_info_tem["array"],packing_position)
-                                topos_layout_test = topos_layout[each_bin] + translated_test
+                                # current_layout_test = list(current_layout[each_bin])                                
+                                # translated_test = translate_voxel(try_info_tem["array"],packing_position)
+                                # topos_layout_test = topos_layout[each_bin] + translated_test
 
-                                value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
-
+                                # value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
+                                value = best_position_and_value[0]
+                                packing_position = best_position_and_value[1]
                                 # trace(f"The value of this position is {value} current best value is {best_value}") 
 
                                 packing_posi_info_current_bin.append((value,0,"x",packing_position))
@@ -892,7 +924,7 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
 
                                     # time_check1 = time.time() 
 
-                                    packing_position = SC_heuristic(nfv_pool,ifv_pool, try_info_tem, current_layout, topos_layout, position_bin, 
+                                    best_position_and_value = SC_heuristic(nfv_pool,ifv_pool, try_info_tem, current_layout, topos_layout, position_bin, 
                                                                     container_size, SCH_nesting_strategy, density, axis, container_shape,
                                                                     _type, _accessible_check, _encourage_dbl, _select_range, flag_NFV_POOL, _TRACE)
                                     
@@ -905,14 +937,17 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
 
                                     # trace(f"packing position is found, cost {time_check2-time_check1} s")
 
-                                    if isinstance(packing_position,tuple): 
+                                    if isinstance(best_position_and_value,tuple): 
+
+                                        value = best_position_and_value[0]
+                                        packing_position = best_position_and_value[1]
 
                                         # This is for evaluation 
-                                        current_layout_test = list(current_layout[position_bin])                                       
-                                        translated_test = translate_voxel(try_info_tem["array"],packing_position)
-                                        topos_layout_test = topos_layout[position_bin] + translated_test
+                                        # current_layout_test = list(current_layout[position_bin])                                       
+                                        # translated_test = translate_voxel(try_info_tem["array"],packing_position)
+                                        # topos_layout_test = topos_layout[position_bin] + translated_test
 
-                                        value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
+                                        # value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
 
                                         # trace(f"The value of this position is {value} current best value is {best_value}") 
                                         
@@ -942,7 +977,7 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
                                 # time_check1 = time.time() 
                                 # print(f"packing position is found, cost {time_check2-time_check1} s")
                              
-                                packing_position = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, position_bin, 
+                                best_position_and_value = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, position_bin, 
                                                                 container_size, SCH_nesting_strategy, density, axis, container_shape,
                                                                 _type, _accessible_check, _encourage_dbl, _select_range,flag_NFV_POOL, _TRACE)
                                     
@@ -951,14 +986,15 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
                                 # print("packing position is: ", packing_position)
                                 # trace(f"packing position is found, cost {time_check2-time_check1} s")
 
-                                if isinstance(packing_position, tuple): 
-
+                                if isinstance(best_position_and_value, tuple): 
+                                    value = best_position_and_value[0]
+                                    packing_position = best_position_and_value[1]
                                     # This is for evaluation 
-                                    current_layout_test = list(current_layout[position_bin])                                   
-                                    translated_test = translate_voxel(try_info_tem["array"], packing_position)                             
-                                    topos_layout_test = topos_layout[position_bin] + translated_test                                
+                                    # current_layout_test = list(current_layout[position_bin])                                   
+                                    # translated_test = translate_voxel(try_info_tem["array"], packing_position)                             
+                                    # topos_layout_test = topos_layout[position_bin] + translated_test                                
                                                     
-                                    value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
+                                    # value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
                                     
                                     # trace(f"The value of this position is {value} current best value is {best_value}") 
 
@@ -1226,7 +1262,7 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
                                 # =================================================================================================
                                 # time_check1 = time.time()  
                                     
-                                packing_position = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, each_bin, 
+                                best_position_and_value = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, each_bin, 
                                                                 container_size, SCH_nesting_strategy, density, axis, container_shape,
                                                                   _type, _accessible_check, _encourage_dbl, _select_range, flag_NFV_POOL, _TRACE)
                                     
@@ -1235,15 +1271,16 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
                                 # trace(f"packing position is found, cost {time_check2-time_check1} s")
                                 # packing_position = quick_nfv(position_bin, topos_layout, rotated_shape, container_size)
                                 
-                                if isinstance(packing_position,tuple):  
-
+                                if isinstance(best_position_and_value,tuple):  
+                                    value = best_position_and_value[0]
+                                    packing_position = best_position_and_value[1]
                                     # This is for evaluation 
-                                    current_layout_test = list(current_layout[each_bin])
+                                    # current_layout_test = list(current_layout[each_bin])
                                     
-                                    translated_test = translate_voxel(try_info_tem["array"], packing_position)
-                                    topos_layout_test = topos_layout[each_bin] + translated_test
+                                    # translated_test = translate_voxel(try_info_tem["array"], packing_position)
+                                    # topos_layout_test = topos_layout[each_bin] + translated_test
 
-                                    value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
+                                    # value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
 
                                     trace(f"The value of this position is {value} current best value is {best_value}") 
                                     
@@ -1272,7 +1309,7 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
 
                             # =================================================================================================
 
-                            packing_position = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, each_bin, 
+                            best_position_and_value = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, each_bin, 
                                                             container_size, SCH_nesting_strategy, density, axis, container_shape,
                                                             _type, _accessible_check, _encourage_dbl, _select_range,flag_NFV_POOL, _TRACE)
                                                                        
@@ -1281,16 +1318,17 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
                             # packing position pool has been sorted by the value of nesting strategy.
                            
                             
-                            if isinstance(packing_position,tuple): 
+                            if isinstance(best_position_and_value,tuple): 
 
                                 # This is for evaluation 
-                                current_layout_test = list(current_layout[each_bin])
+                                # current_layout_test = list(current_layout[each_bin])
 
-                                translated_test = translate_voxel(try_info_tem["array"], packing_position)
-                                topos_layout_test = topos_layout[each_bin] + translated_test
+                                # translated_test = translate_voxel(try_info_tem["array"], packing_position)
+                                # topos_layout_test = topos_layout[each_bin] + translated_test
 
-                                value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
-
+                                # value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
+                                value = best_position_and_value[0]
+                                packing_position = best_position_and_value[1]
                                 trace(f"The value of this position is {value} current best value is {best_value}") 
                                 
                                 if value < best_value:
@@ -1481,20 +1519,21 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
 
                                     # time_check1 = time.time() 
 
-                                    packing_position = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, position_bin, 
+                                    best_position_and_value = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, position_bin, 
                                                                     container_size, SCH_nesting_strategy, density, axis, container_shape, 
                                                                     _type, _accessible_check, _encourage_dbl, _select_range,flag_NFV_POOL, _TRACE)
                                         
                                     # time_check2 = time.time() 
                                     # trace(f"packing position is found, cost {time_check2-time_check1} s")
-                                    if isinstance(packing_position,tuple): 
-
+                                    if isinstance(best_position_and_value,tuple): 
+                                        value = best_position_and_value[0]
+                                        packing_position = best_position_and_value[1]
                                         # This is for evaluation 
-                                        current_layout_test = list(current_layout[position_bin])                                       
-                                        translated_test = translate_voxel(try_info_tem["array"],packing_position)
-                                        topos_layout_test = topos_layout[position_bin] + translated_test
+                                        # current_layout_test = list(current_layout[position_bin])                                       
+                                        # translated_test = translate_voxel(try_info_tem["array"],packing_position)
+                                        # topos_layout_test = topos_layout[position_bin] + translated_test
 
-                                        value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
+                                        # value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
 
                                         trace(f"The value of this position is {value} current best value is {best_value}") 
                                         
@@ -1529,7 +1568,7 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
                                 # time_check1 = time.time() 
                                 # print(f"packing position is found, cost {time_check2-time_check1} s")
 
-                                packing_position = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, position_bin, 
+                                best_position_and_value = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, position_bin, 
                                                                 container_size, SCH_nesting_strategy, density, axis, container_shape,
                                                                 _type, _accessible_check, _encourage_dbl, _select_range, flag_NFV_POOL, _TRACE)
                                    
@@ -1537,14 +1576,15 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
                                 
                                 # trace(f"packing position is found, cost {time_check2-time_check1} s")
                                 
-                                if isinstance(packing_position,tuple): 
-
+                                if isinstance(best_position_and_value,tuple): 
+                                    value = best_position_and_value[0]
+                                    packing_position = best_position_and_value[1]
                                     # This is for evaluation 
-                                    current_layout_test = list(current_layout[position_bin])                                   
-                                    translated_test = translate_voxel(try_info_tem["array"], packing_position)                             
-                                    topos_layout_test = topos_layout[position_bin] + translated_test                                
+                                    # current_layout_test = list(current_layout[position_bin])                                   
+                                    # translated_test = translate_voxel(try_info_tem["array"], packing_position)                             
+                                    # topos_layout_test = topos_layout[position_bin] + translated_test                                
                                                     
-                                    value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
+                                    # value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
                                     
                                     trace(f"The value of this position is {value} current best value is {best_value}") 
                                     
@@ -1698,7 +1738,7 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
                                 # =================================================================================================
                                 # time_check1 = time.time()  
                                  
-                                packing_position = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, each_bin, 
+                                best_position_and_value = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, each_bin, 
                                                                 container_size,SCH_nesting_strategy, density, axis, container_shape, 
                                                                 _type, _accessible_check, _encourage_dbl, _select_range,flag_NFV_POOL, _TRACE)
                                     
@@ -1707,16 +1747,17 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
                                 # trace(f"packing position is found, cost {time_check2-time_check1} s")
                                 # packing_position = quick_nfv(position_bin, topos_layout, rotated_shape, container_size)
                                 
-                                if isinstance(packing_position,tuple): 
-                                    
+                                if isinstance(best_position_and_value,tuple): 
+                                    value = best_position_and_value[0]
+                                    packing_position = best_position_and_value[1]
 
                                     # This is for evaluation 
-                                    current_layout_test = list(current_layout[each_bin])
+                                    # current_layout_test = list(current_layout[each_bin])
                                     
-                                    translated_test = translate_voxel(try_info_tem["array"],packing_position)
-                                    topos_layout_test = topos_layout[each_bin] + translated_test
+                                    # translated_test = translate_voxel(try_info_tem["array"],packing_position)
+                                    # topos_layout_test = topos_layout[each_bin] + translated_test
 
-                                    value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
+                                    # value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
                                     
                                     trace(f"The value of this position is {value} current best value is {best_value}") 
                                     
@@ -1745,7 +1786,7 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
                             # packing_position = quick_nfv(position_bin, topos_layout, each_object, container_size)
                             #time_check1 = time.time() 
 
-                            packing_position = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, each_bin, 
+                            best_position_and_value = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, each_bin, 
                                                             container_size, SCH_nesting_strategy, density, axis, container_shape,
                                                             _type, _accessible_check, _encourage_dbl, _select_range,flag_NFV_POOL, _TRACE)
                                 
@@ -1754,16 +1795,17 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
                             # packing position pool has been sorted by the value of nesting strategy.
                            
                             
-                            if isinstance(packing_position,tuple): 
-                                
+                            if isinstance(best_position_and_value,tuple): 
+                                value = best_position_and_value[0]
+                                packing_position = best_position_and_value[1]
                                 # temporary nesting strategy: basic bottom-back
 
                                 # This is for evaluation 
-                                current_layout_test = list(current_layout[each_bin])
+                                # current_layout_test = list(current_layout[each_bin])
                                 
-                                translated_test = translate_voxel(try_info_tem["array"],packing_position)
-                                topos_layout_test = topos_layout[each_bin] + translated_test
-                                value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
+                                # translated_test = translate_voxel(try_info_tem["array"],packing_position)
+                                # topos_layout_test = topos_layout[each_bin] + translated_test
+                                # value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
 
                                 trace(f"The value of this position is {value} current best value is {best_value}") 
                                 
@@ -1936,22 +1978,23 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
 
                                     # time_check1 = time.time() 
                                                              
-                                    packing_position = SC_heuristic(nfv_pool,ifv_pool, try_info_tem, current_layout, topos_layout, position_bin, 
+                                    best_position_and_value = SC_heuristic(nfv_pool,ifv_pool, try_info_tem, current_layout, topos_layout, position_bin, 
                                                                     container_size, SCH_nesting_strategy, density, axis,container_shape,
                                                                     _type, _accessible_check, _encourage_dbl, _select_range,flag_NFV_POOL, _TRACE)
                                         
                                     # time_check2 = time.time() 
                                     # trace(f"packing position is found, cost {time_check2-time_check1} s")
 
-                                    if isinstance(packing_position,tuple): 
+                                    if isinstance(best_position_and_value,tuple): 
 
                                         # This is for evaluation 
-                                        current_layout_test = list(current_layout[position_bin])                                       
-                                        translated_test = translate_voxel(try_info_tem["array"],packing_position)
-                                        topos_layout_test = topos_layout[position_bin] + translated_test
+                                        # current_layout_test = list(current_layout[position_bin])                                       
+                                        # translated_test = translate_voxel(try_info_tem["array"],packing_position)
+                                        # topos_layout_test = topos_layout[position_bin] + translated_test
 
-                                        value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
-
+                                        # value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
+                                        value = best_position_and_value[0]
+                                        packing_position = best_position_and_value[1]
                                         trace(f"The value of this position is {value} current best value is {best_value}") 
                                         
                                         if value < best_value:
@@ -1983,7 +2026,7 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
                                 time_check1 = time.time() 
                                 # print(f"packing position is found, cost {time_check2-time_check1} s")
 
-                                packing_position = SC_heuristic(nfv_pool,ifv_pool, try_info_tem, current_layout, topos_layout, position_bin,
+                                best_position_and_value = SC_heuristic(nfv_pool,ifv_pool, try_info_tem, current_layout, topos_layout, position_bin,
                                                                 container_size, SCH_nesting_strategy, density, axis, container_shape, 
                                                                 _type, _accessible_check, _encourage_dbl, _select_range,flag_NFV_POOL, _TRACE)
                                 
@@ -1992,14 +2035,15 @@ def kick_repacking(original_object_info_total, nfv_pool, ifv_pool, orientation, 
                                 
                                 trace(f"packing position is found, cost {time_check2-time_check1} s")
                                 
-                                if isinstance(packing_position,tuple): 
+                                if isinstance(best_position_and_value,tuple): 
+                                    value = best_position_and_value[0]
+                                    packing_position = best_position_and_value[1]
 
                                     # This is for evaluation 
-                                    current_layout_test = list(current_layout[position_bin])                                   
-                                    translated_test = translate_voxel(try_info_tem["array"], packing_position)                             
-                                    topos_layout_test = topos_layout[position_bin] + translated_test                                
-                                                    
-                                    value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
+                                    # current_layout_test = list(current_layout[position_bin])                                   
+                                    # translated_test = translate_voxel(try_info_tem["array"], packing_position)                             
+                                    # topos_layout_test = topos_layout[position_bin] + translated_test                                
+                                    # value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
                                     
                                     trace(f"The value of this position is {value} current best value is {best_value}") 
                                     

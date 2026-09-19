@@ -430,7 +430,7 @@ class IFV_POOL():
     def retrieve_ifv(self, ongoing_info, container_size, container_type):
         # print("retrieve_ifv:", container_size)
         self.all_ifv_cal += 1
-        key = self.get_key(ongoing_info)
+        key = (self.get_key(ongoing_info), tuple(container_size), container_type)
         tem = self.check_key(key, ongoing_info, container_size, container_type)
 
         return tem
@@ -460,9 +460,9 @@ class IFV_POOL():
         # obj_length, obj_width, obj_height = get_bounding_box(ongoing_info["array"])
         obj_length, obj_width, obj_height = aabb_rotate(ongoing_info["aabb"], ongoing_info["orientation"])      
 
-        available_x  = h - obj_length
-        available_y  = w - obj_width
-        available_z  = d - obj_height
+        available_x = max(0, h - obj_length + 1)
+        available_y = max(0, w - obj_width + 1)
+        available_z = max(0, d - obj_height + 1)
 
         ifv[:available_x, :available_y, :available_z] += 1
 
@@ -508,9 +508,9 @@ def njit_get_ifv_cylinder(ongoing_array, obj_length, obj_width, obj_height, cont
     
     # obj_length, obj_width, obj_height = get_bounding_box_njit_itself(ongoing_info)      
       
-    available_x  = h - obj_length
-    available_y  = w - obj_width
-    available_z  = d - obj_height
+    available_x = max(0, h - obj_length + 1)
+    available_y = max(0, w - obj_width + 1)
+    available_z = max(0, d - obj_height + 1)
 
         
     radius = h / 2
@@ -603,7 +603,10 @@ def accessibility_check(ongoing_info, nfv, ifv, container_size):
     # =========================================================
     # Using binary_propagation, potentially quicker
     top_mask = np.zeros(container_size, dtype=bool)
-    top_mask[:, :, container_size[2]-aabb_z-1] = True
+    entry_z = container_size[2] - aabb_z
+    if entry_z < 0:
+        return False
+    top_mask[:, :, entry_z] = True
 
     seeds = top_mask & all_feasible_region
 
@@ -711,9 +714,9 @@ def get_feasible_boundary_rigorous_acces(fixed, fixed_info, ongoing_info, contai
 
         elif container_type == "cube": 
 
-            available_x  = L - x1
-            available_y  = W - y1 
-            available_z  = H_larger - z1
+            available_x = max(0, L - x1 + 1)
+            available_y = max(0, W - y1 + 1)
+            available_z = max(0, H_larger - z1 + 1)
 
             ifv_larger = np.zeros((L,W,H_larger), dtype=np.uint8)
             ifv_larger[:available_x, :available_y, :available_z] += 1
