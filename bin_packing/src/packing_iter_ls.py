@@ -551,7 +551,8 @@ def back_to_origin(object_info):
 
 
 # @profile
-def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, orientation, container_size, 
+def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, 
+                              ifv_pool, orientation, container_size, 
                               container_shape, rho, max_radio, 
                               packing_alg, _evaluation,
                               SCH_nesting_strategy, density, axis, 
@@ -1086,8 +1087,777 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool, ifv_pool, or
               
     return current_layout, topos_layout, radio_list, pieces_order
 
+# Previous improved_repack implementation, retained for comparison.
+# def improved_repack(original_object_info_total,
+#                     selected_info, nfv_pool, ifv_pool,
+#                     best_orientations_list_no_bin, old_data_pool, 
+#                     local_best_iteration, orientation, container_size, 
+#                     container_shape, rho, max_radio, 
+#                     packing_alg, _evaluation,
+#                     SCH_nesting_strategy, density, axis, 
+#                     _type, _accessible_check, _encourage_dbl,
+#                     _select_range,flag_NFV_POOL, _TRACE):
+# 
+#     """
+#     Need to maintain a flag list to track if earlier bins are changed. if not can pack from the selected bin.
+#     """ 
+# 
+#     # structure of object_info_total
+#     # =======================================================================================
+#     # key --      value                     --    value example
+#     # =======================================================================================
+#     # "array"     -- current 3D binary array        --    np.array((0 0 0),(1,1,1)...) (np array)     
+#     # "translation"     -- translation (for retrieve nfv) --    (11,13,67) (tuple)
+#     # "orientation"     -- orientation (for retrieve nfv) --    "x_180" (string)
+#     # "bin_position"     -- bin position                   --    5 (6 th bin) (int)
+#     # "volume"     -- volume after filling holes     --    800 (int)
+#     # "radio"     -- radioactivity                  --    1100 (float)
+#     # "piece_type"     -- piece type (for retrieve nfv)  --    777 (a number represents a group of item) (int)
+#     # =======================================================================================
+# 
+#     global TRACE
+#     TRACE = _TRACE
+#     
+#     # if _neighbor_type == "orientation_only":
+#     # Get the new input for the packing algorithm.
+#     # ============================================================================================
+#     new_selected_index = selected_info[0]
+#     # new_selected_index = 0
+#     new_selected_orientation = selected_info[1]
+#     # new_selected_packing_position = selected_info[2]
+#     
+#     # print(old_data_pool)
+# 
+#     # This is for loading the current best solution as the input of the next iteration.
+# 
+#     filtered_data = old_data_pool[local_best_iteration]
+# 
+#     best_current_layout = filtered_data["bin_real_layout"]
+#     # bin_real_layout is a list filled with object_info
+#     best_topos_layout = filtered_data["bin_topos_layout"]
+#     best_radio_layout = filtered_data["radio_layout"]
+# 
+# 
+#     # initialisation
+#     input_packed_layout = [[]]
+#     input_packed_topos_layout = [np.zeros(container_size)]  
+#     input_packed_order = [[]]
+#     
+#     input_packed_best_orien = [[]]
+#     input_packed_orien_value_pool = [[]]
+#     input_packed_position = [[]]
+#     input_packed_position_pool = [[]]
+#     input_packed_radio_list = [[]] # this is to track the radio layout
+#     
+#     n_bin = 0
+#     
+#     pieces_order_matrix = filtered_data["pieces_order"]
+#     # #print(pieces_order_matrix)
+#     
+#     first_flag = False
+#     # selected_piece_index = find_element_index(pieces_order_matrix, new_selected_index)
+#     
+#     # It is not the first piece, if you select the first piece in one bin, it is the last piece of the previous bin 
+#     # if selected_piece_index[1] == 0:   
+#     # # to decide if the selected item is the first item in the bin
+#     #     first_flag = True
+# 
+#     bin_index = None
+#     selected_index = find_element_index(pieces_order_matrix, new_selected_index)
+#     selected_bin_index = selected_index[0]
+#     
+#     # initialise all input data for the repack
+#     for each_piece in range(new_selected_index):
+#         index = find_element_index(pieces_order_matrix, each_piece)
+#         
+#         bin_index = index[0]
+#         piece_index = index[1]
+# 
+#         best_current_info_this_bin = best_current_layout[bin_index][piece_index]
+# 
+#         if bin_index > n_bin:
+#             input_packed_layout.append([])
+#             input_packed_topos_layout.append(np.zeros(container_size))
+#             input_packed_order.append([])
+#             
+#             input_packed_best_orien.append([])
+#             input_packed_orien_value_pool.append([])
+#             input_packed_position.append([])
+#             input_packed_position_pool.append([])
+#             input_packed_radio_list.append([])
+#             
+#             n_bin += 1
+#             
+#         input_packed_layout[bin_index].append(best_current_info_this_bin)
+#         input_packed_topos_layout[bin_index] += best_current_info_this_bin["array"]
+#     
+#         input_packed_order[bin_index].append(each_piece)
+#         input_packed_radio_list[bin_index].append(best_radio_layout[bin_index][piece_index])
+#     # ============================================================================================
+#     # to create the flag list to track if bin state is changed during repack. 
+#     bin_state_flag_list = [False for i in range(len(best_current_layout))]  # False is for "nochange", True if for "changed"
+#     
+#     # earliest_changed_bin_flag = True 
+#     # earliest_changed_bin = None
+#     for i in range(len(input_packed_layout)):
+#         # if len(input_packed_layout[i]) != len(best_current_layout[i]):
+#         if input_packed_topos_layout[i] != best_topos_layout[i]: 
+#             bin_state_flag_list[i] = True
+# 
+#     current_layout = input_packed_layout # INFO!
+#     topos_layout = input_packed_topos_layout
+#     pieces_order = input_packed_order # to track the packing order of pieces
+#     radio_list = input_packed_radio_list # to track the radioactivity of pieces in the bin
+#     
+#     if container_shape == "cube":
+#         container_volume = container_size[0]*container_size[1]*container_size[2]
+#         
+#     elif container_shape == "cylinder": 
+#         container_volume = (math.pi * (container_size[0]/2)**2) * container_size[2]
+# 
+#     position_bin = len(current_layout)-1
+#     num_piece = new_selected_index
+#     is_selected_piece = True
+#     
+#     if new_selected_index == 0: 
+#         first_flag = True
+# 
+#     # object_index = new_selected_index
+#     starting_bin = 0 
+#     for each_object_info in original_object_info_total[new_selected_index:]:
+# 
+#         # this object_info has updated by CA
+# 
+#         trace(f"Packing begins for object {num_piece}.")
+#         
+#         best_value = 99999999
+#         best_degree = 0
+#         best_axis = "x"
+#         
+# 
+#         if is_selected_piece == True:
+#             # should only try the selected orientation for the selected piece. 
+#             trace("It is the selected object!")
+#             selected_orientation = new_selected_orientation
+# 
+#         else: 
+#             trace("It is NOT the selected object!")
+#             selected_orientation = best_orientations_list_no_bin[num_piece]
+# 
+#         a,b = selected_orientation.split("_")
+#         degrees = [int(b)] # keep the old orientation
+#         axiss = [a]
+#         orientation = [degrees,axiss]
+# 
+#         # if earliest_changed_bin == 
+# 
+# 
+#         for each_bin in range(0, position_bin+1): # only check from the selected bin? 
+#             # if it is physically possible
+# 
+#             if bin_state_flag_list[each_bin] == False: 
+#                 # skip the bin which is not changed in repacking. 
+#                 continue
+# 
+# 
+#             empty_area = container_volume * rho - get_volume(topos_layout[each_bin])
+#             feasible_radio = max_radio - sum(radio_list[each_bin])
+#         
+#             if each_bin < position_bin:
+#                 # check previous bins 
+#                 trace(f"Checking bin {each_bin}!")
+#                 
+#                 if each_object_info["volume"] <= empty_area and each_object_info["radio"] <= feasible_radio:
+#                     
+#                     for each_degree in degrees:
+#                         trace(f"Try next degree {each_degree}")
+#                         
+#                         if each_degree != 0: 
+#                             # if we rotate it 
+#                             # trace(f"Try next degree {each_degree}")
+#                             
+#                             for each_axis in axiss:
+#                                 trace(f"Try next axis {each_axis}")
+# 
+#                                 # rotated_shape = rotate_voxel(each_object_info["array"],each_degree,each_axis)
+#                                 
+#                                 # print(try_info_tem)
+#                                 # origin_array = back_to_origin(try_info_tem) # this is for getting the origin orientation
+#                                 try_info_tem = {**each_object_info}
+#                                 try_info_tem["array"] = rotate_voxel(try_info_tem["array"], each_degree, each_axis)
+#                                 try_info_tem["orientation"] = each_axis + "_" + str(each_degree)  
+#                                 # print(try_info_tem)  
+# 
+#                                 # exit(-1)                      
+#                                 # =================================================================================================
+#                                 # time_check1 = time.time()  
+#                                     
+#                                 best_position_and_value = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, each_bin, 
+#                                                                 container_size, SCH_nesting_strategy, density, axis, container_shape,
+#                                                                   _type, _accessible_check, _encourage_dbl, _select_range, flag_NFV_POOL, _TRACE)
+#                                     
+#                                 # time_check2 = time.time()                        
+#                                 
+#                                 # trace(f"packing position is found, cost {time_check2-time_check1} s")
+#                                 # packing_position = quick_nfv(position_bin, topos_layout, rotated_shape, container_size)
+#                                 
+#                                 if isinstance(best_position_and_value,tuple):  
+#                                     value = best_position_and_value[0]
+#                                     packing_position = best_position_and_value[1]
+#                                     # This is for evaluation 
+#                                     # current_layout_test = list(current_layout[each_bin])
+#                                     
+#                                     # translated_test = translate_voxel(try_info_tem["array"], packing_position)
+#                                     # topos_layout_test = topos_layout[each_bin] + translated_test
+# 
+#                                     # value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
+# 
+#                                     trace(f"The value of this position is {value} current best value is {best_value}") 
+#                                     
+#                                     if value < best_value:
+#                                         
+#                                         best_value = value
+#                                         best_degree = each_degree
+#                                         best_axis = each_axis
+#                                         best_translation = packing_position
+#                                 
+#                                 
+#                                 else:
+#                                     trace("Can't find solution in this orientation")
+#                                     pass
+# 
+#                                 
+#                         else: 
+#                             # if we don't rotate it, don't need to read axis
+#                             # orientation_str = "x_0"
+#                             # try_info_tem = {**each_object_info}
+#                             # try_info_tem = {**each_object_info}
+#                             # try_info_tem["array"] = back_to_origin(try_info_tem) # this is for getting the origin orientation
+#                             
+#                             # try_info_tem["orientation"] = "x_0"
+#                             try_info_tem = {**each_object_info}
+# 
+#                             # =================================================================================================
+# 
+#                             best_position_and_value = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, each_bin, 
+#                                                             container_size, SCH_nesting_strategy, density, axis, container_shape,
+#                                                             _type, _accessible_check, _encourage_dbl, _select_range,flag_NFV_POOL, _TRACE)
+#                                                                        
+# 
+#                             # trace(f"packing position is found, cost {time_check2-time_check1} s")
+#                             # packing position pool has been sorted by the value of nesting strategy.
+#                            
+#                             
+#                             if isinstance(best_position_and_value,tuple): 
+# 
+#                                 # This is for evaluation 
+#                                 # current_layout_test = list(current_layout[each_bin])
+# 
+#                                 # translated_test = translate_voxel(try_info_tem["array"], packing_position)
+#                                 # topos_layout_test = topos_layout[each_bin] + translated_test
+# 
+#                                 # value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
+#                                 value = best_position_and_value[0]
+#                                 packing_position = best_position_and_value[1]
+#                                 trace(f"The value of this position is {value} current best value is {best_value}") 
+#                                 
+#                                 if value < best_value:
+#                                     
+#                                     best_value = value
+#                                     best_degree = 0
+#                                     best_axis = "x"
+#                                     best_translation = packing_position
+#                                         
+# 
+#                             else:
+#                                 trace("Can't find solution in this orientation")
+#                                 pass
+#                             # =================================================================================================
+#                 
+#                     if best_value > 9999999:
+#                         # No feasible solution is found, check the next bin
+#                         trace(f"Can't find a feasible position at bin {each_bin}! Check the nex bin!")
+#                         # if each_bin == selected_bin_index:
+#                         #     bin_state_flag_list[each_bin+1] = True 
+#                         #     # bin
+#                         # else:    
+#                         if is_selected_piece == True:
+#                             bin_state_flag_list[each_bin] = False
+#                         
+#                         pass 
+#                     
+#                     else: 
+#                         # if a solution is found, pack it! 
+# 
+#                         # structure of object_info_total
+#                         # =======================================================================================
+#                         # key --      value                     --    value example
+#                         # =======================================================================================
+#                         # "array"     -- current 3D binary array        --    np.array((0 0 0),(1,1,1)...) (np array)     
+#                         # "translation"     -- translation (for retrieve nfv) --    (11,13,67) (tuple)
+#                         # "orientation"     -- orientation (for retrieve nfv) --    "x_180" (string)
+#                         # "bin_position"     -- bin position                   --    5 (6 th bin) (int)
+#                         # "volume"     -- volume after filling holes     --    800 (int)
+#                         # "radio"     -- radioactivity                  --    1100 (float)
+#                         # "piece_type"     -- piece type (for retrieve nfv)  --    777 (a number represents a group of item) (int)
+#                         # =======================================================================================
+# 
+#                         trace(f"For piece {num_piece}, it has been packed in the bin {each_bin}")    
+# 
+#                         # origin_array = back_to_origin(each_object_info)
+#                         packed_tem = {**each_object_info}
+#                         packed_tem["array"] = rotate_voxel(each_object_info["array"], best_degree, best_axis)
+#                         packed_tem["array"] = translate_voxel(packed_tem["array"], best_translation)
+#                         packed_tem["translation"] = best_translation
+#                         packed_tem["orientation"] = best_axis + "_" + str(best_degree)
+#                         packed_tem["bin_position"] = each_bin
+# 
+#                         current_layout[each_bin].append(packed_tem)
+#                         topos_layout[each_bin] += packed_tem["array"]
+#                         radio_list[each_bin].append(packed_tem["radio"])
+#                         pieces_order[each_bin].append(num_piece)
+#                         
+#                         
+#                         break # find the solution for the piece stop the loop and check the next piece. 
+#                     
+#                 else:
+#                     # if it is not physically possible (weight and radio constraints)
+#                     trace(f'!!!Bin {each_bin} has NOT enough space for object {num_piece}!!! Check the next bin!')
+# 
+#                     pass
+#                 
+#             else:
+#                 # if it is the last bin, pack as usual 
+#                 
+#                 if each_object_info["volume"] <= empty_area and each_object_info["radio"]  <= feasible_radio: 
+#                     # trace(f"The area of next item is {get_volume(each_object)}, empty area is {empty_area}")
+#                 
+#                     if first_flag == True:
+#                         trace("It is the first object in this bin")
+# 
+#                         # try_info_tem = {**each_object_info}
+# 
+#                         # if it is the first item, pack as low as possible
+#                         for each_degree in degrees:
+#                             trace(f"Try next degree {each_degree}")
+#                             
+#                             if each_degree != 0: 
+#                                 # if we rotate it 
+#                                 
+#                                 for each_axis in axiss:
+#                                     trace(f"Try next axis {each_axis}")
+#                                     # for each orientation of the object
+# 
+#                                     # try_info_tem = {**each_object_info}
+# 
+#                                     # origin_array = back_to_origin(try_info_tem)
+#                                     try_info_tem = {**each_object_info}
+#                                     try_info_tem["array"] = rotate_voxel(try_info_tem["array"], each_degree, each_axis)
+#                                     try_info_tem["orientation"] = each_axis + "_" + str(each_degree)
+# 
+#                                     x,y,z = np.where(try_info_tem["array"] == 1) # index of where space is occupied
+#                                     # orientation_str = each_axis + "_" + str(each_degree)
+#                                     # best_value = len(rotated_shape[2])# the length of z axis
+#                                     
+#                                     # To pack as low as possible
+#                                     value = max(z) # the max height of the item
+#                                     
+#                                     if container_shape == "cube":
+#                                         min_x = 0
+#                                         min_y = 0
+#                                         
+#                                     elif container_shape == "cylinder":
+#                                         # print("treat it as cylinder")
+#                                         
+#                                         ifv = ifv_pool.retrieve_ifv(try_info_tem, container_size, container_shape)
+#                                         # visualize_single_object(ifv,container_size)
+#                                         _x, _y, _z = np.where(ifv == 1) 
+#                                         
+#                                         min_x = np.min(_x) 
+#                                         min_y = np.min(_y[_x == min_x])
+#                                         
+#                                         
+#                                     trace(f"The value of this position is {value} current best value is {best_value}") 
+#                                     if value < best_value:
+#                                         best_value = value
+#                                         best_degree = each_degree
+#                                         best_axis = each_axis
+#                                         best_translation = (min_x, min_y, 0)
+#                                         
+#                                         
+#                             else: 
+#                                 # if we don't rotate it
+# 
+#                                 # try_info_tem = {**each_object_info}
+#                                 # try_info_tem["array"] = back_to_origin(try_info_tem) # this is for getting the origin orientation
+#                                 # try_info_tem["orientation"] = "x_0"
+#                                 try_info_tem = {**each_object_info}
+#                                 # if we don't rotate it, don't need to read axis
+#                                 # orientation_str = "x_0"
+#                                 x,y,z = np.where(try_info_tem["array"]  == 1)                
+#                                 # best_value = len(each_object[2])# the length of z axis 
+#                                 
+#                                 # To pack as low as possible    
+#                                 value = max(z) # the max height of the item
+#                                 
+#                                 if container_shape == "cube":
+#                                     min_x = 0
+#                                     min_y = 0
+#                                         
+#                                 elif container_shape == "cylinder":
+#                                     # print("treat it as cylinder")
+#                                     ifv = ifv_pool.retrieve_ifv(try_info_tem, container_size, container_shape)
+# 
+#                                     _x, _y, _z = np.where(ifv == 1) 
+#                                     
+#                                     min_x = np.min(_x) 
+#                                     min_y = np.min(_y[_x == min_x])
+#                                     
+#                                     
+#                                 trace(f"The value of this position is {value} current best value is {best_value}") 
+#                                 
+#                                 if value < best_value:
+#                                     best_value = value
+#                                     best_degree = 0
+#                                     best_axis = "x"      
+#                                     best_translation = (min_x, min_y, 0)
+#                             
+#                                 
+#                             first_flag = False # not the first item anymore
+#                     
+#                     else: 
+#                         # if it is not the first item in this bin
+#                         # print("It is not the first object")
+#                         
+#                         # try_info_tem = {**each_object_info}
+# 
+#                         for each_degree in degrees:
+#                             trace(f"Try next degree {each_degree}")
+#                             
+#                             if each_degree != 0: 
+#                                 # if we rotate it 
+#                                 # trace(f"Try next degree {each_degree}")
+#                                 
+#                                 for each_axis in axiss:
+#                                     trace(f"Try next axis {each_axis}")
+#                                     # for each orientation of the object
+#                                     # orientation_str = each_axis + "_" + str(each_degree)
+#                                     # rotated_shape = rotate_voxel(each_object_info["array"],each_degree,each_axis)
+#                                     # x,y,z = np.where(rotated_shape == 1) # index of where space is occupied
+#                                     
+#                                     # =================================================================================================
+#                                     # try_info_tem = {**each_object_info}
+#                                     # origin_array = back_to_origin(try_info_tem)
+#                                     try_info_tem = {**each_object_info}
+#                                     try_info_tem["array"] = rotate_voxel(try_info_tem["array"],each_degree,each_axis)
+#                                     try_info_tem["orientation"] = each_axis + "_" + str(each_degree)
+#                                     
+# 
+#                                     # time_check1 = time.time() 
+# 
+#                                     best_position_and_value = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, position_bin, 
+#                                                                     container_size, SCH_nesting_strategy, density, axis, container_shape, 
+#                                                                     _type, _accessible_check, _encourage_dbl, _select_range,flag_NFV_POOL, _TRACE)
+#                                         
+#                                     # time_check2 = time.time() 
+#                                     # trace(f"packing position is found, cost {time_check2-time_check1} s")
+#                                     if isinstance(best_position_and_value,tuple): 
+#                                         value = best_position_and_value[0]
+#                                         packing_position = best_position_and_value[1]
+#                                         # This is for evaluation 
+#                                         # current_layout_test = list(current_layout[position_bin])                                       
+#                                         # translated_test = translate_voxel(try_info_tem["array"],packing_position)
+#                                         # topos_layout_test = topos_layout[position_bin] + translated_test
+# 
+#                                         # value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
+# 
+#                                         trace(f"The value of this position is {value} current best value is {best_value}") 
+#                                         
+#                                         if value < best_value:
+#                                             
+#                                             best_value = value
+#                                             best_degree = each_degree
+#                                             best_axis = each_axis
+#                                             best_translation = packing_position
+#                                                 
+#                                         # else: 
+#                                         #     trace(f"The packing position is NOT accessible vertically! Try next orientation!")
+#                                         #     pass
+#                                     
+#                                     else:
+#                                         trace("Can't find solution in this orientation")
+#                                         pass
+#                                     
+#                                     # =================================================================================================
+#                                     
+#                             else: 
+#                                 # when orientation = "x_0"
+#                                 # don't need to call rotate function
+# 
+#                                 # try_info_tem = {**each_object_info}
+#                                 # try_info_tem["array"] = back_to_origin(try_info_tem) # this is for getting the origin orientation
+#                                 # try_info_tem["orientation"] = "x_0"
+#                                 
+#                                 try_info_tem = {**each_object_info}
+#                                 # =================================================================================================
+# 
+#                                 # time_check1 = time.time() 
+#                                 # print(f"packing position is found, cost {time_check2-time_check1} s")
+# 
+#                                 best_position_and_value = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, position_bin, 
+#                                                                 container_size, SCH_nesting_strategy, density, axis, container_shape,
+#                                                                 _type, _accessible_check, _encourage_dbl, _select_range, flag_NFV_POOL, _TRACE)
+#                                    
+#                                 # time_check2 = time.time() 
+#                                 
+#                                 # trace(f"packing position is found, cost {time_check2-time_check1} s")
+#                                 
+#                                 if isinstance(best_position_and_value,tuple): 
+#                                     value = best_position_and_value[0]
+#                                     packing_position = best_position_and_value[1]
+#                                     # This is for evaluation 
+#                                     # current_layout_test = list(current_layout[position_bin])                                   
+#                                     # translated_test = translate_voxel(try_info_tem["array"], packing_position)                             
+#                                     # topos_layout_test = topos_layout[position_bin] + translated_test                                
+#                                                     
+#                                     # value = evaluation(topos_layout_test, current_layout_test, translated_test, _evaluation)
+#                                     
+#                                     trace(f"The value of this position is {value} current best value is {best_value}") 
+#                                     
+#                                     if value < best_value:
+#                                         
+#                                         best_value = value
+#                                         best_degree = 0
+#                                         best_axis = "x"
+#                                         best_translation = packing_position
+#                                             
+#                                     # else: 
+#                                     #     trace(f"The packing position is NOT accessible vertically! Try next orientation!")
+#                                     #     pass
+#                                 
+#                                 else:
+#                                     trace("Can't find solution in this orientation")
+#                                     pass
+#                                 # =================================================================================================
+#                 
+#                     if best_value > 9999999:
+#                         # No feasible solution is found, check the next bin
+#                         trace(f"Can't find a feasible position at bin {position_bin}! As it is the last bin, open a new bin!")
+#                         best_degree,best_axis, best_translation, position_bin, first_flag = open_a_new_bin(ifv_pool, current_layout, topos_layout, orientation, each_object_info, container_size, container_shape, 
+#                                                                                                            position_bin, radio_list,pieces_order)
+#                     
+#                 # it is the last bin 
+#                 
+#                 else: 
+#                     # if it is physically impossible
+#                     trace(f'!!!Bin {position_bin} has NOT enough space for object {num_piece}!!! As it is the last bin, open a new bin! ')
+#                     best_degree, best_axis, best_translation, position_bin, first_flag = open_a_new_bin(ifv_pool, current_layout, topos_layout, orientation, each_object_info, container_size, container_shape,
+#                                                                                                         position_bin, radio_list,pieces_order)
+#             
+#                 # this is the updates for the last bin
+#                 trace(f"The piece {num_piece} has been packed in {position_bin}, Best oprientation is {best_axis}_{str(best_degree)}")  
+#                 # info updating     
+#                    
+#                 # origin_array = back_to_origin(each_object_info)
+#                 packed_tem = {**each_object_info}
+#                 packed_tem["array"] = rotate_voxel(each_object_info["array"], best_degree, best_axis)
+#                 packed_tem["array"] = translate_voxel(packed_tem["array"], best_translation)
+#                 packed_tem["translation"] = best_translation
+#                 packed_tem["orientation"] = best_axis + "_" + str(best_degree)
+#                 packed_tem["bin_position"] = position_bin
+# 
+#                 current_layout[position_bin].append(packed_tem)
+#                 topos_layout[position_bin] += packed_tem["array"]
+#                 radio_list[position_bin].append(packed_tem["radio"])
+#                 pieces_order[position_bin].append(num_piece)
+# 
+#         # add a partial visualised here
+#         num_piece += 1
+#         is_selected_piece = False
+#         # object_index += 1
+#     
+#     return current_layout, topos_layout, radio_list, pieces_order
 
-def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_pool, best_orientations_list_no_bin, old_data_pool, CA_iter, orientation, container_size, 
+def improved_repack(original_object_info_total, selected_info, nfv_pool, ifv_pool,
+                    best_orientations_list_no_bin, old_data_pool,
+                    local_best_iteration, orientation, container_size,
+                    container_shape, rho, max_radio, packing_alg, _evaluation,
+                    SCH_nesting_strategy, density, axis, _type,
+                    _accessible_check, _encourage_dbl, _select_range,
+                    flag_NFV_POOL, _TRACE):
+    """Repack from p, searching only bins whose packing has changed.
+
+    Preserve the prefix before p. For later pieces, skip unchanged earlier bins
+    and restore their placement in unchanged original bins. Search later bins.
+    A bin remains changed once an orientation, placement or membership changes.
+    """
+    # Load the accepted local-best solution as the reference for repacking.
+    filtered_data = old_data_pool[local_best_iteration]
+
+    # Find a placement using the existing empty-bin policy or SC_heuristic.
+    def search(info, current_layout, topos_layout, each_bin):
+        # Handle an empty bin directly instead of searching against fixed pieces.
+        if not current_layout[each_bin]:
+            # Check the normalized voxel geometry before placing it at the cuboid origin.
+            if container_shape == "cube":
+                occupied = np.argwhere(info["array"] == 1)
+                if not len(occupied) or np.any(occupied.max(axis=0) >= container_size):
+                    return False
+                return 0, (0, 0, 0)
+            # For a cylindrical bin, obtain the inner-fit volume and choose a starting position.
+            ifv = ifv_pool.retrieve_ifv(info, container_size, container_shape)
+            x, y, z = np.where(ifv == 1)
+            if not len(x):
+                return False
+            min_x = np.min(x)
+            return 0, (min_x, np.min(y[x == min_x]), 0)
+        # Search for a feasible position among the pieces already packed in this bin.
+        return SC_heuristic(
+            nfv_pool, ifv_pool, info, current_layout, topos_layout, each_bin,
+            container_size, SCH_nesting_strategy, density, axis,
+            container_shape, _type, _accessible_check, _encourage_dbl,
+            _select_range, flag_NFV_POOL, _TRACE)
+
+    # Identify the selected piece p and its candidate orientation.
+    new_selected_index, new_selected_orientation = selected_info
+    best_current_layout = filtered_data["bin_real_layout"]
+    pieces_order_matrix = filtered_data["pieces_order"]
+    # Map each sequence index to its original bin and complete placement record.
+    # Piece indices distinguish individual objects even when their types are identical.
+    old_piece_info = {}
+    for each_bin, indices in enumerate(pieces_order_matrix):
+        for j, num_piece in enumerate(indices):
+            old_piece_info[num_piece] = (each_bin, best_current_layout[each_bin][j])
+
+    # Initialize the reconstructed solution while retaining the original bin indices.
+    current_layout = [[] for _ in best_current_layout]
+    topos_layout = [np.zeros(container_size) for _ in best_current_layout]
+    radio_list = [[] for _ in best_current_layout]
+    pieces_order = [[] for _ in best_current_layout]
+    # False means the processed prefix in this bin still matches the old solution.
+    # Removing unprocessed suffix pieces alone does not mark a bin as changed.
+    bin_state_flag_list = [False for _ in best_current_layout]
+
+    # Update the real layout, occupancy, radioactivity and piece-order records together.
+    def place(num_piece, each_bin, info):
+        # Copy the object dictionary so final renumbering does not modify the reference solution.
+        current_layout[each_bin].append(dict(info))
+        topos_layout[each_bin] += info["array"]
+        radio_list[each_bin].append(info["radio"])
+        pieces_order[each_bin].append(num_piece)
+
+    # Restore the prefix before p with its original positions and orientations.
+    # The selected piece p is excluded and will be repacked with the suffix.
+    for num_piece in range(new_selected_index):
+        each_bin, info = old_piece_info[num_piece]
+        place(num_piece, each_bin, info)
+
+    # Removing/changing p changes its old bin even if it moves elsewhere.
+    # Mark the original bin of p as changed: its orientation or membership will change.
+    bin_state_flag_list[old_piece_info[new_selected_index][0]] = True
+    # Compute container volume for the capacity check controlled by rho.
+    volume = (np.prod(container_size) if container_shape == "cube" else
+              np.pi * (container_size[0] / 2) ** 2 * container_size[2])
+
+    # Process p and all subsequent pieces in their original sequence order.
+    for num_piece in range(new_selected_index, len(original_object_info_total)):
+        # Retrieve this piece's original bin and placement for comparison and possible reuse.
+        original_bin_index, best_current_info = old_piece_info[num_piece]
+        # Use the candidate orientation for p and the accepted orientations for later pieces.
+        orientation = (new_selected_orientation if num_piece == new_selected_index else
+                       best_orientations_list_no_bin[num_piece])
+        selected_axis, selected_degree = orientation.split("_")
+        selected_degree = int(selected_degree)
+        # Build trial geometry from the original piece, without modifying its input record.
+        try_info_tem = dict(original_object_info_total[num_piece])
+        try_info_tem["array"] = rotate_voxel(try_info_tem["array"], selected_degree, selected_axis)
+        try_info_tem["orientation"] = orientation
+        # Normally only p changes orientation; keep restoration safe if a
+        # caller supplies a different orientation for another piece as well.
+        # Invalidate restoration if the requested orientation differs from the old placement.
+        if orientation != best_current_info["orientation"]:
+            # Mark the original bin as changed after an orientation change or a departure.
+            bin_state_flag_list[original_bin_index] = True
+
+        # Visit bins from index 0; stop as soon as the piece is placed.
+        # The extra iteration opens a new bin only after existing bins fail or are skipped.
+        for each_bin in range(len(current_layout) + 1):
+            is_new = each_bin == len(current_layout)
+            # Allocate a new bin when needed; a failed search in this bin is handled below.
+            if is_new:
+                current_layout.append([])
+                topos_layout.append(np.zeros(container_size))
+                radio_list.append([])
+                pieces_order.append([])
+                # A new bin has no old placement to reuse and is marked as changed.
+                bin_state_flag_list.append(True)
+            # Core skip rule: p tries all eligible bins; later pieces reuse unchanged bins.
+            # Skip unchanged earlier bins, restore the original bin, and search later bins.
+            if num_piece != new_selected_index and not bin_state_flag_list[each_bin]:
+                if each_bin < original_bin_index:
+                    # Reuse an earlier first-fit rejection in an unchanged bin.
+                    continue
+                if each_bin == original_bin_index:
+                    # Check original membership before allowing a fresh search.
+                    # The unchanged original bin can restore this piece directly.
+                    place(num_piece, each_bin, best_current_info)
+                    break
+                # Later bins were not tested after the old first-fit placement.
+                # Search them without temporarily changing their state flags.
+                # Success marks arrival/departure below; failure preserves flags.
+
+            result = False
+            if (try_info_tem["volume"] <= volume * rho - np.count_nonzero(topos_layout[each_bin])
+                    and try_info_tem["radio"] <= max_radio - sum(radio_list[each_bin])):
+                # Perform geometric search only after the skip rule and capacity checks allow it.
+                result = search(try_info_tem, current_layout, topos_layout, each_bin)
+            # A failed attempt does not alter any change flag; continue to the next bin.
+            # If even a new empty bin cannot accommodate the piece, report failure.
+            if not isinstance(result, tuple):
+                # Allocate a new bin when needed; a failed search in this bin is handled below.
+                if is_new:
+                    raise ValueError(f"Piece {num_piece} cannot fit in an empty bin")
+                # A failed attempt changes no bin. In particular, bins before
+                # p's original bin stay False after trying p.
+                continue
+
+            # Convert the successful search result into a placed object and commit its records.
+            packed_tem = dict(try_info_tem)
+            packed_tem["translation"] = result[1]
+            packed_tem["array"] = translate_voxel(try_info_tem["array"], result[1])
+            packed_tem["bin_position"] = each_bin
+            place(num_piece, each_bin, packed_tem)
+            # Compare the target bin with this piece's original bin.
+            if each_bin != original_bin_index:
+                # Mark the destination bin as changed so subsequent pieces reconsider it.
+                bin_state_flag_list[each_bin] = True
+                # Mark the original bin as changed after an orientation change or a departure.
+                bin_state_flag_list[original_bin_index] = True
+            # Even without a bin transfer, a different orientation or occupied position is a change.
+            # Once True, a change flag remains True for the rest of this repacking call.
+            elif (orientation != best_current_info["orientation"] or
+                  not np.array_equal(packed_tem["array"], best_current_info["array"])):
+                # Mark the destination bin as changed so subsequent pieces reconsider it.
+                bin_state_flag_list[each_bin] = True
+            break
+
+    # Old bin indices are needed throughout the search. Compact only after
+    # all pieces are placed so empty bins do not inflate the objective N.
+    # Remove empty bins only after repacking, preserving reference indices during the search.
+    used = [each_bin for each_bin, layout in enumerate(current_layout) if layout]
+    current_layout = [current_layout[each_bin] for each_bin in used]
+    topos_layout = [topos_layout[each_bin] for each_bin in used]
+    radio_list = [radio_list[each_bin] for each_bin in used]
+    pieces_order = [pieces_order[each_bin] for each_bin in used]
+    # Renumber the remaining bins and update each placed object's bin_position.
+    for each_bin, layout in enumerate(current_layout):
+        for info in layout:
+            info["bin_position"] = each_bin
+    # Return the same four layout records expected by improved_ILS.
+    return current_layout, topos_layout, radio_list, pieces_order
+
+def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_pool,
+                       best_orientations_list_no_bin, old_data_pool, CA_iter, orientation, container_size, 
                         container_shape, rho, max_radio, 
                         packing_alg, _evaluation,
                         SCH_nesting_strategy, density, axis, 
@@ -1154,7 +1924,9 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
     # if selected_piece_index[1] == 0:   
     # # to decide if the selected item is the first item in the bin
     #     first_flag = True
-        
+
+    bin_index = None
+
     # initialise all input data for the repack
     for each_piece in range(new_selected_index):
         index = find_element_index(pieces_order_matrix, each_piece)
@@ -1228,7 +2000,7 @@ def repacking_new_ILS(original_object_info_total, selected_info, nfv_pool, ifv_p
         axiss = [a]
         orientation = [degrees,axiss]
 
-        for each_bin in range(0,position_bin+1):
+        for each_bin in range(0, position_bin+1): # only check from the selected bin? 
             # if it is physically possible
             empty_area = container_volume * rho - get_volume(topos_layout[each_bin])
             feasible_radio = max_radio - sum(radio_list[each_bin])

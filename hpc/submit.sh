@@ -2,8 +2,10 @@
 # Usage: bash hpc/submit.sh hpc/all_instances.txt 8 [sbatch resource overrides]
 set -euo pipefail
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+PARAMS="${1:-$ROOT/hpc/all_instances.txt}"
+# Resolve explicit paths against the caller's directory before changing cwd.
+[[ "$PARAMS" = /* ]] || PARAMS="$PWD/$PARAMS"
 cd "$ROOT"
-PARAMS="${1:-hpc/all_instances.txt}"
 MAX_PARALLEL="${2:-8}"
 CHUNK_SIZE="${HPC_ARRAY_SIZE:-1000}"
 if (( $# > 0 )); then shift; fi
@@ -11,7 +13,6 @@ if (( $# > 0 )); then shift; fi
 [[ "$MAX_PARALLEL" =~ ^[1-9][0-9]*$ ]] || { echo "Invalid concurrency" >&2; exit 1; }
 [[ "$CHUNK_SIZE" =~ ^[1-9][0-9]*$ ]] || { echo "Invalid HPC_ARRAY_SIZE" >&2; exit 1; }
 [[ -f "$PARAMS" ]] || { echo "Missing params: $PARAMS" >&2; exit 1; }
-[[ "$PARAMS" = /* ]] || PARAMS="$ROOT/$PARAMS"
 if grep -q '^[[:space:]]*$' "$PARAMS"; then
     echo "Blank parameter rows are not allowed" >&2; exit 1
 fi

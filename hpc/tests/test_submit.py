@@ -8,6 +8,12 @@ import unittest
 
 class SubmitTests(unittest.TestCase):
     def test_chunk_offsets_and_dependency_keep_global_concurrency(self):
+        self.check_submission(False)
+
+    def test_relative_params_from_hpc_directory(self):
+        self.check_submission(True)
+
+    def check_submission(self, from_hpc):
         bash = shutil.which("bash")
         if not bash and Path("C:/Program Files/Git/bin/bash.exe").exists():
             bash = "C:/Program Files/Git/bin/bash.exe"
@@ -17,7 +23,8 @@ class SubmitTests(unittest.TestCase):
             root = Path(temp)
             (root / "hpc").mkdir()
             shutil.copyfile(Path(__file__).resolve().parents[1] / "submit.sh", root / "hpc/submit.sh")
-            (root / "params.txt").write_text("task\n" * 5, encoding="utf-8", newline="\n")
+            params = root / "hpc/smoke.txt" if from_hpc else root / "params.txt"
+            params.write_text("task\n" * 5, encoding="utf-8", newline="\n")
             script = '''
 export TEST_DIR="$PWD"
 export PATH="/usr/bin:/bin:$PATH"
@@ -32,6 +39,9 @@ sbatch() {
 export -f sbatch
 HPC_ARRAY_SIZE=2 bash hpc/submit.sh params.txt 8
 '''
+            if from_hpc:
+                script = script.replace("HPC_ARRAY_SIZE=2 bash hpc/submit.sh params.txt 8",
+                                        "cd hpc\nHPC_ARRAY_SIZE=2 bash ./submit.sh ./smoke.txt 8")
             result = subprocess.run([bash, "-c", script], cwd=root, text=True, capture_output=True)
             self.assertEqual(result.returncode, 0, result.stderr)
             calls = (root / "calls").read_text().splitlines()

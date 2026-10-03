@@ -1,0 +1,20 @@
+CONTROL-FLOW DEMO: scripted geometry; real local improved_repack body.
+Fixed sequence: a -> p -> q -> r
+Old bins: [a] | [p, q] | [r]
+Change p orientation; preserve a; repack p, q, r.
+
+SEARCH p in bin 1: FAIL
+SEARCH p in bin 2: SUCCESS
+MARK bin 2 changed
+SKIP q in unchanged earlier bin 1
+SEARCH q in bin 2: FAIL
+TRY unchanged later bin 3
+SEARCH q in bin 3: SUCCESS
+MARK bin 3 changed
+SKIP r in unchanged earlier bin 1
+SEARCH r in bin 2: SUCCESS
+MARK bin 2 changed
+
+New bins: ['a'] | ['p', 'r'] | ['q']
+PASS: q skips unchanged bin 1, searches unchanged bin 3 after bin 2 fails,
+and marks bin 3 changed after entering it. r then finds its first fit in bin 2.

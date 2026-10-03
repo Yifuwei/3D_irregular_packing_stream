@@ -17,7 +17,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 's
 
 import binvox_rw
 # from iter_local_search import iter_local_search, bin_lower_bound, pieces_selection_ls
-from new_ILS_southampton import ILS_from_the_first_piece, GRASP, GRASP_ILS
+from new_ILS_southampton import improved_ILS, ILS_from_the_first_piece, GRASP, GRASP_ILS
 from function_lib import save_voxel_model, NFV_POOL, IFV_POOL, get_bounding_box
 
 def voxel_volume(voxel_data):
@@ -438,7 +438,10 @@ def load_instance(instance_id, input_dir="../instances"):
 
         return container_shape, container_size, int(max_radio), int(max_weight), object_info_total
     
-def testing(list_datasets_name, seq_seed_list, ALG_list, container_shape_list):
+def testing(list_datasets_name, seq_seed_list, ALG_list, container_shape_list,
+            *, experiment_iterations=1000, experiment_time=360000,
+            experiment_kick_trigger=120, visualisation=False,
+            selection_ranges=None, nesting_strategies=None):
 
     # =======================================================================================
     # key --      value                     --    value example
@@ -499,11 +502,12 @@ def testing(list_datasets_name, seq_seed_list, ALG_list, container_shape_list):
         for seq_seed in seq_seed_list:
             for each_ALG in ALG_list:     
                 for each_container_shape in container_shape_list:
-                    for selection_range in ["bottom","bottom_top","all"]:
-                        for SCH_nesting_strategy in ["minimum_aabb_volume","minimum_aabb_edges_len","maximal_residual_box", "overlap_distance"]:
+                    for selection_range in (selection_ranges or ["bottom","bottom_top","all"]):
+                        for SCH_nesting_strategy in (nesting_strategies or ["minimum_aabb_volume","minimum_aabb_edges_len","maximal_residual_box", "overlap_distance"]):
                             for each_max_rho in max_rho_list:
                                 for each_max_radio in max_radio_list:
 
+                                    np.random.seed(seq_seed)  # Reproducible stochastic search for each configuration.
                                     instance_id = make_instance_id(each_name, seq_seed, each_container_shape, each_max_radio, each_max_rho)
                                     container_shape, container_size, max_radio, rho, object_info_total = load_instance(instance_id)
 
@@ -557,8 +561,8 @@ def testing(list_datasets_name, seq_seed_list, ALG_list, container_shape_list):
                                     if ALG in ("fixed_CA","ILS","random_CA"): 
                                         
                                         # define the parameter/effort level of ILS algorithm
-                                        iteration_limit = 1000
-                                        time_limit = 360000
+                                        iteration_limit = experiment_iterations
+                                        time_limit = experiment_time
                                         alpha = 1   
 
                                         # to select a piece and its orientation and packing position
@@ -573,7 +577,7 @@ def testing(list_datasets_name, seq_seed_list, ALG_list, container_shape_list):
 
                                         # kick_trigger_time = len(object_info_total) * 10 / 5 # ? when objects are 300, do we need 600 iters to trigger kick???
                                     
-                                        kick_trigger_time = 120
+                                        kick_trigger_time = experiment_kick_trigger
                                         kick_level = "medium"
                                         # neighbour_type = "orientation_only"
 
@@ -641,11 +645,11 @@ def testing(list_datasets_name, seq_seed_list, ALG_list, container_shape_list):
                                         best_N, best_U, best_U_star, origin_N, origin_U, origin_U_star, \
                                         best_current_layout, origin_current_layout, best_topos_layout,\
                                         best_pieces_order, initial_orientations_list_no_bin,\
-                                        best_orientations_list_no_bin, local_local_best_list, local_change_iter_list, overall_time_cost = ILS_from_the_first_piece(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, ils_orientations,  orientations_list,
+                                        best_orientations_list_no_bin, local_local_best_list, local_change_iter_list, overall_time_cost = improved_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, ils_orientations,  orientations_list,
                                                                                                                                                                     packing_alg, selection_type, selection_range, accessible_check,
                                                                                                                                                                     SCH_nesting_strategy, _evaluation, ALG,
                                                                                                                                                                     container_size, container_shape,
-                                                                                                                                                                    iteration_limit= iteration_limit, time_limit=time_limit, alpha=alpha, kick_trigger_time=kick_trigger_time, kick_level=kick_level, flag_NFV_POOL=False, visualisation = True, _TRACE = True)
+                                                                                                                                                                    iteration_limit= iteration_limit, time_limit=time_limit, kick_trigger_time=kick_trigger_time, kick_level=kick_level, flag_NFV_POOL=False, visualisation=visualisation, _TRACE=True)
                                                                                                                                                                                                                     
                                                                                                                                                         # def ILS_from_the_first_piece(object_info, nfv_pool, max_radio, rho, orientations, ils_orientations, orientations_list,
                                                                                                                                                         #             packing_alg, selection_type, selection_range, accessible_check,
@@ -677,7 +681,7 @@ def testing(list_datasets_name, seq_seed_list, ALG_list, container_shape_list):
 
                                     T = check2 - check1
 
-                                    result_list.append([each_name, len(object_info_total), seq_seed, each_ALG, best_N, best_U_star, origin_N, origin_U_star,(best_U-origin_U)/origin_U*100, (best_U_star-origin_U_star)/origin_U_star*100, overall_time_cost])
+                                    result_list.append([each_name, len(object_info_total), seq_seed, each_ALG, best_N, best_U_star, origin_N, origin_U_star,(best_U-origin_U)/origin_U*100, (best_U_star-origin_U_star)/origin_U_star*100, overall_time_cost, selection_range, SCH_nesting_strategy])
                                     no_overlap = all(np.all(each_bin <= 1.5) for each_bin in best_topos_layout)
 
                                     # print(f"The final orientations are {best_orientations_list_no_bin}")
@@ -737,29 +741,32 @@ def testing(list_datasets_name, seq_seed_list, ALG_list, container_shape_list):
     return result_list
 
 def __main__():
+    import argparse
+    parser = argparse.ArgumentParser(description="Run improved ILS and its constructive baseline.")
+    parser.add_argument("--dataset", default="chess")
+    parser.add_argument("--seed", type=int, default=13)
+    parser.add_argument("--iterations", type=int, default=100)
+    parser.add_argument("--time-limit", type=float, default=60)
+    parser.add_argument("--kick-trigger", type=int, default=10)
+    parser.add_argument("--full-matrix", action="store_true")
+    parser.add_argument("--visualisation", action="store_true")
+    parser.add_argument("--output", default="../result/numerical/improved_ils_experiment.csv")
+    args = parser.parse_args()
+    # Existing data loaders resolve relative paths from this test directory.
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    rows = testing([args.dataset], [args.seed], ["fixed_CA", "ILS"], ["cube"],
+                   experiment_iterations=args.iterations, experiment_time=args.time_limit,
+                   experiment_kick_trigger=args.kick_trigger, visualisation=args.visualisation,
+                   selection_ranges=None if args.full_matrix else ["bottom"],
+                   nesting_strategies=None if args.full_matrix else ["minimum_aabb_volume"])
+    columns = ["dataset", "piece_count", "seed", "algorithm", "best_N", "best_U_star",
+               "origin_N", "origin_U_star", "U_improvement_percent", "U_star_improvement_percent",
+               "elapsed_seconds", "selection_range", "nesting_strategy"]
+    output = os.path.abspath(args.output)
+    os.makedirs(os.path.dirname(output), exist_ok=True)
+    pd.DataFrame(rows, columns=columns).to_csv(output, index=False)
+    print("Experiment results saved to", output)
 
-    list_datasets_name = ["chess"] 
-    ALG_list = ["fixed_CA"]
-    seq_seed_list = [13]
-    container_shape_list = ["cube"]
 
-    # instance_generator() 
-    testing(list_datasets_name,seq_seed_list,ALG_list,container_shape_list)
-
-    # columns =  ["dataset","piece_num", "seed", "ALG", "best_N", "best_U_star", "origin_N", "origin_U_star","U improve (%)", "U_star improve (%)", "T (s)"]
-    # list_datasets_name = ["chess"] 
-
-    # result_list_overall = []
-    # for amplifier in [1]:
-    #     instance_generator(list_datasets_name,amplifier) 
-    #     result_list = testing(list_datasets_name)
-
-    #     result_list_overall.append(result_list[0])
-    #     df = pd.DataFrame(result_list_overall, columns=columns)
-
-    #     # print("Types num: ", types_num, "Items num: ", item_num)
-    #     print(df)
-    
-   # df.to_csv("amplifier_test.csv", index = False)
-
-__main__()
+if __name__ == "__main__":
+    __main__()
