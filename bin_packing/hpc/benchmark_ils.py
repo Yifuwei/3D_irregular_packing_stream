@@ -22,17 +22,20 @@ parser.add_argument('--project', type=Path, default=Path(__file__).resolve().par
 parser.add_argument('--dataset')
 parser.add_argument('--task-index', type=int)
 parser.add_argument('--repeats', type=int, default=1)
+parser.add_argument('--order-offset', type=int, default=0)
 parser.add_argument('--list-datasets', action='store_true')
 parser.add_argument('--manifest', type=Path)
 parser.add_argument('--write-manifest', type=Path)
 parser.add_argument('--progress', action='store_true')
 parser.add_argument('--worker', choices=['original', 'improved'])
 parser.add_argument('--evaluations', type=int, default=100)
-parser.add_argument('--seed', type=int, default=13)
+parser.add_argument('--seed', type=int, default=13, help='Input sequence seed')
+parser.add_argument('--ls-seed', type=int, help='LS RNG seed; defaults to sequence seed')
 parser.add_argument('--kick-trigger', type=int, default=100)
 parser.add_argument('--output', type=Path, default=Path('ils_hpc_results'))
 args = parser.parse_args()
 LOCAL = args.project.resolve()
+ls_seed = args.seed if args.ls_seed is None else args.ls_seed
 if args.evaluations < 1 or args.repeats < 1:
     parser.error('evaluations and repeats must be positive')
 args.output = args.output.resolve()
@@ -60,13 +63,13 @@ def worker():
     base = [objects, None, None, max_radio, rho, orientations, orientations,
             values, 'SCH', 'bounding_box', 'bottom', False,
             'minimum_aabb_volume', None, 'ILS', size, shape]
-    print('SETTINGS', json.dumps(dict(algorithm=args.worker, seed=args.seed,
+    print('SETTINGS', json.dumps(dict(algorithm=args.worker, seed=args.seed, ls_seed=ls_seed,
           evaluations=args.evaluations, kick_trigger=args.kick_trigger,
           kick_level='medium', dataset=args.dataset, piece_count=len(objects))), flush=True)
 
     # Warm construction/GPU/JIT once in each independent process; exclude it.
-    random.seed(args.seed)
-    np.random.seed(args.seed)
+    random.seed(ls_seed)
+    np.random.seed(ls_seed)
     warm = list(base)
     warm[0], warm[1], warm[2], warm[14] = copy.deepcopy(objects), NFV_POOL(), IFV_POOL(), 'fixed_CA'
     ils.improved_ILS(*warm, visualisation=False, _TRACE=False)
@@ -145,8 +148,8 @@ def worker():
         algorithm = scope['improved_ILS']
         settings = dict(iteration_limit=args.evaluations, time_limit=None)
 
-    random.seed(args.seed)
-    np.random.seed(args.seed)
+    random.seed(ls_seed)
+    np.random.seed(ls_seed)
     base[0], base[1], base[2] = copy.deepcopy(objects), NFV_POOL(), IFV_POOL()
     cuda.synchronize()
     cpu_start = time.process_time()
@@ -162,7 +165,7 @@ def worker():
     assert all(np.max(array) <= 1 for array in result[8])
     hashes = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in (LOCAL / 'src').glob('*.py')}
     gpu = subprocess.run(['nvidia-smi', '--query-gpu=name,driver_version', '--format=csv,noheader'], capture_output=True, text=True).stdout.strip()
-    report = dict(cpu_seconds=cpu_seconds, hostname=socket.gethostname(), gpu=gpu, numpy_version=np.__version__, platform=platform.platform(), source_hashes=hashes, single_bin_policy='benchmark-only continuation; all pieces eligible at one bin', algorithm=args.worker, dataset=args.dataset, seed=args.seed,
+    report = dict(cpu_seconds=cpu_seconds, hostname=socket.gethostname(), gpu=gpu, numpy_version=np.__version__, platform=platform.platform(), source_hashes=hashes, single_bin_policy='benchmark-only continuation; all pieces eligible at one bin', algorithm=args.worker, dataset=args.dataset, seed=args.seed, ls_seed=ls_seed,
                   evaluations=budget['count'], regular=budget['regular'], kicks=budget['kicks'],
                   kick_trigger=args.kick_trigger, wall_seconds=elapsed,
                   seconds_per_evaluation=elapsed/args.evaluations,
@@ -216,12 +219,12 @@ def controller():
             if any((output / f'{name}.json').exists() for name in ['original', 'improved']):
                 parser.error(f'Results already exist: {output}; choose a fresh --output')
             # Alternate order without changing seed or input.
-            order = ['original', 'improved'] if repeat % 2 == 0 else ['improved', 'original']
+            order = ['original', 'improved'] if (repeat + args.order_offset) % 2 == 0 else ['improved', 'original']
             reports = {}
             for name in order:
                 command = [sys.executable, '-u', str(Path(__file__).resolve()), '--worker', name,
                     '--project', str(LOCAL), '--dataset', dataset, '--evaluations', str(args.evaluations),
-                    '--seed', str(args.seed), '--kick-trigger', str(args.kick_trigger), '--output', str(output)]
+                    '--seed', str(args.seed), '--ls-seed', str(ls_seed), '--kick-trigger', str(args.kick_trigger), '--output', str(output)]
                 if args.progress:
                     command.append('--progress')
                 print('START', dataset, repeat + 1, name, flush=True)
@@ -232,7 +235,7 @@ def controller():
                     print('FAILED; inspect', output / f'{name}.log', flush=True)
                     continue
                 reports[name] = json.loads((output / f'{name}.json').read_text())
-            row = dict(dataset=dataset, repeat=repeat + 1, seed=args.seed,
+            row = dict(dataset=dataset, repeat=repeat + 1, seed=args.seed, ls_seed=ls_seed,
                        status='passed' if len(reports) == 2 else 'failed')
             for name, report in reports.items():
                 row[name + '_seconds'] = report['wall_seconds']
@@ -246,7 +249,7 @@ def controller():
                 assert abs(old['origin_U_star'] - new['origin_U_star']) < 1e-12
                 row['reduction_percent'] = 100 * (1 - new['wall_seconds'] / old['wall_seconds'])
             rows.append(row)
-            fields = ['dataset', 'repeat', 'seed', 'status', 'original_seconds', 'improved_seconds',
+            fields = ['dataset', 'repeat', 'seed', 'ls_seed', 'status', 'original_seconds', 'improved_seconds',
                 'reduction_percent', 'original_N', 'improved_N', 'original_U_star', 'improved_U_star',
                 'original_evaluations', 'improved_evaluations', 'original_kicks', 'improved_kicks']
             # Each Slurm array task owns a distinct file.

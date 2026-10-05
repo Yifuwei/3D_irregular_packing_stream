@@ -33,6 +33,8 @@ class CollectorTests(unittest.TestCase):
             self.assertEqual(chess['failed_pairs'], 1)
             self.assertEqual(chess['original_median_s'], 110)
             self.assertEqual(chess['improved_median_s'], 90)
+            self.assertEqual(chess['original_mean_s'], 110)
+            self.assertAlmostEqual(chess['original_std_s'], 14.14213562373095)
             self.assertAlmostEqual(chess['paired_reduction_median_pct'], 18.3333333333333)
             self.assertEqual(engine['status'], 'missing')
             self.assertTrue((root / 'report.md').exists())
@@ -62,6 +64,16 @@ class CollectorTests(unittest.TestCase):
             rows = collector.collect(Path(directory), ['engine'])
             self.assertEqual(rows[0]['status'], 'missing')
             self.assertTrue((Path(directory) / 'summary.csv').exists())
+
+    def test_incomplete_multiseed_manifest_is_not_passed(self):
+        import json
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.write(root, 'task_0.csv', [self.row()])
+            (root / 'submission_manifest.json').write_text(json.dumps(dict(
+                datasets=['chess'], tasks=[{'dataset': 'chess'}] * 5, repeats=1)))
+            summary = collector.collect(root)
+            self.assertEqual(summary[0]['status'], 'partial/missing')
 
 
 if __name__ == '__main__':

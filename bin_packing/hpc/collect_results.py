@@ -18,7 +18,7 @@ def collect(root, expected=None):
     for file in files:
         with file.open(newline='', encoding='utf-8-sig') as stream:
             for row in csv.DictReader(stream):
-                key = (row['dataset'], row['repeat'], row['seed'])
+                key = (row['dataset'], row['repeat'], row['seed'], row.get('ls_seed', row['seed']))
                 if key in seen:
                     raise ValueError(f'Duplicate result: {key}')
                 seen.add(key)
@@ -46,11 +46,26 @@ def collect(root, expected=None):
             old = [float(row['original_seconds']) for row in valid]
             new = [float(row['improved_seconds']) for row in valid]
             item.update(original_median_s=statistics.median(old), improved_median_s=statistics.median(new),
+                original_mean_s=statistics.mean(old), improved_mean_s=statistics.mean(new),
+                original_std_s=statistics.stdev(old) if len(old)>1 else None, improved_std_s=statistics.stdev(new) if len(new)>1 else None,
                 original_min_s=min(old), original_max_s=max(old), improved_min_s=min(new), improved_max_s=max(new),
                 paired_reduction_median_pct=statistics.median(100*(1-n/o) for o, n in zip(old, new)))
+        if valid and all(row.get('original_N') and row.get('improved_N') for row in valid):
+            item.update(original_N_mean=statistics.mean(float(row['original_N']) for row in valid),
+                        improved_N_mean=statistics.mean(float(row['improved_N']) for row in valid),
+                        improved_N_better=sum(float(row['improved_N']) < float(row['original_N']) for row in valid),
+                        improved_N_equal=sum(float(row['improved_N']) == float(row['original_N']) for row in valid),
+                        improved_N_worse=sum(float(row['improved_N']) > float(row['original_N']) for row in valid))
+        if (root / 'submission_manifest.json').exists():
+            manifest = json.loads((root / 'submission_manifest.json').read_text())
+            if 'tasks' in manifest:
+                expected_pairs = sum(task['dataset'] == name for task in manifest['tasks']) * manifest['repeats']
+                if len(selected) < expected_pairs:
+                    item['status'] = 'partial/missing'
         summary.append(item)
     fields = ['dataset', 'status', 'valid_pairs', 'failed_pairs', 'original_median_s', 'improved_median_s',
-              'paired_reduction_median_pct', 'original_min_s', 'original_max_s', 'improved_min_s', 'improved_max_s']
+              'paired_reduction_median_pct', 'original_mean_s', 'improved_mean_s', 'original_std_s', 'improved_std_s',
+              'original_N_mean', 'improved_N_mean', 'improved_N_better', 'improved_N_equal', 'improved_N_worse', 'original_min_s', 'original_max_s', 'improved_min_s', 'improved_max_s']
     with (root / 'summary.csv').open('w', newline='', encoding='utf-8') as stream:
         writer = csv.DictWriter(stream, fieldnames=fields)
         writer.writeheader()

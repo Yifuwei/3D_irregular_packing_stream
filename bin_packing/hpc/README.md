@@ -1,5 +1,8 @@
 # ILS versus improved ILS: HPC benchmark
 
+For the updated five-seed study (3, 7, 13, 19, 53), use `submit_multiseed.sh`.
+See `README_multiseed.md` for submission and result collection.
+
 This folder is independent of the existing repository-root `hpc` experiments.
 Upload **the current local project** `C:/work/paper_repo/3D_irregular_packing_stream`,
 including `bin_packing/src`, `bin_packing/test/code_launcher.py`, `bin_packing/data`,
