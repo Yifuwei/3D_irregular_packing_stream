@@ -1,7 +1,7 @@
 # GRASP tolerance comparison: cube and cylinder
 
-Completed: 106/270; valid successes: 106; failed/invalid: 0.
-Currently running: Merged4_normal_cylinder_seed13_t10.
+Completed: 109/270; valid successes: 109; failed/invalid: 0.
+Currently running: none.
 Only improved_GRASP is compared, at position tolerances 10%, 15%, and 20%. Order seeds 3/7/13; piece seed 101; position seed 202. Each run has a 180-second wall budget and 20 LS evaluations per restart. All runs use bottom/top candidates and original instance dimensions.
 Cube PES: maximal_residual_box. Cylinder PES: minimum_aabb_edges_len. Shape-specific results are kept separate. Radio limit 999999; rho 1. Workers run sequentially with identical kernel/IFV warmup outside the algorithm budget.
 A running packing call may overrun the time limit. Actual elapsed time and search-call counts are recorded. Invalid/failed results are excluded from quality averages and paired comparisons, never filled with zeros.
@@ -41,9 +41,10 @@ A running packing call may overrun the time limit. Actual elapsed time and searc
 | Merged4_normal | cube | 10% | 3 | 4.323011 | 0.595599 | 4.67 | 1.00 | 0.00 |
 | Merged4_normal | cube | 15% | 3 | 3.980438 | 0.601245 | 4.33 | 1.00 | 0.00 |
 | Merged4_normal | cube | 20% | 3 | 4.681285 | 0.012720 | 5.00 | 1.00 | 0.00 |
-| Merged4_normal | cylinder | 10% | 2 | 3.679014 | 0.020381 | 4.00 | 1.00 | 0.00 |
-| Merged4_normal | cylinder | 15% | 2 | 4.214447 | 0.718983 | 4.50 | 1.00 | 0.00 |
+| Merged4_normal | cylinder | 10% | 3 | 3.673565 | 0.017227 | 4.00 | 1.00 | 0.00 |
+| Merged4_normal | cylinder | 15% | 3 | 4.032257 | 0.598371 | 4.33 | 1.00 | 0.00 |
 | Merged4_normal | cylinder | 20% | 3 | 3.676695 | 0.003784 | 4.00 | 1.00 | 0.00 |
+| Merged5_normal | cube | 10% | 1 | 5.665892 |  | 6.00 | 1.00 | 0.00 |
 
 ## Paired outcomes against 10%
 
@@ -51,8 +52,8 @@ A running packing call may overrun the time limit. Actual elapsed time and searc
 | --- | --- | --- | --- | --- | --- |
 | cube | 15% | 18 | 9 | 4 | 5 |
 | cube | 20% | 18 | 6 | 6 | 6 |
-| cylinder | 15% | 17 | 7 | 3 | 7 |
-| cylinder | 20% | 17 | 7 | 5 | 5 |
+| cylinder | 15% | 18 | 7 | 3 | 8 |
+| cylinder | 20% | 18 | 7 | 5 | 6 |
 
 Negative paired delta means lower (better) N-U*. Different datasets are not pooled by raw objective means. RCL frequencies describe each tolerance's actual construction trajectory, including evaluated orientations that were not selected.
 This pilot uses three order seeds and fixed algorithm RNG streams. It does not establish performance across other algorithm seeds, all datasets, or full accessibility trajectories. Fewer than two constructions indicate limited evidence about repeated GRASP diversification.
