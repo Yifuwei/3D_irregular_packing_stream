@@ -26,7 +26,7 @@ export PYTHON_BIN=/path/to/cuda/environment/bin/python
 MAX_PARALLEL=20 bash submit_iterations.sh
 ```
 
-沿用既有集群默认值：gpu分区、miniforge模块、packing环境、4 CPU、240G内存、1 GPU、SLURM walltime=6小时。3600秒是算法预算；六小时allocation给加载、统一构造预热及不可中断调用留余量，可通过sbatch选项调整。
+默认资源：gpu分区、miniforge模块、packing环境、4 CPU、16G主机内存、1 GPU、SLURM walltime=6小时。依据AIRE管理员反馈，该批任务实际主机内存约5GB，旧240G请求会阻塞节点上其他GPU，因此改为16G并留出余量。该测量不保证所有大型实例峰值都相同；正式扩大实验前按任务查看MaxRSS，必要时只提高对应任务内存。--mem是主机RAM，不是GPU显存。3600秒是算法预算；六小时allocation给加载、统一构造预热及不可中断调用留余量，可通过sbatch选项调整。
 
 ```bash
 # 只生成manifest，不调用sbatch
@@ -39,7 +39,7 @@ SHAPES=cube MAX_PARALLEL=20 bash submit_iterations.sh
 DATASETS=shapesnew SHAPES=cube SEEDS=3 TIME_LIMIT=30 bash submit_iterations.sh
 
 # 自定义分区/内存/调度walltime
-bash submit_iterations.sh --partition=gpu --mem=240G --time=06:00:00
+bash submit_iterations.sh --partition=gpu --mem=16G --time=06:00:00
 
 # 无module/conda/numactl的环境
 HPC_MODULE=none HPC_CONDA_ENV=none HPC_NUMACTL=0 bash submit_iterations.sh
