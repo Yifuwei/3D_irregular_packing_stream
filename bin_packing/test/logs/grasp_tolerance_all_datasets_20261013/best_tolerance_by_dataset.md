@@ -1,7 +1,7 @@
 # Dataset-specific RCL tolerance results
 
-Status: partial; completed 92/270.
-Current task: Merged4_normal_cube_seed3_t20.
+Status: partial; completed 93/270.
+Current task: none.
 
 Each dataset and container shape is evaluated separately. Lower N-U* is better. Three order seeds (3/7/13), piece seed 101, position seed 202, 180 seconds, 20 LS evaluations per restart; shape-specific PES and bottom/top candidates.
 The best rate is selected only when all nine cases in a dataset/shape group are valid. Missing or failed runs are never filled with zeros. Ties retain all tied rates.
@@ -18,7 +18,7 @@ The best rate is selected only when all nine cases in a dataset/shape group are 
 | Merged1_normal | cylinder | 3/3/3 | 1.396361 | 1.396361 | 1.396361 | 10/15/20 | 0/3/0 |
 | Merged3_normal | cube | 3/3/3 | 3.670297 | 3.329723 | 3.327941 | 20 | 2/0/1 |
 | Merged3_normal | cylinder | 3/3/3 | 2.661848 | 2.663778 | 2.672955 | 10 | 1/0/2 |
-| Merged4_normal | cube | 1/1/0 | 4.666880 | 3.630149 |  | pending | 0/0/0 |
+| Merged4_normal | cube | 1/1/1 | 4.666880 | 3.630149 | 4.666880 | pending | 1/0/0 |
 | Merged4_normal | cylinder | 0/0/0 |  |  |  | pending | 0/0/0 |
 | Merged5_normal | cube | 0/0/0 |  |  |  | pending | 0/0/0 |
 | Merged5_normal | cylinder | 0/0/0 |  |  |  | pending | 0/0/0 |

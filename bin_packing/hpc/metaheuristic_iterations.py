@@ -89,15 +89,25 @@ def prepare(project, datasets, shapes, seeds, time_limit=3600,
                             random_CA_threshold=5, restart_limit=None,
                             no_improvement_limit=150, accessible_check=True,
                             flag_NFV_POOL=False, total_iteration_limit=None),
+                internal_seed_policy='time_ns mixed with process, host and task identity; actual seeds saved per run',
                 selection_basis='Default datasets are min/median/max of existing CA mean runtime; override explicitly if desired.')
 
 
-def algorithm_kwargs(task, manifest):
+def internal_seeds(task_id):
+    """Fresh time-based streams, independent of the input order seed."""
+    timestamp = time.time_ns()
+    material = f'{timestamp}:{os.getpid()}:{socket.gethostname()}:{task_id}'.encode()
+    digest = hashlib.sha256(material).digest()
+    seeds = {name:int.from_bytes(digest[i*4:i*4+4], 'big')
+             for i,name in enumerate(('piece','position','kick','global'))}
+    return timestamp, seeds
+
+
+def algorithm_kwargs(task, manifest, search_seeds):
     settings = manifest['common']
-    seed = task['seed']
     kw = dict(time_limit=manifest['time_limit'], flag_NFV_POOL=False,
               visualisation=False, _TRACE=False,
-              piece_seed=101+seed, position_seed=202+seed)
+              piece_seed=search_seeds['piece'], position_seed=search_seeds['position'])
     if task['algorithm'] == 'improved_ILS':
         kw.update(ALG='ILS', iteration_limit=None,
                   kick_trigger_time=task['kick_trigger'], kick_level=settings['kick_level'])
@@ -109,7 +119,7 @@ def algorithm_kwargs(task, manifest):
             kw['no_improvement_limit'] = settings['no_improvement_limit']
         else:
             kw.update(kick_trigger_time=task['kick_trigger'],
-                      kick_level=settings['kick_level'], kick_seed=303+seed)
+                      kick_level=settings['kick_level'], kick_seed=search_seeds['kick'])
     return kw
 
 
@@ -173,9 +183,10 @@ def run_task(project, manifest, index, output):
     target = output / f'task_{index}.json'
     if target.exists():
         raise FileExistsError(f'Result already exists: {target}; use a fresh output directory')
-    report = dict(task, settings=algorithm_kwargs(task, manifest), common=manifest['common'],
-                  seeds=dict(order=task['seed'], piece=101+task['seed'],
-                             position=202+task['seed'], kick=303+task['seed']), status='failed')
+    seed_time_ns, search_seeds = internal_seeds(index)
+    report = dict(task, settings=algorithm_kwargs(task, manifest, search_seeds), common=manifest['common'],
+                  seeds=dict(order=task['seed'], **search_seeds), seed_time_ns=seed_time_ns,
+                  internal_seed_policy='time_ns+pid+hostname+task_id', status='failed')
     report.update(hostname=socket.gethostname(), platform=platform.platform(), python=sys.executable,
                   python_version=platform.python_version(), source_hashes=manifest['source_hashes'])
     overall_start = time.perf_counter()
@@ -214,10 +225,10 @@ def run_task(project, manifest, index, output):
                       container_size=size, container_shape=shape)
         # Same untimed construction warm-up for all nine configurations.
         algorithms.improved_ILS(**common, ALG='fixed_CA', visualisation=False, _TRACE=False,
-                                piece_seed=101+task['seed'], position_seed=202+task['seed'])
+                                piece_seed=search_seeds['piece'], position_seed=search_seeds['position'])
         common.update(object_info_total=copy.deepcopy(objects), nfv_pool=NFV_POOL(), ifv_pool=IFV_POOL())
-        random.seed(404+task['seed'])
-        np.random.seed(303+task['seed'])
+        random.seed(search_seeds['global'])
+        np.random.seed(search_seeds['kick'])
         counts = dict(construction_count=0, ls_evaluation_count=0, kick_count=0)
         seconds = dict(construction_s=0., ls_s=0., kick_s=0.)
         best = [math.inf]

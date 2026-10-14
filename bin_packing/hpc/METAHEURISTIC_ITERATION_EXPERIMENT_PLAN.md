@@ -43,8 +43,8 @@ ILS 的 100/125/150 是 kick 阈值，不是总评估预算。iteration_limit=No
 - 固定实例几何、物体数量、箱体尺寸、约束模式、朝向集合、packing_alg、PES、候选位置范围、accessibility 和 NFV 设置；禁止按算法单独调整。
 - 初始建议使用 SCH、minimum_aabb_volume、bottom_top；若已经根据独立 CA 参数实验选定公共配置，则统一采用该配置并记录选择依据。不要用正式 metaheuristic 测试集结果再反复选择公共配置。
 - 同一 dataset/shape 的 9 组配置使用相同的输入顺序及同一重复编号。每个任务单独进程，避免 RNG 和全局变量串扰。
-- 重复编号使用 seed={3,7,13,19,53}。建议明确记录 order_seed=seed、piece_seed=101+seed、position_seed=202+seed、kick_seed=303+seed、global_seed=404+seed。
-- improved_ILS 没有独立 kick_seed 参数，其 kick 使用全局 NumPy RNG：为它设置 np.random.seed(303+seed)。混合算法显式传 kick_seed=303+seed。其余全局随机源也要在任务入口初始化并记录。
+- 重复编号使用 seed={3,7,13,19,53}，只指定输入物体顺序。内部piece/position/kick/Python全局种子在每次任务启动时用time.time_ns()混合进程、主机和任务ID生成，记录实际种子与时间戳；不由order_seed派生。
+- improved_ILS 没有独立 kick_seed 参数，其 kick 使用全局 NumPy RNG：为它设置生成的kick种子。混合算法显式传入生成的kick_seed。配置间输入顺序配对，内部搜索随机流独立；复现某次运行需使用保存的内部种子。
 - 不在每个 restart 或 kick 重新设种子；RNG 流随搜索推进。同种子不会保证三种算法经历同一轨迹，但能保证各配置可复现。
 - 单任务使用相同型号 GPU、相同 CPU 数与线程设置；禁止多个装箱任务竞争同一 GPU。固定软件版本并保存源代码快照/提交及未提交差异。
 

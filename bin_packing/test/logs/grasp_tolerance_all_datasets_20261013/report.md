@@ -1,7 +1,7 @@
 # GRASP tolerance comparison: cube and cylinder
 
-Completed: 92/270; valid successes: 92; failed/invalid: 0.
-Currently running: Merged4_normal_cube_seed3_t20.
+Completed: 93/270; valid successes: 93; failed/invalid: 0.
+Currently running: none.
 Only improved_GRASP is compared, at position tolerances 10%, 15%, and 20%. Order seeds 3/7/13; piece seed 101; position seed 202. Each run has a 180-second wall budget and 20 LS evaluations per restart. All runs use bottom/top candidates and original instance dimensions.
 Cube PES: maximal_residual_box. Cylinder PES: minimum_aabb_edges_len. Shape-specific results are kept separate. Radio limit 999999; rho 1. Workers run sequentially with identical kernel/IFV warmup outside the algorithm budget.
 A running packing call may overrun the time limit. Actual elapsed time and search-call counts are recorded. Invalid/failed results are excluded from quality averages and paired comparisons, never filled with zeros.
@@ -40,13 +40,14 @@ A running packing call may overrun the time limit. Actual elapsed time and searc
 | Merged3_normal | cylinder | 20% | 3 | 2.672955 | 0.027576 | 3.00 | 1.00 | 0.00 |
 | Merged4_normal | cube | 10% | 1 | 4.666880 |  | 5.00 | 1.00 | 0.00 |
 | Merged4_normal | cube | 15% | 1 | 3.630149 |  | 4.00 | 1.00 | 0.00 |
+| Merged4_normal | cube | 20% | 1 | 4.666880 |  | 5.00 | 1.00 | 0.00 |
 
 ## Paired outcomes against 10%
 
 | Shape | Challenger | Complete pairs | Wins | Ties | Losses |
 | --- | --- | --- | --- | --- | --- |
-| cube | 15% | 15 | 8 | 4 | 3 |
-| cube | 20% | 15 | 6 | 5 | 4 |
+| cube | 15% | 16 | 9 | 4 | 3 |
+| cube | 20% | 16 | 6 | 6 | 4 |
 | cylinder | 15% | 15 | 7 | 3 | 5 |
 | cylinder | 20% | 15 | 6 | 5 | 4 |
 

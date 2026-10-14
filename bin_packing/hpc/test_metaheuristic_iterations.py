@@ -17,7 +17,8 @@ class IterationExperimentTests(unittest.TestCase):
         common = dict(kick_level='medium', rcl_tolerance=.1, random_CA_threshold=5,
                       no_improvement_limit=150)
         for config in configs:
-            kw = experiment.algorithm_kwargs(dict(config, seed=3), dict(time_limit=3600, common=common))
+            kw = experiment.algorithm_kwargs(dict(config, seed=3), dict(time_limit=3600, common=common),
+                                              {'piece':11,'position':22,'kick':33,'global':44})
             self.assertEqual(kw['time_limit'], 3600)
             if config['algorithm']=='improved_ILS':
                 self.assertIsNone(kw['iteration_limit'])
@@ -29,7 +30,15 @@ class IterationExperimentTests(unittest.TestCase):
                 if config['algorithm']=='improved_GRASP':
                     self.assertEqual(kw['no_improvement_limit'], 150)
                 else:
-                    self.assertEqual(kw['kick_seed'], 306)
+                    self.assertEqual(kw['kick_seed'], 33)
+
+    def test_internal_seeds_are_time_based_and_numpy_compatible(self):
+        with patch.object(experiment.time,'time_ns',side_effect=[1000,1001]):
+            first_time,first=experiment.internal_seeds(0)
+            second_time,second=experiment.internal_seeds(0)
+        self.assertEqual((first_time,second_time),(1000,1001))
+        self.assertNotEqual(first,second)
+        self.assertTrue(all(0<=value<2**32 for value in first.values()))
 
     def fixture(self, root):
         project = root/'bin_packing'

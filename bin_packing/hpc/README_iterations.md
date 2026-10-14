@@ -12,7 +12,9 @@
 
 混合算法kick计入额外iteration，不消耗300次LS额度。第300次LS后允许满足阈值的kick，随后重启。持续失败时三组分别最多3/2/2次kick。
 
-公共设置：SCH、minimum_aabb_volume、bottom_top、accessibility=True、medium kick、RCL tolerance=0.10。输入使用既有 *_999999_1.txt 实例；实际radio/rho由该实例读取。输入顺序使用对应seq seed；piece/position/kick种子按方案分别为101+seed、202+seed、303+seed。
+公共设置：SCH、minimum_aabb_volume、bottom_top、accessibility=True、medium kick、RCL tolerance=0.10。输入使用既有 *_999999_1.txt 实例；实际radio/rho由该实例读取。输入顺序使用对应seq seed。内部搜索种子在每个任务启动时由time.time_ns()、进程ID、主机名和任务ID混合生成，与顺序seed无关；piece/position/kick/Python全局随机源使用各自生成的种子，实际值和时间戳保存到task_N.json。单独ILS的NumPy全局kick随机源使用生成的kick种子。每轮重启不重新设种子。
+
+因此重复运行同一个任务也会产生新的内部搜索轨迹。配置间仅输入顺序配对，内部搜索随机流不再配对；三个种子对应三次“不同输入顺序+独立内部随机搜索”重复。复现某次搜索需要使用结果JSON中的实际内部种子，不能只使用顺序seed。
 
 ## 准备与提交
 
