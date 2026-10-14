@@ -8,7 +8,7 @@ import line_profiler
 # import matplotlib.pyplot as plt
 # from mayavi import mlab
 # from mpl_toolkits.mplot3d import Axes3D
-from SCH_iter_ls import SC_heuristic
+from SCH_iter_ls import SC_heuristic, score_position_pes
 # from function_lib import get_ifv
 from plotly.subplots import make_subplots
 from plotly.colors import sample_colorscale
@@ -340,12 +340,12 @@ def evaluation(topos_layout_test, current_layout_test, translated_test, _evaluat
 
 
 def open_a_new_bin(ifv_pool, current_layout, topos_layout, orientation, each_object_info, container_size, container_shape, 
-                   position_bin, radio_list, pieces_order):
+                   position_bin, radio_list, pieces_order, pes_strategy=None, encourage_dbl=True):
     
     # open_a_new_bin(ifv_pool, current_layout, topos_layout, orientation, each_object_info, container_size, container_shape, 
     #                 position_bin, radio_list,pieces_order, pieces_orientation_value_pool,pieces_packing_position_pool)
     
-    best_value_local = 9999999
+    best_value_local = float("inf")
     current_layout.append([])
     topos_layout.append(np.zeros(container_size))
     position_bin += 1
@@ -387,6 +387,13 @@ def open_a_new_bin(ifv_pool, current_layout, topos_layout, orientation, each_obj
                     min_x = np.min(_x) 
                     min_y = np.min(_y[_x == min_x])
                 
+                if pes_strategy is not None:
+                    scored = score_position_pes(tem['array'], topos_layout[position_bin],
+                                                current_layout[position_bin], (min_x, min_y, 0),
+                                                pes_strategy, container_size, encourage_dbl)
+                    if scored is False:
+                        continue
+                    value = scored[0]
                 trace(f"The value of this position is {value} current best value is {best_value_local}") 
                 if value < best_value_local:
                     best_value_local = value
@@ -420,6 +427,13 @@ def open_a_new_bin(ifv_pool, current_layout, topos_layout, orientation, each_obj
                 min_y = np.min(_y[_x == min_x])
                 # best_translation = (min_x, min_y, 0)
                 
+            if pes_strategy is not None:
+                scored = score_position_pes(each_object_info['array'], topos_layout[position_bin],
+                                            current_layout[position_bin], (min_x, min_y, 0),
+                                            pes_strategy, container_size, encourage_dbl)
+                if scored is False:
+                    continue
+                value = scored[0]
             trace(f"The value of this position is {value} current best value is {best_value_local}") 
             if value < best_value_local:
                 best_value_local = value
@@ -428,6 +442,8 @@ def open_a_new_bin(ifv_pool, current_layout, topos_layout, orientation, each_obj
                 best_translation = (min_x, min_y, 0)
         
             
+    if best_value_local == float("inf"):
+        raise ValueError("No orientation fits in an empty bin")
     first_flag = False # not the first item anymore
             
     return best_degree, best_axis, best_translation, position_bin, first_flag
@@ -557,7 +573,19 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool,
                               packing_alg, _evaluation,
                               SCH_nesting_strategy, density, axis, 
                               _type, _accessible_check, _encourage_dbl,
-                              _select_range, random_CA, random_CA_threshold, flag_NFV_POOL, _TRACE):
+                              _select_range, random_CA, random_CA_threshold, flag_NFV_POOL, _TRACE, search_observer=None, unified_pes=False, rcl_tolerance=None, position_rng=None, rcl_observer=None):
+    if rcl_tolerance is not None and (not np.isfinite(rcl_tolerance) or rcl_tolerance < 0):
+        raise ValueError("RCL tolerance must be finite and nonnegative")
+
+    def position_search(*args):
+        if rcl_tolerance is None:
+            return SC_heuristic(*args)
+        def record(event):
+            rcl_observer(dict(event, piece_index=num_piece, bin_index=int(args[5]),
+                              orientation=args[2]['orientation']))
+        return SC_heuristic(*args, rcl_tolerance=rcl_tolerance, position_rng=position_rng,
+                            rcl_observer=record if rcl_observer is not None else None)
+
     
     # packing_3D_voxel_lookback(object_info_total, nfv_pool, ifv_pool, orientations, container_size,
     #                             container_shape, rho, max_radio, 
@@ -604,6 +632,21 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool,
 
     pieces_order = [[]] # to track the packing order
     radio_list = [[]] # to track the radioactivity of pieces in the bin
+
+    def observed_search(*args, **kwargs):
+        # Observe the actual SC query before the current piece is placed.
+        # The observer records failures only; CA decisions stay unchanged.
+        result = position_search(*args, **kwargs)
+        if search_observer is not None:
+            from improved_ILS_weight_radio import geometry_search_config
+            config = geometry_search_config(container_size, SCH_nesting_strategy,
+                density, axis, container_shape, _type, _accessible_check,
+                _encourage_dbl, _select_range, flag_NFV_POOL)
+            search_observer(num_piece, args[2], current_layout, pieces_order,
+                            args[5], result, config)
+        return result
+
+
     
     if container_shape == "cube":
         container_volume = container_size[0]*container_size[1]*container_size[2]
@@ -658,7 +701,7 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool,
                                 # =================================================================================================
                                 # time_check1 = time.time()  
                                 
-                                best_position_and_value = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, each_bin, 
+                                best_position_and_value = observed_search(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, each_bin,
                                                                 container_size, SCH_nesting_strategy, density, axis, container_shape, 
                                                                 _type, _accessible_check, _encourage_dbl, _select_range, flag_NFV_POOL, _TRACE)
             
@@ -706,7 +749,7 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool,
                             try_info_tem = {**each_object_info}
                             # try_info_tem = copy.deepcopy(original_object_info_total[num_piece])
 
-                            best_position_and_value = SC_heuristic(nfv_pool,ifv_pool, try_info_tem, current_layout, topos_layout, each_bin, 
+                            best_position_and_value = observed_search(nfv_pool,ifv_pool, try_info_tem, current_layout, topos_layout, each_bin,
                                                             container_size, SCH_nesting_strategy, density, axis, container_shape,
                                                             _type, _accessible_check, _encourage_dbl, _select_range,flag_NFV_POOL, _TRACE)
                                 
@@ -755,8 +798,9 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool,
                         packing_posi_candidates = packing_posi_info_current_bin[:random_CA_threshold]
                         position_info = []
 
-                        if random_CA: 
-                            _ = np.random.randint(0, min(random_CA_threshold,len(packing_posi_candidates)))
+                        if random_CA and rcl_tolerance is None:
+                            _ = (np.random.randint(0, min(random_CA_threshold,len(packing_posi_candidates)))
+                                 if position_rng is None else position_rng.integers(min(random_CA_threshold, len(packing_posi_candidates))))
                             position_info = packing_posi_info_current_bin[_]
 
                         else:
@@ -855,6 +899,13 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool,
                                         
                                     # trace(f"The value of this position is {value} current best value is {best_value}") 
 
+                                    if unified_pes:
+                                        scored = score_position_pes(try_info_tem["array"], topos_layout[position_bin],
+                                                                    current_layout[position_bin], (min_x, min_y, 0),
+                                                                    SCH_nesting_strategy, container_size, _encourage_dbl)
+                                        if scored is False:
+                                            continue
+                                        value = scored[0]
                                     packing_posi_info_current_bin.append((value,each_degree,each_axis,(min_x,min_y,0)))
 
                                     # if value < best_value:
@@ -889,6 +940,13 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool,
                                     
                                 # trace(f"The value of this position is {value} current best value is {best_value}") 
 
+                                if unified_pes:
+                                    scored = score_position_pes(try_info_tem["array"], topos_layout[position_bin],
+                                                                current_layout[position_bin], (min_x, min_y, 0),
+                                                                SCH_nesting_strategy, container_size, _encourage_dbl)
+                                    if scored is False:
+                                        continue
+                                    value = scored[0]
                                 packing_posi_info_current_bin.append((value, 0, "x",(min_x,min_y,0)))
 
                                 # if value < best_value:
@@ -925,11 +983,11 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool,
 
                                     # time_check1 = time.time() 
 
-                                    best_position_and_value = SC_heuristic(nfv_pool,ifv_pool, try_info_tem, current_layout, topos_layout, position_bin, 
+                                    best_position_and_value = observed_search(nfv_pool,ifv_pool, try_info_tem, current_layout, topos_layout, position_bin,
                                                                     container_size, SCH_nesting_strategy, density, axis, container_shape,
                                                                     _type, _accessible_check, _encourage_dbl, _select_range, flag_NFV_POOL, _TRACE)
                                     
-                                    # def SC_heuristic(nfv_pool,ifv_pool, ongoing_object_info, current_layout, topos_layout, position_bin, 
+                                    # def position_search(nfv_pool,ifv_pool, ongoing_object_info, current_layout, topos_layout, position_bin,
                                     #                     bin_size, nesting_strategy, density, axis, container_shape, 
                                     #                     _type, _accessible_check, _encourage_dbl, _select_range, _TRACE): 
     
@@ -978,7 +1036,7 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool,
                                 # time_check1 = time.time() 
                                 # print(f"packing position is found, cost {time_check2-time_check1} s")
                              
-                                best_position_and_value = SC_heuristic(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, position_bin, 
+                                best_position_and_value = observed_search(nfv_pool, ifv_pool, try_info_tem, current_layout, topos_layout, position_bin,
                                                                 container_size, SCH_nesting_strategy, density, axis, container_shape,
                                                                 _type, _accessible_check, _encourage_dbl, _select_range,flag_NFV_POOL, _TRACE)
                                     
@@ -1021,7 +1079,8 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool,
                         # No feasible solution is found, check the next bin
                         trace(f"Can't find a feasible position at bin {position_bin+1}! As it is the last bin, open a new bin!")
                         best_degree,best_axis, best_translation, position_bin, first_flag = open_a_new_bin(ifv_pool, current_layout, topos_layout, orientation, each_object_info, container_size, container_shape, 
-                                                                                                           position_bin, radio_list, pieces_order)
+                                                                                                           position_bin, radio_list, pieces_order,
+                                                                                                           pes_strategy=SCH_nesting_strategy if unified_pes else None, encourage_dbl=_encourage_dbl)
                     
                 # it is the last bin 
                 
@@ -1029,7 +1088,8 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool,
                     # if it is physically impossible
                     trace(f'!!!Bin {position_bin+1} has NOT enough space for object {num_piece}!!! As it is the last bin, open a new bin! ')
                     best_degree, best_axis, best_translation, position_bin, first_flag = open_a_new_bin(ifv_pool, current_layout, topos_layout, orientation, each_object_info, container_size, container_shape,
-                                                                                                        position_bin, radio_list,pieces_order)
+                                                                                                        position_bin, radio_list,pieces_order,
+                                                                                                        pes_strategy=SCH_nesting_strategy if unified_pes else None, encourage_dbl=_encourage_dbl)
             
                 # this is the updates for the last bin
                 trace(f"The piece {num_piece} has been packed in {position_bin}") 
@@ -1044,8 +1104,9 @@ def packing_3D_voxel_lookback(original_object_info_total, nfv_pool,
 
                     position_info = []
                     
-                    if random_CA: 
-                        _ = np.random.randint(0,min(random_CA_threshold,len(packing_posi_candidates)))
+                    if random_CA and rcl_tolerance is None:
+                        _ = (np.random.randint(0, min(random_CA_threshold,len(packing_posi_candidates)))
+                             if position_rng is None else position_rng.integers(min(random_CA_threshold, len(packing_posi_candidates))))
                         position_info = packing_posi_info_current_bin[_]
 
                     else:
@@ -1791,6 +1852,7 @@ def improved_repack(original_object_info_total, selected_info, nfv_pool, ifv_poo
                 pieces_order.append([])
                 # A new bin has no old placement to reuse and is marked as changed.
                 bin_state_flag_list.append(True)
+                
             # Core skip rule: p tries all eligible bins; later pieces reuse unchanged bins.
             # Skip unchanged earlier bins, restore the original bin, and search later bins.
             if num_piece != new_selected_index and not bin_state_flag_list[each_bin]:
@@ -1811,6 +1873,7 @@ def improved_repack(original_object_info_total, selected_info, nfv_pool, ifv_poo
                     and try_info_tem["radio"] <= max_radio - sum(radio_list[each_bin])):
                 # Perform geometric search only after the skip rule and capacity checks allow it.
                 result = search(try_info_tem, current_layout, topos_layout, each_bin)
+
             # A failed attempt does not alter any change flag; continue to the next bin.
             # If even a new empty bin cannot accommodate the piece, report failure.
             if not isinstance(result, tuple):
@@ -1827,12 +1890,14 @@ def improved_repack(original_object_info_total, selected_info, nfv_pool, ifv_poo
             packed_tem["array"] = translate_voxel(try_info_tem["array"], result[1])
             packed_tem["bin_position"] = each_bin
             place(num_piece, each_bin, packed_tem)
+
             # Compare the target bin with this piece's original bin.
             if each_bin != original_bin_index:
                 # Mark the destination bin as changed so subsequent pieces reconsider it.
                 bin_state_flag_list[each_bin] = True
                 # Mark the original bin as changed after an orientation change or a departure.
                 bin_state_flag_list[original_bin_index] = True
+
             # Even without a bin transfer, a different orientation or occupied position is a change.
             # Once True, a change flag remains True for the rest of this repacking call.
             elif (orientation != best_current_info["orientation"] or

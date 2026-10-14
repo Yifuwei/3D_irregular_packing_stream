@@ -1,0 +1,132 @@
+{
+  "max_radio": 2000.0,
+  "initial_bins": 3,
+  "best_bins": 3,
+  "initial_counts": [
+    16,
+    11,
+    5
+  ],
+  "best_counts": [
+    16,
+    11,
+    5
+  ],
+  "ranks_checked": 283,
+  "attempt_orders_checked": 283,
+  "events": {
+    "REPACK_START": 12,
+    "BIN_RANK": 283,
+    "SEARCH": 402,
+    "SEARCH_FAILED": 169,
+    "PLACE": 283,
+    "RESTORE_ORIGINAL": 17,
+    "REPACK_END": 12,
+    "EVALUATION": 10,
+    "HARD_CONSTRAINT_REJECT": 20,
+    "REUSE_SUCCESS": 33,
+    "SKIP_CACHED_FAILURE": 19
+  },
+  "ils_events": {
+    "REPACK_START": 10,
+    "BIN_RANK": 219,
+    "SEARCH": 354,
+    "SEARCH_FAILED": 150,
+    "PLACE": 219,
+    "RESTORE_ORIGINAL": 13,
+    "REPACK_END": 10,
+    "EVALUATION": 10,
+    "HARD_CONSTRAINT_REJECT": 18,
+    "REUSE_SUCCESS": 2
+  },
+  "repeat_second_events": {
+    "REPACK_START": 1,
+    "BIN_RANK": 32,
+    "REUSE_SUCCESS": 30,
+    "PLACE": 32,
+    "SKIP_CACHED_FAILURE": 19,
+    "HARD_CONSTRAINT_REJECT": 1,
+    "RESTORE_ORIGINAL": 2,
+    "REPACK_END": 1
+  },
+  "ranking_example": {
+    "rank": {
+      "phase": "ils",
+      "repack_id": 1,
+      "event": "BIN_RANK",
+      "piece": 31,
+      "ranked": [
+        [
+          2,
+          0.14076498236819254
+        ],
+        [
+          0,
+          0.1309238966149468
+        ],
+        [
+          1,
+          0.11742709922152589
+        ]
+      ],
+      "existing_bin_count": 3,
+      "details": [
+        {
+          "bin": 3,
+          "filling_rate": 0.14284006013119532,
+          "current_radio": 26.933245000000003,
+          "piece_radio": 2.121318,
+          "max_radio": 2000.0,
+          "radio_left_after": 1970.945437,
+          "remaining_ratio": 0.9854727185000001,
+          "score": 0.14076498236819254
+        },
+        {
+          "bin": 1,
+          "filling_rate": 0.2862438502186589,
+          "current_radio": 1083.106913,
+          "piece_radio": 2.121318,
+          "max_radio": 2000.0,
+          "radio_left_after": 914.771769,
+          "remaining_ratio": 0.45738588449999995,
+          "score": 0.1309238966149468
+        },
+        {
+          "bin": 2,
+          "filling_rate": 0.25006263666180756,
+          "current_radio": 1058.6971970000004,
+          "piece_radio": 2.121318,
+          "max_radio": 2000.0,
+          "radio_left_after": 939.1814849999996,
+          "remaining_ratio": 0.4695907424999998,
+          "score": 0.11742709922152589
+        }
+      ]
+    },
+    "attempts": [
+      3
+    ]
+  },
+  "cache_example": {
+    "failed": {
+      "phase": "repeat_first",
+      "repack_id": 11,
+      "event": "SEARCH_FAILED",
+      "piece": 14,
+      "bin": 1,
+      "state_id": "8658a8c1890f372722a1",
+      "orientation": "x_90"
+    },
+    "skipped": {
+      "phase": "repeat_second",
+      "repack_id": 12,
+      "event": "SKIP_CACHED_FAILURE",
+      "piece": 14,
+      "bin": 1,
+      "changed": true,
+      "state_id": "8658a8c1890f372722a1",
+      "orientation": "x_90"
+    }
+  },
+  "passed": true
+}

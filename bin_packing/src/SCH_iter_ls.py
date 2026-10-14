@@ -153,7 +153,60 @@ def get_intersection(object1, object2):
     intersect_volume = intersect_x * intersect_y * intersect_z
     return intersect_volume
 
-def nesting_evaluation(ongoing, partial_solution_in_the_bin, current_layout, packing_position_list, nesting, bin_size, encourage_dbl):
+def select_pes_rcl(value_list_pairs, tolerance, rng=None, observer=None):
+    """Uniformly sample unique positions within a relative PES gap of the best.
+
+    Pairs are (position, score); scores are minimized and may be negative.
+    A zero best score admits only equally good positions (up to roundoff).
+    """
+    if not np.isfinite(tolerance) or tolerance < 0:
+        raise ValueError("RCL tolerance must be finite and nonnegative")
+    unique = {}
+    for position, score in value_list_pairs:
+        if not np.isfinite(score):
+            continue
+        key = tuple(position)
+        unique[key] = min(score, unique.get(key, np.inf))
+    if not unique:
+        if observer is not None:
+            observer(dict(candidates=[], best_pes=None, tolerance=float(tolerance),
+                          active_rcl_size=0, selected_position=None, selected_pes=None))
+        return False
+    best = min(unique.values())
+    threshold = best + tolerance * abs(best)
+    epsilon = 8 * np.finfo(float).eps * max(1.0, abs(threshold))
+    rcl = [(score, position) for position, score in unique.items()
+           if score <= threshold + epsilon]
+    index = np.random.randint(len(rcl)) if rng is None else rng.integers(len(rcl))
+    selected = rcl[index]
+    if observer is not None:
+        observer(dict(candidates=[dict(position=[int(v) for v in p], pes=float(s))
+                                  for p, s in unique.items()],
+                      best_pes=float(best), tolerance=float(tolerance),
+                      active_rcl_size=len(rcl),
+                      selected_position=[int(v) for v in selected[1]],
+                      selected_pes=float(selected[0])))
+    return selected
+
+
+def selection_process_bottom_top_extrema(feasible_region):
+    """At most eight actual AABB-edge endpoints per extreme z slice."""
+    occupied = np.argwhere(feasible_region == 1)
+    if not len(occupied):
+        return []
+    candidates = []
+    for z in dict.fromkeys((int(occupied[:, 2].min()), int(occupied[:, 2].max()))):
+        points = np.argwhere(feasible_region[:, :, z] == 1)
+        for dim in (0, 1):
+            for edge in (points[:, dim].min(), points[:, dim].max()):
+                boundary = points[points[:, dim] == edge]
+                for point in (boundary[boundary[:, 1-dim].argmin()],
+                              boundary[boundary[:, 1-dim].argmax()]):
+                    candidates.append((int(point[0]), int(point[1]), z))
+    return list(dict.fromkeys(candidates))
+
+
+def nesting_evaluation(ongoing, partial_solution_in_the_bin, current_layout, packing_position_list, nesting, bin_size, encourage_dbl, rcl_tolerance=None, position_rng=None, rcl_observer=None):
 
     best_position = None
     best_value = np.inf
@@ -245,11 +298,28 @@ def nesting_evaluation(ongoing, partial_solution_in_the_bin, current_layout, pac
 
     # sorted_positions = [pos for pos, value in sorted(value_list_pairs,key=lambda x:x[1])]
 
+    if rcl_tolerance is not None:
+        return select_pes_rcl(value_list_pairs, rcl_tolerance, rng=position_rng, observer=rcl_observer)
     return False if best_position is None else (best_value, tuple(best_position))
+
+def score_position_pes(ongoing, fixed, current_layout, position, strategy,
+                       bin_size, encourage_dbl):
+    """Score a prescribed position using SCH's PES, including empty bins."""
+    modes = {
+        'minimum_volume_of_AABB': 1, 'minimum_aabb_volume': 1,
+        'minimum_length_of_edges_of_AABB': 2, 'minimum_aabb_edges_len': 2,
+        'maximum_connected_space': 3, 'maximal_residual_box': 3,
+        'overlap_distance': 4,
+    }
+    if strategy not in modes:
+        raise ValueError(f"Unknown nesting strategy: {strategy}")
+    return nesting_evaluation(ongoing, fixed, current_layout, [position],
+                              modes[strategy], bin_size, encourage_dbl)
+
 
 def SC_heuristic(nfv_pool, ifv_pool, ongoing_object_info, current_layout, topos_layout, position_bin, 
                  bin_size, nesting_strategy, density, axis, container_shape, 
-                 _type, _accessible_check, _encourage_dbl, _select_range, flag_NFV_POOL, _TRACE): 
+                 _type, _accessible_check, _encourage_dbl, _select_range, flag_NFV_POOL, _TRACE, rcl_tolerance=None, position_rng=None, rcl_observer=None):
     
     """_summary_
         The Selection of Candidates Heuritic (SCH) 
@@ -295,7 +365,10 @@ def SC_heuristic(nfv_pool, ifv_pool, ongoing_object_info, current_layout, topos_
         
         return False
     
-    if select_range == "all": 
+    if rcl_tolerance is not None:
+        # GRASP position RCL always uses the specified bottom/top AABB extrema.
+        packing_position_list = selection_process_bottom_top_extrema(feasible_region)
+    elif select_range == "all":
         # original version 
         packing_position_list = selection_process(feasible_region, density, axis, _type)
         
@@ -333,6 +406,8 @@ def SC_heuristic(nfv_pool, ifv_pool, ongoing_object_info, current_layout, topos_
     else:
         raise ValueError(f"Unknown nesting strategy: {nesting_strategy}")
 
+    if rcl_tolerance is not None:
+        return nesting_evaluation(ongoing_object_info["array"], topos_layout[position_bin], current_layout[position_bin], packing_position_list, nesting, bin_size, _encourage_dbl, rcl_tolerance=rcl_tolerance, position_rng=position_rng, rcl_observer=rcl_observer)
     best_position_and_value = nesting_evaluation(ongoing_object_info["array"], topos_layout[position_bin], current_layout[position_bin], packing_position_list, nesting, bin_size, _encourage_dbl)
             
     return best_position_and_value

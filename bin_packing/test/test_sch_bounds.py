@@ -27,7 +27,7 @@ def load_functions(filename, names, namespace=None):
 
 
 SCH = load_functions("SCH_iter_ls.py", {
-    "nesting_evaluation", "get_bounding_box", "find_max_xyz",
+    "nesting_evaluation", "score_position_pes", "get_bounding_box", "find_max_xyz",
     "get_intersection", "SC_heuristic", "selection_process",
     "selection_process_bottom_only", "selection_process_bottom_top_only",
     "selection_process_bottom_left_filling", "voxel_floor",
@@ -46,6 +46,41 @@ class BoundsTests(unittest.TestCase):
     def evaluate(self, positions, nesting=1):
         return SCH["nesting_evaluation"](
             self.piece, self.fixed, [], positions, nesting, (6, 6, 6), False)
+
+    def test_prescribed_position_uses_same_pes_for_every_strategy(self):
+        for mode, strategy in enumerate(('minimum_aabb_volume',
+                                        'minimum_aabb_edges_len',
+                                        'maximal_residual_box',
+                                        'overlap_distance'), 1):
+            with self.subTest(strategy=strategy):
+                actual = SCH['score_position_pes'](
+                    self.piece, self.fixed, [], (1, 0, 0), strategy, (6, 6, 6), True)
+                expected = SCH['nesting_evaluation'](
+                    self.piece, self.fixed, [], [(1, 0, 0)], mode, (6, 6, 6), True)
+                self.assertEqual(actual, expected)
+
+    def test_empty_bin_orientation_uses_pes_instead_of_height(self):
+        scope = load_functions('packing_iter_ls.py', {'open_a_new_bin'},
+                               {'trace': lambda msg: None,
+                                'rotate_voxel': lambda a, d, axis: np.rot90(a, axes=(0, 2)),
+                                'score_position_pes': SCH['score_position_pes']})
+        piece = np.zeros((10, 10, 10), dtype=np.uint8)
+        piece[:2, :2, :5] = 1
+        # Normalize the mocked rotation to the origin.
+        def rotate(a, d, axis):
+            out = np.zeros_like(a)
+            out[:5, :2, :2] = 1
+            return out
+        scope['rotate_voxel'] = rotate
+        args = (None, [[]], [np.zeros_like(piece)], ([0, 90], ['y']),
+                {'array': piece}, (10, 10, 10), 'cube', 0, [[]], [[]])
+        # Residual-box PES favors the narrower footprint despite its greater height.
+        pes = scope['open_a_new_bin'](*args, pes_strategy='maximal_residual_box')
+        self.assertEqual(pes[:2], (0, 'x'))
+        args = (None, [[]], [np.zeros_like(piece)], ([0, 90], ['y']),
+                {'array': piece}, (10, 10, 10), 'cube', 0, [[]], [[]])
+        legacy = scope['open_a_new_bin'](*args)
+        self.assertEqual(legacy[:2], (90, 'y'))
 
     def test_clipped_candidates_rejected(self):
         self.assertIs(self.evaluate([(5, 0, 0), (-1, 0, 0)]), False)

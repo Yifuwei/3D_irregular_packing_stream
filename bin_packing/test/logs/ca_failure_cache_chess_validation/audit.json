@@ -1,0 +1,121 @@
+{
+  "max_radio": 2000.0,
+  "initial_bins": 3,
+  "best_bins": 3,
+  "initial_counts": [
+    16,
+    11,
+    5
+  ],
+  "best_counts": [
+    16,
+    11,
+    5
+  ],
+  "ranks_checked": 283,
+  "attempt_orders_checked": 283,
+  "events": {
+    "CA_SEARCH_FAILED": 163,
+    "REPACK_START": 12,
+    "HARD_CONSTRAINT_REJECT": 45,
+    "BIN_RANK": 283,
+    "SKIP_CACHED_FAILURE": 21,
+    "SEARCH": 382,
+    "PLACE": 283,
+    "RESTORE_ORIGINAL": 17,
+    "REPACK_END": 12,
+    "EVALUATION": 10,
+    "SEARCH_FAILED": 149,
+    "REUSE_SUCCESS": 33
+  },
+  "ils_events": {
+    "REPACK_START": 10,
+    "HARD_CONSTRAINT_REJECT": 31,
+    "BIN_RANK": 219,
+    "SKIP_CACHED_FAILURE": 7,
+    "SEARCH": 339,
+    "PLACE": 219,
+    "RESTORE_ORIGINAL": 13,
+    "REPACK_END": 10,
+    "EVALUATION": 10,
+    "SEARCH_FAILED": 135,
+    "REUSE_SUCCESS": 2
+  },
+  "repeat_second_events": {
+    "REPACK_START": 1,
+    "BIN_RANK": 32,
+    "REUSE_SUCCESS": 30,
+    "PLACE": 32,
+    "SKIP_CACHED_FAILURE": 14,
+    "HARD_CONSTRAINT_REJECT": 7,
+    "RESTORE_ORIGINAL": 2,
+    "REPACK_END": 1
+  },
+  "ranking_example": {
+    "rank": {
+      "phase": "ils",
+      "repack_id": 1,
+      "event": "BIN_RANK",
+      "piece": 31,
+      "ranked": [
+        [
+          2,
+          0.14076498236819254
+        ],
+        [
+          1,
+          0.11742709922152589
+        ]
+      ],
+      "existing_bin_count": 3,
+      "details": [
+        {
+          "bin": 3,
+          "filling_rate": 0.14284006013119532,
+          "current_radio": 26.933245000000003,
+          "piece_radio": 2.121318,
+          "max_radio": 2000.0,
+          "radio_left_after": 1970.945437,
+          "remaining_ratio": 0.9854727185000001,
+          "score": 0.14076498236819254
+        },
+        {
+          "bin": 2,
+          "filling_rate": 0.25006263666180756,
+          "current_radio": 1058.6971970000004,
+          "piece_radio": 2.121318,
+          "max_radio": 2000.0,
+          "radio_left_after": 939.1814849999996,
+          "remaining_ratio": 0.4695907424999998,
+          "score": 0.11742709922152589
+        }
+      ]
+    },
+    "attempts": [
+      3
+    ]
+  },
+  "cache_example": {
+    "failed": {
+      "phase": "ca",
+      "repack_id": 0,
+      "event": "CA_SEARCH_FAILED",
+      "piece": 24,
+      "bin": 2,
+      "orientation": "y_270",
+      "state_id": "45d87c1cf2cc0b2a2d62"
+    },
+    "skipped": {
+      "phase": "ils",
+      "repack_id": 1,
+      "event": "SKIP_CACHED_FAILURE",
+      "piece": 24,
+      "bin": 2,
+      "changed": false,
+      "state_id": "45d87c1cf2cc0b2a2d62",
+      "orientation": "y_270",
+      "source": "CA"
+    }
+  },
+  "passed": true
+}

@@ -175,7 +175,7 @@ def bin_lower_bound(object_total, bin_size, container_shape):
 
     return piece_volume_lower_bound, aabb_volume_lower_bound
 
-def improve_pieces_selection_ls(object_info_total, iter_time, LS_stage_var, num_used_bin, seed=None, deterministic=False):
+def improve_pieces_selection_ls(object_info_total, iter_time, LS_stage_var, num_used_bin, seed=None, deterministic=False, exclude_last_bin=True, rng=None):
     # • Give additional selection weight to the earlier pieces when LS is at its early stage, and vice versa. 
     # The selection_age (the average number of iteration that the piece is selected in the LS) 
     # can gradually increase along the piece order from first to last.  
@@ -197,17 +197,15 @@ def improve_pieces_selection_ls(object_info_total, iter_time, LS_stage_var, num_
     n = len(object_info_total)
     
     selectable_mask = np.array([
-        obj_info["bin_position"] != num_used_bin - 1
+        not exclude_last_bin or obj_info["bin_position"] != num_used_bin - 1
         for obj_info in object_info_total
         ])
 
     if not np.any(selectable_mask):
         raise ValueError("No selectable pieces outside the last bin")
 
-    if seed != None:
-        rng = np.random.default_rng(seed) 
-    else:
-        rng = np.random
+    if rng is None:
+        rng = np.random.default_rng(seed) if seed is not None else np.random
 
     # if deterministic:
     #     # if the deterministic is True, the LS will select the pieces from the first to the last
@@ -268,16 +266,14 @@ def improve_pieces_selection_ls(object_info_total, iter_time, LS_stage_var, num_
     return selected_index
 
 
-def pieces_selection_ls(object_info_total, alpha, seed=None):
+def pieces_selection_ls(object_info_total, alpha, seed=None, rng=None):
     # Maybe also consider the piece order, prefer to select the earlier piece
     # normalised softmax exponential sampling process, alpha is to decide the preference level for the larger object
     # select one object as aimed neighbour searching
     # use individual random seed generation
 
-    if seed != None:
-        rng = np.random.default_rng(seed) 
-    else:
-        rng = np.random
+    if rng is None:
+        rng = np.random.default_rng(seed) if seed is not None else np.random
 
     value = np.array([get_aabb_length(obj_info["array"]) for obj_info in object_info_total])
     
@@ -824,7 +820,7 @@ def improved_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientat
                  orientations_list, packing_alg, selection_type, selection_range, accessible_check,
                  SCH_nesting_strategy, orien_evaluation, ALG, container_size, container_shape,
                  iteration_limit=None, time_limit=None, kick_trigger_time=None,
-                 kick_level=None, flag_NFV_POOL=False, visualisation=False, _TRACE=False):
+                 kick_level=None, flag_NFV_POOL=False, visualisation=False, _TRACE=False, ca_search_observer=None, piece_seed=101, position_seed=202):
     
     """Run randomized descent and kicks with independent accepted/best states.
 
@@ -836,6 +832,10 @@ def improved_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientat
 
     global TRACE
     TRACE = _TRACE
+    # Initialize once per run, independently from the instance-order RNG.
+    piece_rng = np.random.default_rng(piece_seed)
+    position_rng = np.random.default_rng(position_seed)
+
 
     if ALG not in ("ILS", "fixed_CA", "random_CA", "BLF"):
         raise ValueError("Unsupported ALG")
@@ -855,6 +855,9 @@ def improved_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientat
         if not orientations_list:
             raise ValueError("orientations_list must not be empty")
 
+    if ALG == "ILS":
+        # Use PES for both placement and orientation scoring.
+        orien_evaluation = SCH_nesting_strategy
     overall_start = time.perf_counter()
     original_object_info_total = copy.deepcopy(object_info_total)
     data_pool = {}
@@ -870,7 +873,8 @@ def improved_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientat
         orientations, container_size, container_shape, rho, max_radio,
         packing_alg, orien_evaluation, SCH_nesting_strategy,
         _type=selection_type, random_CA=ALG == "random_CA",
-        random_CA_threshold=5 if ALG == "random_CA" else None, **common)
+        random_CA_threshold=5 if ALG == "random_CA" else None,
+        search_observer=ca_search_observer, unified_pes=ALG == "ILS", position_rng=position_rng, **common)
     T = time.perf_counter() - start
 
     def evaluate(layout, topos_layout, pieces_order):
@@ -913,6 +917,9 @@ def improved_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientat
         return ((iteration_limit is not None and n_iter >= iteration_limit) or
                 (time_limit is not None and time.perf_counter() - overall_start >= time_limit))
 
+    # Exclude the last bin only while the accepted layout matches construction.
+    exclude_last_bin = True
+
     def accept_candidate(layout, topos_layout, radio_layout, pieces_order, T,
                          selected_info, is_kick=False):
         
@@ -920,14 +927,26 @@ def improved_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientat
         nonlocal local_best_iteration, global_best_iteration
         nonlocal local_best_perform, global_best_perform
         nonlocal local_best_orientations_list_no_bin, global_best_orientations_list_no_bin
-        nonlocal no_change_time, iter_piece_selection
+        nonlocal no_change_time, iter_piece_selection, exclude_last_bin
 
         N, U, U_star, perform_this_iter = evaluate(layout, topos_layout, pieces_order)
+        # perform_this_iter = N - U_star
+
         accepted = is_kick or perform_this_iter < local_best_perform
         globally_better = perform_this_iter < global_best_perform
         
         if accepted or globally_better:
             candidate_orientations = read_orientations(layout, pieces_order)
+            # Rejected trials do not change eligibility. Once an accepted layout
+            # changes, earlier CA failures no longer justify excluding the last bin.
+            if accepted and exclude_last_bin:
+                previous = data_pool[local_best_iteration]
+                same_layout = (pieces_order == previous["pieces_order"]
+                               and candidate_orientations == local_best_orientations_list_no_bin
+                               and all(np.array_equal(a["array"], b["array"])
+                                       for new_bin, old_bin in zip(layout, previous["bin_real_layout"])
+                                       for a, b in zip(new_bin, old_bin)))
+                exclude_last_bin = same_layout
             update_data(data_pool, layout, topos_layout, radio_layout, pieces_order,
                         U_star, perform_this_iter, T, selected_info, n_iter)
             if accepted:
@@ -937,6 +956,7 @@ def improved_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientat
                 local_best_list.append(perform_this_iter)
                 local_change_iter_list.append(n_iter)
                 no_change_time = iter_piece_selection = 0
+
             if globally_better:
                 global_best_iteration = n_iter
                 global_best_perform = perform_this_iter
@@ -960,7 +980,8 @@ def improved_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientat
                         if kick_trigger_time is not None else 1.0)
         selected_index = improve_pieces_selection_ls(
             selection_info, iter_piece_selection, LS_stage_var,
-            num_used_bin, seed=None, deterministic=False)
+            num_used_bin, seed=None, deterministic=False,
+            exclude_last_bin=exclude_last_bin, rng=piece_rng)
         iter_piece_selection += 1
         other_orientations = [value for value in orientations_list
                               if value != local_best_orientations_list_no_bin[selected_index]]
@@ -1045,10 +1066,14 @@ def ILS_from_the_first_piece(object_info_total, nfv_pool, ifv_pool, max_radio, r
                             packing_alg, selection_type, selection_range, accessible_check,
                             SCH_nesting_strategy, orien_evaluation, ALG,
                             container_size, container_shape,
-                            iteration_limit=None, time_limit=None, alpha=None, kick_trigger_time=None, kick_level=None, flag_NFV_POOL=False,  visualisation=False, _TRACE=False):
+                            iteration_limit=None, time_limit=None, alpha=None, kick_trigger_time=None, kick_level=None, flag_NFV_POOL=False,  visualisation=False, _TRACE=False, piece_seed=101, position_seed=202):
     
     global TRACE 
     TRACE = _TRACE
+    # Initialize once per run, independently from the instance-order RNG.
+    piece_rng = np.random.default_rng(piece_seed)
+    position_rng = np.random.default_rng(position_seed)
+
 
     # structure of object_info_total
     # =======================================================================================
@@ -1102,7 +1127,7 @@ def ILS_from_the_first_piece(object_info_total, nfv_pool, ifv_pool, max_radio, r
                                                                                 packing_alg, orien_evaluation,
                                                                                 SCH_nesting_strategy, density = 5, axis = 'z', 
                                                                                 _type = selection_type, _accessible_check = accessible_check, _encourage_dbl = True, 
-                                                                                _select_range = selection_range, random_CA= random_CA, random_CA_threshold = random_CA_threshold,flag_NFV_POOL=flag_NFV_POOL, _TRACE = False) # for SCH
+                                                                                _select_range = selection_range, random_CA= random_CA, random_CA_threshold = random_CA_threshold,flag_NFV_POOL=flag_NFV_POOL, _TRACE = False, position_rng=position_rng) # for SCH
     
                                                                                                                                             # def packing_3D_voxel_lookback(polobject_info_total, nfv_pool, orientation, container_size, 
                                                                                                                                             #                         container_shape, rho, max_radio, 
@@ -1222,7 +1247,7 @@ def ILS_from_the_first_piece(object_info_total, nfv_pool, ifv_pool, max_radio, r
         
 
         # decide which piece
-        selected_index = pieces_selection_ls(object_info_total, alpha = alpha, seed=None)
+        selected_index = pieces_selection_ls(object_info_total, alpha = alpha, seed=None, rng=piece_rng)
 
         # decide which orientation
         # selected_orientation = orientation_selection_ls(orientations)
@@ -1520,14 +1545,369 @@ def ILS_from_the_first_piece(object_info_total, nfv_pool, ifv_pool, max_radio, r
 
 
 
+def improved_GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
+                   orientations, ils_orientations, orientations_list,
+                   packing_alg, selection_type, selection_range, accessible_check,
+                   SCH_nesting_strategy, orien_evaluation,
+                   container_size, container_shape, iter_limit_per_iter,
+                   time_limit, alpha, flag_NFV_POOL, visualisation, _TRACE,
+                   random_CA_threshold=5, restart_limit=None,
+                   no_improvement_limit=None, rcl_tolerance=0.10, piece_seed=101, position_seed=202, rcl_observer=None):
+    """Random construction followed by bounded first-improvement descent.
+
+    Compatible with GRASP's arguments and eleven-value return tuple. Each
+    accepted move becomes the next repacking baseline. Piece selection matches
+    improved_ILS: weighted sampling with replacement from the accepted layout,
+    excluding the last bin until the first accepted layout change. Each restart
+    resets that exclusion. Consecutive rejected candidates trigger a restart;
+    no_improvement_limit defaults to the per-restart repacking budget.
+    alpha is retained for compatibility; this selector does not use it.
+
+    The wall-clock budget includes copying/evaluation. Calls to the packing
+    engine cannot be interrupted, so one call may overrun it; its completed
+    result is still evaluated. Always build one initial solution. NumPy's
+    independent Generators use fixed piece_seed=101 and position_seed=202.
+    They are initialized once per run and advance across restarts.
+
+    PES is selected by SCH_nesting_strategy, using the same SCH evaluator and
+    origin-distance term as improved_ILS. Descent also uses improved_repack
+    with bounding-box candidates, matching improved_ILS's repacking path.
+
+    Construction samples each orientation's bottom/top position RCL with
+    score <= best + rcl_tolerance * abs(best), then compares the sampled
+    positions across orientations by PES. Default tolerance is 0.10; None
+    restores the legacy top-k orientation sampling. Empty-bin placement
+    retains its prescribed starting position and compares orientations by PES.
+    Descent remains greedy and uses the requested selection_range.
+    """
+    global TRACE
+    TRACE = _TRACE
+    # Initialize once per run, independently from the instance-order RNG.
+    piece_rng = np.random.default_rng(piece_seed)
+    position_rng = np.random.default_rng(position_seed)
+
+    if not object_info_total or not orientations_list:
+        raise ValueError("Objects and orientations must be nonempty")
+    if iter_limit_per_iter <= 0 or time_limit <= 0 or random_CA_threshold <= 0:
+        raise ValueError("Search budgets and RCL size must be positive")
+    if restart_limit is not None and restart_limit <= 0:
+        raise ValueError("restart_limit must be positive")
+    if no_improvement_limit is None:
+        no_improvement_limit = iter_limit_per_iter
+    if no_improvement_limit <= 0:
+        raise ValueError("no_improvement_limit must be positive")
+    if rcl_tolerance is not None and (not np.isfinite(rcl_tolerance) or rcl_tolerance < 0):
+        raise ValueError("RCL tolerance must be finite and nonnegative or None")
+
+    # Retain the legacy OES argument for callers; PES is the only criterion.
+    orien_evaluation = SCH_nesting_strategy
+    started = time.perf_counter()
+    original = best = None
+    restart = 0
+    orientation_choices = list(dict.fromkeys(orientations_list))
+    common = dict(density=5, axis='z', _type=selection_type,
+                  _accessible_check=accessible_check, _encourage_dbl=True,
+                  _select_range=selection_range, flag_NFV_POOL=flag_NFV_POOL,
+                  _TRACE=False)
+    ls_common = dict(common, _type="bounding_box")
+
+    def exhausted():
+        return time.perf_counter() - started >= time_limit
+
+    def snapshot(result):
+        layout, topos, radio, order = result
+        N, U, U_star = get_final_performance(
+            object_info_total, container_size, container_shape, layout)
+        U_star = U if U_star is None else U_star
+        state = copy.deepcopy(dict(bin_real_layout=layout,
+                                   bin_topos_layout=topos, radio_layout=radio,
+                                   pieces_order=order))
+        state['metrics'] = (N, U, U_star)
+        state['score'] = N - U_star
+        state['orientations'] = [None] * len(object_info_total)
+        for bin_layout, indices in zip(state['bin_real_layout'], order):
+            for info, index in zip(bin_layout, indices):
+                state['orientations'][index] = info['orientation']
+        if any(o is None for o in state['orientations']):
+            raise ValueError("Packing result is missing an object")
+        return state
+
+    while original is None or (not exhausted() and
+                               (restart_limit is None or restart < restart_limit)):
+        restart += 1
+        current = snapshot(packing_3D_voxel_lookback(
+            copy.deepcopy(object_info_total), nfv_pool, ifv_pool, orientations,
+            container_size, container_shape, rho, max_radio, packing_alg,
+            orien_evaluation, SCH_nesting_strategy, random_CA=True,
+            random_CA_threshold=random_CA_threshold, unified_pes=True,
+            rcl_tolerance=rcl_tolerance, position_rng=position_rng,
+            rcl_observer=(lambda event: rcl_observer(dict(event, restart=restart)))
+            if rcl_observer is not None else None, **common))
+        if original is None:
+            original = current
+        if best is None or current['score'] < best['score']:
+            best = current
+        trace(f"improved_GRASP restart {restart}: {current['score']}")
+        attempts = 0
+        no_change_time = iter_piece_selection = 0
+        exclude_last_bin = True
+        while (attempts < iter_limit_per_iter and not exhausted()
+               and no_change_time < no_improvement_limit
+               and len(current['bin_real_layout']) > 1):
+            selection_info = [None] * len(object_info_total)
+            for bin_layout, indices in zip(current['bin_real_layout'], current['pieces_order']):
+                for info, index in zip(bin_layout, indices):
+                    selection_info[index] = info
+            LS_stage_var = (no_improvement_limit - no_change_time) / no_improvement_limit
+            selected = improve_pieces_selection_ls(
+                selection_info, iter_piece_selection, LS_stage_var,
+                len(current['bin_real_layout']), seed=None, deterministic=False,
+                exclude_last_bin=exclude_last_bin, rng=piece_rng)
+            iter_piece_selection += 1
+            neighbors = [o for o in orientation_choices
+                         if o != current['orientations'][selected]]
+            if not neighbors:
+                break
+            for orientation in neighbors:
+                if (attempts >= iter_limit_per_iter or exhausted()
+                        or no_change_time >= no_improvement_limit):
+                    break
+                candidate = snapshot(improved_repack(
+                    copy.deepcopy(object_info_total), (selected, orientation),
+                    nfv_pool, ifv_pool, list(current['orientations']),
+                    {0: copy.deepcopy(current)}, 0, ils_orientations,
+                    container_size, container_shape, rho, max_radio,
+                    packing_alg, orien_evaluation, SCH_nesting_strategy, **ls_common))
+                attempts += 1
+                if candidate['score'] < best['score']:
+                    best = candidate
+                if candidate['score'] < current['score']:
+                    if exclude_last_bin:
+                        same_layout = (candidate['pieces_order'] == current['pieces_order']
+                                       and candidate['orientations'] == current['orientations']
+                                       and all(np.array_equal(a['array'], b['array'])
+                                               for new_bin, old_bin in zip(candidate['bin_real_layout'], current['bin_real_layout'])
+                                               for a, b in zip(new_bin, old_bin)))
+                        exclude_last_bin = same_layout
+                    current = candidate
+                    no_change_time = iter_piece_selection = 0
+                    break
+                no_change_time += 1
+        # With no orientation moves, additional constructions still diversify
+        # placement; restart_limit optionally bounds the number of constructions.
+
+    if visualisation:
+        visualize_voxel_model(best['bin_real_layout'], best['pieces_order'],
+                              container_size, container_shape)
+    return (*best['metrics'], *original['metrics'], best['bin_real_layout'],
+            original['bin_real_layout'], best['bin_topos_layout'],
+            best['pieces_order'], time.perf_counter() - started)
+
+
+
+def improved_GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
+                       orientations, ils_orientations, orientations_list,
+                       packing_alg, selection_type, selection_range, accessible_check,
+                       SCH_nesting_strategy, orien_evaluation,
+                       container_size, container_shape, iter_limit_per_iter,
+                       kick_trigger_time, kick_level, time_limit, alpha,
+                       flag_NFV_POOL, visualisation, _TRACE,
+                       random_CA_threshold=5, restart_limit=None,
+                       rcl_tolerance=0.10, piece_seed=101, position_seed=202,
+                       kick_seed=None, rcl_observer=None):
+    """Improved GRASP construction followed by bounded improved ILS.
+
+    Each restart constructs a fresh random RCL/PES solution. Descent uses
+    improved_repack and the improved layout-weighted piece selector. After
+    kick_trigger_time consecutive rejected neighbors, perturb the restart's
+    best orientations and unconditionally accept the kick as the current
+    solution. Every selected kick orientation actually changes. The restart
+    best and run best survive worsening kicks.
+
+    iter_limit_per_iter limits LS neighbor evaluations; construction does
+    not consume it. Each kick counts as one additional search iteration.
+    A kick may follow the last LS evaluation when its stall threshold is
+    reached, before starting a new construction. Thus 300/150 permits two
+    kicks and 302 total iterations if all 300 LS neighbors are rejected.
+    There is
+    no stall-based restart; stalls trigger kicks. None disables kicks.
+    time_limit covers all wall time; finish and evaluate an in-flight call,
+    then start no further packing call after expiry. Always construct once.
+    Return the same eleven values as improved_GRASP. alpha is compatibility
+    only. Independent RNG streams advance across restarts; kick_seed=None
+    follows improved_ILS's global NumPy perturbation RNG.
+    """
+    global TRACE
+    TRACE = _TRACE
+    if not object_info_total or not orientations_list:
+        raise ValueError("Objects and orientations must be nonempty")
+    for name, value in (("iter_limit_per_iter", iter_limit_per_iter),
+                        ("restart_limit", restart_limit),
+                        ("kick_trigger_time", kick_trigger_time)):
+        if value is None and name != "iter_limit_per_iter":
+            continue
+        if not isinstance(value, (int, np.integer)) or isinstance(value, bool) or value <= 0:
+            raise ValueError(f"{name} must be a positive integer")
+    if not math.isfinite(time_limit) or time_limit <= 0:
+        raise ValueError("time_limit must be finite and positive")
+    if random_CA_threshold <= 0:
+        raise ValueError("random_CA_threshold must be positive")
+    if rcl_tolerance is not None and (not np.isfinite(rcl_tolerance) or rcl_tolerance < 0):
+        raise ValueError("RCL tolerance must be finite and nonnegative or None")
+    choices = list(dict.fromkeys(orientations_list))
+    fractions = {"small": 0.25, "medium": 0.5, "large": 0.75}
+    if kick_trigger_time is not None:
+        if kick_level not in fractions or len(choices) < 2:
+            raise ValueError("Kicks require small/medium/large and two distinct orientations")
+
+    piece_rng = np.random.default_rng(piece_seed)
+    position_rng = np.random.default_rng(position_seed)
+    kick_rng = np.random if kick_seed is None else np.random.default_rng(kick_seed)
+    orien_evaluation = SCH_nesting_strategy
+    started = time.perf_counter()
+    original = best = None
+    restart = 0
+    common = dict(density=5, axis='z', _type=selection_type,
+                  _accessible_check=accessible_check, _encourage_dbl=True,
+                  _select_range=selection_range, flag_NFV_POOL=flag_NFV_POOL,
+                  _TRACE=False)
+    ls_common = dict(common, _type="bounding_box")
+
+    def exhausted():
+        return time.perf_counter() - started >= time_limit
+
+    def snapshot(result):
+        layout, topos, radio, order = result
+        indices = [index for ids in order for index in ids]
+        if sorted(indices) != list(range(len(object_info_total))):
+            raise ValueError("Packing must contain every piece exactly once")
+        if len(layout) != len(topos) or len(layout) != len(order):
+            raise ValueError("Inconsistent bin records")
+        if any(len(objects) != len(ids) for objects, ids in zip(layout, order)):
+            raise ValueError("Inconsistent piece records")
+        if any(np.any(array > 1) for array in topos):
+            raise ValueError("Packing contains overlapping voxels")
+        N, U, U_star = get_final_performance(
+            object_info_total, container_size, container_shape, layout)
+        U_star = U if U_star is None else U_star
+        state = copy.deepcopy(dict(bin_real_layout=layout, bin_topos_layout=topos,
+                                   radio_layout=radio, pieces_order=order))
+        state['metrics'] = (N, U, U_star)
+        state['score'] = N - U_star
+        state['orientations'] = [None] * len(object_info_total)
+        for bin_layout, ids in zip(state['bin_real_layout'], state['pieces_order']):
+            for info, index in zip(bin_layout, ids):
+                state['orientations'][index] = info['orientation']
+        return state
+
+    while original is None or (not exhausted() and
+                               (restart_limit is None or restart < restart_limit)):
+        restart += 1
+        current = snapshot(packing_3D_voxel_lookback(
+            copy.deepcopy(object_info_total), nfv_pool, ifv_pool, orientations,
+            container_size, container_shape, rho, max_radio, packing_alg,
+            orien_evaluation, SCH_nesting_strategy, random_CA=True,
+            random_CA_threshold=random_CA_threshold, unified_pes=True,
+            rcl_tolerance=rcl_tolerance, position_rng=position_rng,
+            rcl_observer=(lambda event: rcl_observer(dict(event, restart=restart)))
+            if rcl_observer is not None else None, **common))
+        if original is None:
+            original = current
+        restart_best = current
+        if best is None or current['score'] < best['score']:
+            best = current
+        attempts = ls_attempts = no_change_time = iter_piece_selection = 0
+        exclude_last_bin = True
+        trace(f"improved_GRASP_ILS restart {restart}: {current['score']}")
+        while (ls_attempts < iter_limit_per_iter and not exhausted()
+               and len(current['bin_real_layout']) > 1):
+            selection_info = [None] * len(object_info_total)
+            for bin_layout, ids in zip(current['bin_real_layout'], current['pieces_order']):
+                for info, index in zip(bin_layout, ids):
+                    selection_info[index] = info
+            stage = ((kick_trigger_time - no_change_time) / kick_trigger_time
+                     if kick_trigger_time is not None else 1.0)
+            selected = improve_pieces_selection_ls(
+                selection_info, iter_piece_selection, stage,
+                len(current['bin_real_layout']), seed=None, deterministic=False,
+                exclude_last_bin=exclude_last_bin, rng=piece_rng)
+            iter_piece_selection += 1
+            neighbors = [o for o in choices if o != current['orientations'][selected]]
+            if not neighbors:
+                break
+            for orientation in neighbors:
+                if ls_attempts >= iter_limit_per_iter or exhausted():
+                    break
+                candidate = snapshot(improved_repack(
+                    copy.deepcopy(object_info_total), (selected, orientation),
+                    nfv_pool, ifv_pool, list(current['orientations']),
+                    {0: copy.deepcopy(current)}, 0, ils_orientations,
+                    container_size, container_shape, rho, max_radio,
+                    packing_alg, orien_evaluation, SCH_nesting_strategy, **ls_common))
+                attempts += 1
+                ls_attempts += 1
+                if candidate['score'] < best['score']:
+                    best = candidate
+                if candidate['score'] < restart_best['score']:
+                    restart_best = candidate
+                if candidate['score'] < current['score']:
+                    if exclude_last_bin:
+                        same_layout = (candidate['pieces_order'] == current['pieces_order']
+                                       and candidate['orientations'] == current['orientations']
+                                       and all(np.array_equal(a['array'], b['array'])
+                                               for new_bin, old_bin in zip(candidate['bin_real_layout'], current['bin_real_layout'])
+                                               for a, b in zip(new_bin, old_bin)))
+                        exclude_last_bin = same_layout
+                    current = candidate
+                    no_change_time = iter_piece_selection = 0
+                    break
+                no_change_time += 1
+                if candidate['metrics'][0] == 1 or exhausted():
+                    break
+                if kick_trigger_time is not None and no_change_time >= kick_trigger_time:
+                    # The restart best plays the standalone ILS best-state role.
+                    perturbed = list(restart_best['orientations'])
+                    count = int(np.ceil(len(object_info_total) * fractions[kick_level]))
+                    positions = kick_rng.choice(len(object_info_total), size=count, replace=False)
+                    for index in positions:
+                        alternatives = [o for o in choices if o != perturbed[index]]
+                        perturbed[index] = kick_rng.choice(alternatives)
+                    current = snapshot(kick_repacking(
+                        copy.deepcopy(object_info_total), nfv_pool, ifv_pool,
+                        orientations, perturbed, container_size, container_shape,
+                        rho, max_radio, packing_alg, orien_evaluation,
+                        SCH_nesting_strategy, **common))
+                    attempts += 1
+                    if current['score'] < restart_best['score']:
+                        restart_best = current
+                    if current['score'] < best['score']:
+                        best = current
+                    no_change_time = iter_piece_selection = 0
+                    exclude_last_bin = False
+                    trace(f"Restart {restart}, iteration {attempts}, kick after LS evaluation {ls_attempts}: {current['score']}")
+                    # Rebuild selection and alternatives from the accepted kick.
+                    break
+
+    if visualisation:
+        visualize_voxel_model(best['bin_real_layout'], best['pieces_order'],
+                              container_size, container_shape)
+    return (*best['metrics'], *original['metrics'], best['bin_real_layout'],
+            original['bin_real_layout'], best['bin_topos_layout'],
+            best['pieces_order'], time.perf_counter() - started)
+
+
 def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, ils_orientations, orientations_list,
             packing_alg, selection_type, selection_range, accessible_check,
             SCH_nesting_strategy, orien_evaluation,
             container_size, container_shape,
-            iter_limit_per_iter, time_limit, alpha, flag_NFV_POOL, visualisation, _TRACE):
+            iter_limit_per_iter, time_limit, alpha, flag_NFV_POOL, visualisation, _TRACE, piece_seed=101, position_seed=202):
 
     global TRACE 
     TRACE = _TRACE
+    # Initialize once per run, independently from the instance-order RNG.
+    piece_rng = np.random.default_rng(piece_seed)
+    position_rng = np.random.default_rng(position_seed)
+
 
     # GRASP: (Random Constructive Algorithm + LS) in a loop
 
@@ -1585,7 +1965,7 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
                                                                                     packing_alg, orien_evaluation,
                                                                                     SCH_nesting_strategy, density = 5, axis = 'z', 
                                                                                     _type = selection_type, _accessible_check = accessible_check, _encourage_dbl = True, 
-                                                                                    _select_range = selection_range, random_CA= random_CA, random_CA_threshold = random_CA_threshold, flag_NFV_POOL=flag_NFV_POOL, _TRACE = False) # for SCH
+                                                                                    _select_range = selection_range, random_CA= random_CA, random_CA_threshold = random_CA_threshold, flag_NFV_POOL=flag_NFV_POOL, _TRACE = False, position_rng=position_rng) # for SCH
         
                                                                                                                                                 # def packing_3D_voxel_lookback(polobject_info_total, nfv_pool, orientation, container_size, 
                                                                                                                                                 #                         container_shape, rho, max_radio, 
@@ -1696,7 +2076,7 @@ def GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, i
         while keep_this_iter:
 
             # decide which piece
-            selected_index = pieces_selection_ls(object_info_total, alpha = alpha, seed=None)
+            selected_index = pieces_selection_ls(object_info_total, alpha = alpha, seed=None, rng=piece_rng)
 
             # decide which orientation
             # selected_orientation = orientation_selection_ls(orientations)
@@ -1838,10 +2218,14 @@ def GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientation
                 packing_alg, selection_type, selection_range, accessible_check,
                 SCH_nesting_strategy, orien_evaluation,
                 container_size, container_shape,
-                iter_limit_per_iter, kick_trigger_time, kick_level, time_limit, alpha, flag_NFV_POOL, visualisation, _TRACE):
+                iter_limit_per_iter, kick_trigger_time, kick_level, time_limit, alpha, flag_NFV_POOL, visualisation, _TRACE, piece_seed=101, position_seed=202):
     
     global TRACE 
     TRACE = _TRACE
+    # Initialize once per run, independently from the instance-order RNG.
+    piece_rng = np.random.default_rng(piece_seed)
+    position_rng = np.random.default_rng(position_seed)
+
 
 
     # GRASP: (Random Constructive Algorithm + LS) in a loop
@@ -1901,7 +2285,7 @@ def GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientation
                                                                                     packing_alg, orien_evaluation,
                                                                                     SCH_nesting_strategy, density = 5, axis = 'z', 
                                                                                     _type = selection_type, _accessible_check = accessible_check, _encourage_dbl = True, 
-                                                                                    _select_range = selection_range, random_CA= random_CA, random_CA_threshold = random_CA_threshold,flag_NFV_POOL = flag_NFV_POOL, _TRACE = False) # for SCH
+                                                                                    _select_range = selection_range, random_CA= random_CA, random_CA_threshold = random_CA_threshold,flag_NFV_POOL = flag_NFV_POOL, _TRACE = False, position_rng=position_rng) # for SCH
         
                                                                                                                                                 # def packing_3D_voxel_lookback(polobject_info_total, nfv_pool, orientation, container_size, 
                                                                                                                                                 #                         container_shape, rho, max_radio, 
@@ -2018,7 +2402,7 @@ def GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientation
         while keep_this_iter:
 
             # decide which piece
-            selected_index = pieces_selection_ls(object_info_total, alpha = alpha, seed=None)
+            selected_index = pieces_selection_ls(object_info_total, alpha = alpha, seed=None, rng=piece_rng)
 
             # decide which orientation
             # selected_orientation = orientation_selection_ls(orientations)

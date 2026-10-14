@@ -14,10 +14,10 @@ from scipy.ndimage import binary_fill_holes
 # ========================================================\
 # call function in src
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
-
 import binvox_rw
+from ca_parameters import best_ca_parameters
 # from iter_local_search import iter_local_search, bin_lower_bound, pieces_selection_ls
-from new_ILS_southampton import improved_ILS, ILS_from_the_first_piece, GRASP, GRASP_ILS
+from new_ILS_southampton import improved_ILS, ILS_from_the_first_piece, GRASP, GRASP_ILS, improved_GRASP
 from function_lib import save_voxel_model, NFV_POOL, IFV_POOL, get_bounding_box
 
 def voxel_volume(voxel_data):
@@ -441,7 +441,7 @@ def load_instance(instance_id, input_dir="../instances"):
 def testing(list_datasets_name, seq_seed_list, ALG_list, container_shape_list,
             *, experiment_iterations=1000, experiment_time=360000,
             experiment_kick_trigger=120, visualisation=False,
-            selection_ranges=None, nesting_strategies=None):
+            selection_ranges=None, nesting_strategies=None, rcl_tolerance=0.10, piece_seed=101, position_seed=202, rcl_observer=None):
 
     # =======================================================================================
     # key --      value                     --    value example
@@ -502,12 +502,14 @@ def testing(list_datasets_name, seq_seed_list, ALG_list, container_shape_list,
         for seq_seed in seq_seed_list:
             for each_ALG in ALG_list:     
                 for each_container_shape in container_shape_list:
-                    for selection_range in (selection_ranges or ["bottom","bottom_top","all"]):
-                        for SCH_nesting_strategy in (nesting_strategies or ["minimum_aabb_volume","minimum_aabb_edges_len","maximal_residual_box", "overlap_distance"]):
+                    # Empirical CA defaults by shape; explicit lists still allow parameter scans.
+                    default_strategy, default_range = best_ca_parameters(each_container_shape)
+                    for selection_range in (selection_ranges or [default_range]):
+                        for SCH_nesting_strategy in (nesting_strategies or [default_strategy]):
                             for each_max_rho in max_rho_list:
                                 for each_max_radio in max_radio_list:
 
-                                    np.random.seed(seq_seed)  # Reproducible stochastic search for each configuration.
+                                    np.random.seed(seq_seed)  # Legacy RNG (e.g. kicks); piece/position streams are separate.
                                     instance_id = make_instance_id(each_name, seq_seed, each_container_shape, each_max_radio, each_max_rho)
                                     container_shape, container_size, max_radio, rho, object_info_total = load_instance(instance_id)
 
@@ -581,11 +583,11 @@ def testing(list_datasets_name, seq_seed_list, ALG_list, container_shape_list,
                                         kick_level = "medium"
                                         # neighbour_type = "orientation_only"
 
-                                    elif ALG == "GRASP": 
+                                    elif ALG in ("GRASP", "improved_GRASP"):
                                         
                                         # define the parameter/effort level of ILS algorithm
-                                        iter_limit_per_GRASP_iter = 100
-                                        time_limit = 3600
+                                        iter_limit_per_GRASP_iter = experiment_iterations
+                                        time_limit = experiment_time
                                         alpha = 1   
                                         # to select a piece and its orientation and packing position
                                         # ideally
@@ -630,6 +632,7 @@ def testing(list_datasets_name, seq_seed_list, ALG_list, container_shape_list,
                                     print(f"Algorithm is {each_ALG}")
                                     print(f"Rho is {rho}, max_radio is {max_radio}, {0.2 *100} % is ILW.")
                                     print(f"Seed for sequence is {seq_seed}")
+                                    print(f"Piece selection seed: {piece_seed}; packing position seed: {position_seed}")
 
                                     check1 = time.time()
 
@@ -649,7 +652,8 @@ def testing(list_datasets_name, seq_seed_list, ALG_list, container_shape_list,
                                                                                                                                                                     packing_alg, selection_type, selection_range, accessible_check,
                                                                                                                                                                     SCH_nesting_strategy, _evaluation, ALG,
                                                                                                                                                                     container_size, container_shape,
-                                                                                                                                                                    iteration_limit= iteration_limit, time_limit=time_limit, kick_trigger_time=kick_trigger_time, kick_level=kick_level, flag_NFV_POOL=False, visualisation=visualisation, _TRACE=True)
+                                                                                                                                                                    iteration_limit= iteration_limit, time_limit=time_limit, kick_trigger_time=kick_trigger_time, 
+                                                                                                                                                                    kick_level=kick_level, flag_NFV_POOL=False, visualisation=visualisation, _TRACE=True, piece_seed=piece_seed, position_seed=position_seed)
                                                                                                                                                                                                                     
                                                                                                                                                         # def ILS_from_the_first_piece(object_info, nfv_pool, max_radio, rho, orientations, ils_orientations, orientations_list,
                                                                                                                                                         #             packing_alg, selection_type, selection_range, accessible_check,
@@ -657,14 +661,19 @@ def testing(list_datasets_name, seq_seed_list, ALG_list, container_shape_list,
                                                                                                                                                         #             container_size, container_shape,
                                                                                                                                                         #             iteration_limit, time_limit, alpha, neighbour_type, kick_trigger_time, kick_level, visualisation, _TRACE):
                                     
-                                    elif ALG == "GRASP":
+                                    elif ALG in ("GRASP", "improved_GRASP"):
+                                        grasp_algorithm = GRASP if ALG == "GRASP" else improved_GRASP
+                                        grasp_options = dict(piece_seed=piece_seed, position_seed=position_seed)
+                                        if ALG == "improved_GRASP":
+                                            grasp_options["rcl_tolerance"] = rcl_tolerance
+                                            grasp_options["rcl_observer"] = rcl_observer
 
                                         best_N, best_U, best_U_star, origin_N, origin_U, origin_U_star,  \
-                                        best_current_layout, origin_current_layout, best_topos_layout, best_pieces_order, overall_time_cost = GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, ils_orientations, orientations_list,
+                                        best_current_layout, origin_current_layout, best_topos_layout, best_pieces_order, overall_time_cost = grasp_algorithm(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, ils_orientations, orientations_list,
                                                                                                                                                                 packing_alg, selection_type, selection_range, accessible_check,
                                                                                                                                                                 SCH_nesting_strategy, _evaluation,
                                                                                                                                                                 container_size, container_shape,
-                                                                                                                                                                iter_limit_per_GRASP_iter, time_limit, alpha, flag_NFV_POOL, visualisation = False, _TRACE = True)
+                                                                                                                                                                iter_limit_per_GRASP_iter, time_limit, alpha, flag_NFV_POOL, visualisation = visualisation, _TRACE = True, **grasp_options)
                                                                                                                                     
                                     elif ALG == "GRASP_ILS":
                                         best_N, best_U, best_U_star, origin_N, origin_U, origin_U_star,  \
@@ -672,7 +681,7 @@ def testing(list_datasets_name, seq_seed_list, ALG_list, container_shape_list,
                                                                                                                                                         packing_alg, selection_type, selection_range, accessible_check,
                                                                                                                                                         SCH_nesting_strategy, _evaluation,
                                                                                                                                                         container_size, container_shape,
-                                                                                                                                                        iter_limit_per_GRASP_iter, kick_trigger_time, kick_level, time_limit, alpha, flag_NFV_POOL, visualisation = False, _TRACE = True)
+                                                                                                                                                        iter_limit_per_GRASP_iter, kick_trigger_time, kick_level, time_limit, alpha, flag_NFV_POOL, visualisation = False, _TRACE = True, piece_seed=piece_seed, position_seed=position_seed)
 
                                     else:
                                         raise ValueError
@@ -742,8 +751,15 @@ def testing(list_datasets_name, seq_seed_list, ALG_list, container_shape_list,
 
 def __main__():
     import argparse
-    parser = argparse.ArgumentParser(description="Run improved ILS and its constructive baseline.")
+    parser = argparse.ArgumentParser(description="Run packing algorithms, including GRASP and improved_GRASP.")
     parser.add_argument("--dataset", default="chess")
+    parser.add_argument("--shapes", nargs="+", choices=["cube", "cylinder"], default=["cube"])
+    parser.add_argument("--algorithms", nargs="+", default=["fixed_CA", "ILS"],
+                        choices=["fixed_CA", "random_CA", "ILS", "BLF", "GRASP", "improved_GRASP", "GRASP_ILS"])
+    parser.add_argument("--seeds", nargs="+", type=int)
+    parser.add_argument("--range", dest="selection_range", choices=["bottom", "bottom_top", "all"])
+    parser.add_argument("--pes", choices=["minimum_aabb_volume", "minimum_aabb_edges_len", "maximal_residual_box", "overlap_distance"])
+    parser.add_argument("--rcl-tolerance", type=float, default=0.10)
     parser.add_argument("--seed", type=int, default=13)
     parser.add_argument("--iterations", type=int, default=100)
     parser.add_argument("--time-limit", type=float, default=60)
@@ -754,11 +770,12 @@ def __main__():
     args = parser.parse_args()
     # Existing data loaders resolve relative paths from this test directory.
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    rows = testing([args.dataset], [args.seed], ["fixed_CA", "ILS"], ["cube"],
+    rows = testing([args.dataset], args.seeds or [args.seed], args.algorithms, args.shapes,
                    experiment_iterations=args.iterations, experiment_time=args.time_limit,
                    experiment_kick_trigger=args.kick_trigger, visualisation=args.visualisation,
-                   selection_ranges=None if args.full_matrix else ["bottom"],
-                   nesting_strategies=None if args.full_matrix else ["minimum_aabb_volume"])
+                   selection_ranges=["bottom", "bottom_top", "all"] if args.full_matrix else ([args.selection_range] if args.selection_range else None),
+                   nesting_strategies=["minimum_aabb_volume", "minimum_aabb_edges_len", "maximal_residual_box", "overlap_distance"] if args.full_matrix else ([args.pes] if args.pes else None),
+                   rcl_tolerance=args.rcl_tolerance)
     columns = ["dataset", "piece_count", "seed", "algorithm", "best_N", "best_U_star",
                "origin_N", "origin_U_star", "U_improvement_percent", "U_star_improvement_percent",
                "elapsed_seconds", "selection_range", "nesting_strategy"]

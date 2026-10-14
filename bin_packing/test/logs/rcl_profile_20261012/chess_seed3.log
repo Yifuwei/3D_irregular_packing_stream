@@ -1,0 +1,35 @@
+======================= Alg started ======================= 
+Dataset is chess
+Algorithm is improved_GRASP
+Rho is 1, max_radio is 999999, 20.0 % is ILW.
+Seed for sequence is 3
+Piece selection seed: 101; packing position seed: 202
+improved_GRASP restart 1: 2.720523756377551
+Alg applied is improved_GRASP
+After ILS, 3 bins are used, U_star is 0.279476243622449
+ U_star Improvement: 0.0%
+ U Improvement: 0.0%
+==== improved_GRASP Done - Bins: 3 | U*: 0.279476243622449 | Overlap test: Pass ====
+It takes 11.615400799999406 s, overall
+Traceback (most recent call last):
+  File "C:\work\paper_repo\3D_irregular_packing_stream\bin_packing\test\profile_rcl.py", line 136, in <module>
+    worker(args) if args.worker else parent(args)
+  File "C:\work\paper_repo\3D_irregular_packing_stream\bin_packing\test\profile_rcl.py", line 54, in worker
+    Path(args.output).write_text(json.dumps(dict(events=events, launcher_row=rows[0]), indent=2), encoding='utf-8')
+  File "C:\work\anaconda\envs\cutting_stable\lib\json\__init__.py", line 238, in dumps
+    **kw).encode(obj)
+  File "C:\work\anaconda\envs\cutting_stable\lib\json\encoder.py", line 201, in encode
+    chunks = list(chunks)
+  File "C:\work\anaconda\envs\cutting_stable\lib\json\encoder.py", line 431, in _iterencode
+    yield from _iterencode_dict(o, _current_indent_level)
+  File "C:\work\anaconda\envs\cutting_stable\lib\json\encoder.py", line 405, in _iterencode_dict
+    yield from chunks
+  File "C:\work\anaconda\envs\cutting_stable\lib\json\encoder.py", line 325, in _iterencode_list
+    yield from chunks
+  File "C:\work\anaconda\envs\cutting_stable\lib\json\encoder.py", line 405, in _iterencode_dict
+    yield from chunks
+  File "C:\work\anaconda\envs\cutting_stable\lib\json\encoder.py", line 438, in _iterencode
+    o = _default(o)
+  File "C:\work\anaconda\envs\cutting_stable\lib\json\encoder.py", line 179, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type int32 is not JSON serializable

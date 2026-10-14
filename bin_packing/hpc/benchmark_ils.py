@@ -53,6 +53,7 @@ def worker():
     os.chdir(LOCAL / 'test')
     import code_launcher as launcher
     import new_ILS_southampton as ils
+    from ca_parameters import best_ca_parameters
     from function_lib import NFV_POOL, IFV_POOL
     from numba import cuda
     assert cuda.is_available()
@@ -60,12 +61,14 @@ def worker():
     shape, size, max_radio, rho, objects = launcher.load_instance(instance)
     orientations = ([0, 90, 180, 270], ['x', 'y', 'z'])
     values = ['x_0'] + [f'{ax}_{d}' for d in [90, 180, 270] for ax in ['x', 'y', 'z']]
+    SCH_nesting_strategy, selection_range = best_ca_parameters(shape)
     base = [objects, None, None, max_radio, rho, orientations, orientations,
-            values, 'SCH', 'bounding_box', 'bottom', False,
-            'minimum_aabb_volume', None, 'ILS', size, shape]
+            values, 'SCH', 'bounding_box', selection_range, False,
+            SCH_nesting_strategy, None, 'ILS', size, shape]
     print('SETTINGS', json.dumps(dict(algorithm=args.worker, seed=args.seed, ls_seed=ls_seed,
           evaluations=args.evaluations, kick_trigger=args.kick_trigger,
-          kick_level='medium', dataset=args.dataset, piece_count=len(objects))), flush=True)
+          kick_level='medium', dataset=args.dataset, piece_count=len(objects),
+          nesting_strategy=SCH_nesting_strategy, selection_range=selection_range)), flush=True)
 
     # Warm construction/GPU/JIT once in each independent process; exclude it.
     random.seed(ls_seed)
@@ -177,6 +180,8 @@ def worker():
                   original_fixes=['exact candidate budget', 'independent orientation lists',
                                   'post-kick end timestamp', 'restart neighborhood after kick'] if args.worker == 'original' else [],
                   note='Wall time includes construction and search; excludes warm-up/imports. CUDA synchronized at timing boundaries. Exact budget includes kicks. Detailed event tracing disabled. One-bin continuation is a benchmark-only adaptation.')
+    report.update(nesting_strategy=SCH_nesting_strategy, selection_range=selection_range,
+                  container_shape=shape)
     (args.output / f'{args.worker}.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
     print('PASS', json.dumps(report), flush=True)
 
