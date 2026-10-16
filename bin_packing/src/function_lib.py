@@ -378,6 +378,9 @@ class IFV_POOL():
         self.all_ifv_cal = 0
         self.val_ifv_cal = 0
         self.rep_ifv_cal = 0
+        # Same immutable piece-type/orientation identity as the full IFV cache.
+        # Side-wall feasibility depends on the cross section, not bin height.
+        self.cylinder_xy_pool = {}
     
     def get_key(self,ongoing_info):
         
@@ -446,7 +449,15 @@ class IFV_POOL():
             obj_length, obj_width, obj_height = aabb_rotate(ongoing_info["aabb"], ongoing_info["orientation"])  
             # print("get_ifv", container_size)
             # exit(-1)
-            return njit_get_ifv_cylinder(ongoing_info["array"], obj_length, obj_width, obj_height, container_size)
+            xy_key = (self.get_key(ongoing_info), tuple(container_size[:2]))
+            xy = self.cylinder_xy_pool.get(xy_key)
+            if xy is None:
+                xy = njit_cylinder_xy(ongoing_info["array"], obj_length, obj_width,
+                                      container_size[0], container_size[1])
+                if len(self.cylinder_xy_pool) >= self.max_size:
+                    self.cylinder_xy_pool.pop(next(iter(self.cylinder_xy_pool)))
+                self.cylinder_xy_pool[xy_key] = xy
+            return njit_expand_cylinder_xy(xy, obj_height, container_size[2])
 
     def get_ifv_cube(self, ongoing_info, container_size): 
             
@@ -498,48 +509,84 @@ def insert_add(big, small, offset):
 
 @njit
 def njit_get_ifv_cylinder(ongoing_array, obj_length, obj_width, obj_height, container_size): 
-    
-    h = int(container_size[0])
-    w = int(container_size[1])
-    d = int(container_size[2])
-    
-    ifv = np.zeros((h,w,d), dtype=np.int32)      
-    # print("DEBUG: ifv.shape:", ifv.shape, "container_size:", container_size)
-    
-    # obj_length, obj_width, obj_height = get_bounding_box_njit_itself(ongoing_info)      
-      
+    """Standalone IFV calculation; pooled callers also reuse the XY mask."""
+    xy = njit_cylinder_xy(ongoing_array, obj_length, obj_width,
+                          container_size[0], container_size[1])
+    return njit_expand_cylinder_xy(xy, obj_height, container_size[2])
+
+
+@njit
+def njit_expand_cylinder_xy(xy, obj_height, height):
+    """Materialize binary IFV with one byte per voxel (formerly int32)."""
+    height = int(height)
+    ifv = np.zeros((xy.shape[0], xy.shape[1], height), dtype=np.uint8)
+    available_z = max(0, height - obj_height + 1)
+    for i in range(xy.shape[0]):
+        for j in range(xy.shape[1]):
+            if xy[i, j]:
+                ifv[i, j, :available_z] = 1
+    return ifv
+
+
+@njit
+def njit_cylinder_xy(ongoing_array, obj_length, obj_width, length, width):
+    """Exact legacy point-containment test using a monotone-chain convex hull.
+
+    Points are collected in lexicographic order, so no sorting or Qhull is
+    needed. Empty, singleton and collinear projections are supported.
+    """
+    h, w = int(length), int(width)
+    xy = np.zeros((h, w), dtype=np.uint8)
     available_x = max(0, h - obj_length + 1)
     available_y = max(0, w - obj_width + 1)
-    available_z = max(0, d - obj_height + 1)
-
-        
-    radius = h / 2
-    # circle = np.zeros((h, w), dtype=np.int8)
-    cx, cy = h / 2, w / 2
-    
-    y_indices, x_indices = np.indices((h, w))
-    circle = ((x_indices - cx) ** 2 + (y_indices - cy) ** 2 > radius ** 2).astype(np.int32)
-    
-    # for i in range(container_size[0]):
-    #     for j in range(container_size[1]):
-    #         if (i - cx) ** 2 + (j - cy) ** 2 > radius ** 2:
-    #             circle[i, j] = 1  
-
-    projection = max_along_axis_2(ongoing_array).astype(np.int32)
-    
+    if available_x == 0 or available_y == 0:
+        return xy
+    projection = max_along_axis_2(ongoing_array)
+    points = np.empty((projection.size, 2), dtype=np.int64)
+    n = 0
+    for x in range(projection.shape[0]):
+        for y in range(projection.shape[1]):
+            if projection[x, y] == 1:
+                points[n, 0], points[n, 1] = x, y
+                n += 1
+    hull = np.empty((2 * n + 1, 2), dtype=np.int64)
+    k = 0
+    for p in range(n):
+        while k >= 2:
+            cross = ((hull[k-1, 0] - hull[k-2, 0]) * (points[p, 1] - hull[k-2, 1])
+                     - (hull[k-1, 1] - hull[k-2, 1]) * (points[p, 0] - hull[k-2, 0]))
+            if cross > 0:
+                break
+            k -= 1
+        hull[k] = points[p]
+        k += 1
+    upper_start = k + 1
+    for p in range(n - 2, -1, -1):
+        while k >= upper_start:
+            cross = ((hull[k-1, 0] - hull[k-2, 0]) * (points[p, 1] - hull[k-2, 1])
+                     - (hull[k-1, 1] - hull[k-2, 1]) * (points[p, 0] - hull[k-2, 0]))
+            if cross > 0:
+                break
+            k -= 1
+        hull[k] = points[p]
+        k += 1
+    if n > 1:
+        k -= 1  # closing point repeats the first vertex
+    radius_squared = (h / 2.0) ** 2
     for i in range(available_x):
         for j in range(available_y):
-            
-            trans_projection = np.zeros_like(projection, dtype=np.int32)
-            
-            trans_projection[i: h, j: w] = projection[:h-i, :w-j]
-            
-            check = trans_projection + circle  
-            
-            if np.all(check <= 1):
-                ifv[i, j, :available_z] = 1
-                
-    return ifv
+            fits = True
+            for p in range(k):
+                # Preserve the original np.indices coordinate order, including
+                # its swapped centres for non-square cross sections.
+                dx = hull[p, 0] + i - w / 2.0
+                dy = hull[p, 1] + j - h / 2.0
+                if dx * dx + dy * dy > radius_squared:
+                    fits = False
+                    break
+            if fits:
+                xy[i, j] = 1
+    return xy
 
 
 @njit
@@ -710,7 +757,7 @@ def get_feasible_boundary_rigorous_acces(fixed, fixed_info, ongoing_info, contai
         # print("main function", (L, W, H_larger))
         if container_type == "cylinder": 
 
-            ifv_larger = njit_get_ifv_cylinder(ongoing_info["array"], x1, y1, z1, (L,W, H_larger))
+            ifv_larger = ifv_pool.retrieve_ifv(ongoing_info, (L, W, H_larger), container_type)
 
         elif container_type == "cube": 
 

@@ -10,6 +10,7 @@ import copy
 import hashlib
 import json
 import numpy as np
+from radio_bin_priority import post_placement_score
 
 
 def geometry_search_config(size, strategy, density=5, axis='z', shape='cube',
@@ -115,9 +116,12 @@ class RankedRepacker:
                         or (volumes[b]+piece['volume'])*self.factor > self.max_weight):
                     self.emit(event='HARD_CONSTRAINT_REJECT', piece=i, bin=b+1)
                     continue
-                score = (volumes[b]/self.volume)*(remaining/self.max_radio)
+                score = post_placement_score(volumes[b],piece['volume'],self.volume,
+                                              sum(radio[b]),piece['radio'],self.max_radio)
                 eligible.append((b,score))
-                details.append(dict(bin=b+1,filling_rate=volumes[b]/self.volume,
+                details.append(dict(bin=b+1,filling_rate=(volumes[b]+piece['volume'])/self.volume,
+                    filling_rate_before=volumes[b]/self.volume,
+                    filling_rate_after=(volumes[b]+piece['volume'])/self.volume,
                     current_radio=sum(radio[b]),piece_radio=piece['radio'],max_radio=self.max_radio,
                     radio_left_after=remaining,remaining_ratio=remaining/self.max_radio,score=score))
             ranked = sorted(eligible,key=lambda pair:(-pair[1],pair[0]))

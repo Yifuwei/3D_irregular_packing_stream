@@ -1552,15 +1552,20 @@ def improved_GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
                    container_size, container_shape, iter_limit_per_iter,
                    time_limit, alpha, flag_NFV_POOL, visualisation, _TRACE,
                    random_CA_threshold=5, restart_limit=None,
-                   no_improvement_limit=None, rcl_tolerance=0.10, piece_seed=101, position_seed=202, rcl_observer=None):
-    """Random construction followed by bounded first-improvement descent.
+                   no_improvement_limit=None, rcl_tolerance=0.10, piece_seed=101, position_seed=202, rcl_observer=None,
+                   ls_evaluation_limit=None):
+    """Random construction followed by stagnation-limited descent.
 
     Compatible with GRASP's arguments and eleven-value return tuple. Each
     accepted move becomes the next repacking baseline. Piece selection matches
     improved_ILS: weighted sampling with replacement from the accepted layout,
     excluding the last bin until the first accepted layout change. Each restart
     resets that exclusion. Consecutive rejected candidates trigger a restart;
-    no_improvement_limit defaults to the per-restart repacking budget.
+    iter_limit_per_iter is the consecutive-failure threshold, NOT a total
+    evaluation budget. no_improvement_limit, when provided, overrides it.
+    Every strict improvement resets the failure counter. Total evaluations
+    may exceed that threshold. ls_evaluation_limit optionally provides a
+    separate total cap for fixed-work experiments; None disables that cap.
     alpha is retained for compatibility; this selector does not use it.
 
     The wall-clock budget includes copying/evaluation. Calls to the packing
@@ -1596,6 +1601,13 @@ def improved_GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
         no_improvement_limit = iter_limit_per_iter
     if no_improvement_limit <= 0:
         raise ValueError("no_improvement_limit must be positive")
+    if (not isinstance(no_improvement_limit, (int, np.integer))
+            or isinstance(no_improvement_limit, bool)):
+        raise ValueError("no_improvement_limit must be an integer")
+    if ls_evaluation_limit is not None and (
+            not isinstance(ls_evaluation_limit, (int, np.integer))
+            or isinstance(ls_evaluation_limit, bool) or ls_evaluation_limit <= 0):
+        raise ValueError("ls_evaluation_limit must be a positive integer or None")
     if rcl_tolerance is not None and (not np.isfinite(rcl_tolerance) or rcl_tolerance < 0):
         raise ValueError("RCL tolerance must be finite and nonnegative or None")
 
@@ -1651,7 +1663,7 @@ def improved_GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
         attempts = 0
         no_change_time = iter_piece_selection = 0
         exclude_last_bin = True
-        while (attempts < iter_limit_per_iter and not exhausted()
+        while ((ls_evaluation_limit is None or attempts < ls_evaluation_limit) and not exhausted()
                and no_change_time < no_improvement_limit
                and len(current['bin_real_layout']) > 1):
             selection_info = [None] * len(object_info_total)
@@ -1669,7 +1681,7 @@ def improved_GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
             if not neighbors:
                 break
             for orientation in neighbors:
-                if (attempts >= iter_limit_per_iter or exhausted()
+                if ((ls_evaluation_limit is not None and attempts >= ls_evaluation_limit) or exhausted()
                         or no_change_time >= no_improvement_limit):
                     break
                 candidate = snapshot(improved_repack(
@@ -2640,3 +2652,10 @@ def GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientation
     return best_N, best_U, best_U_star, origin_N, origin_U, origin_U_star,  \
             best_current_layout, origin_current_layout, best_topos_layout,  \
             best_pieces_order,overall_time_cost
+
+# Shared radiation-aware bin priority for all three improved controllers.
+# Frozen experiment snapshots retain their original implementation.
+from radio_bin_priority import with_radio_bin_priority as _with_radio_bin_priority
+improved_ILS = _with_radio_bin_priority(improved_ILS)
+improved_GRASP = _with_radio_bin_priority(improved_GRASP)
+improved_GRASP_ILS = _with_radio_bin_priority(improved_GRASP_ILS)

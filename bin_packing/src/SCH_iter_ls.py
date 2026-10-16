@@ -303,7 +303,8 @@ def nesting_evaluation(ongoing, partial_solution_in_the_bin, current_layout, pac
     return False if best_position is None else (best_value, tuple(best_position))
 
 def score_position_pes(ongoing, fixed, current_layout, position, strategy,
-                       bin_size, encourage_dbl):
+                       bin_size, encourage_dbl, *, positions=None,
+                       rcl_tolerance=None, position_rng=None, rcl_observer=None):
     """Score a prescribed position using SCH's PES, including empty bins."""
     modes = {
         'minimum_volume_of_AABB': 1, 'minimum_aabb_volume': 1,
@@ -313,8 +314,11 @@ def score_position_pes(ongoing, fixed, current_layout, position, strategy,
     }
     if strategy not in modes:
         raise ValueError(f"Unknown nesting strategy: {strategy}")
-    return nesting_evaluation(ongoing, fixed, current_layout, [position],
-                              modes[strategy], bin_size, encourage_dbl)
+    return nesting_evaluation(ongoing, fixed, current_layout,
+                              [position] if positions is None else positions,
+                              modes[strategy], bin_size, encourage_dbl,
+                              rcl_tolerance=rcl_tolerance,position_rng=position_rng,
+                              rcl_observer=rcl_observer)
 
 
 def SC_heuristic(nfv_pool, ifv_pool, ongoing_object_info, current_layout, topos_layout, position_bin, 

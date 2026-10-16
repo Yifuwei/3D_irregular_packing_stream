@@ -12,13 +12,15 @@ import time
 from collections import Counter
 
 import numpy as np
+from radio_bin_priority import post_placement_score
 
 
 class GlobalRankedPacking:
     """One instance per GRASP run; never share its cache across instances."""
 
     def __init__(self, objects, size, volume, max_radio, rho, max_weight,
-                 weight_factor, search, rotate, translate, policy_keys, event=None):
+                 weight_factor, search, rotate, translate, policy_keys, event=None,
+                 bin_priority='radio', orientation_selector=None, random_state_key=None):
         if not all(np.isfinite(v) and v > 0 for v in
                    (volume, max_radio, rho, max_weight, weight_factor)):
             raise ValueError('Capacities, rho and weight factor must be positive and finite')
@@ -28,6 +30,11 @@ class GlobalRankedPacking:
         self.max_weight, self.factor = max_weight, weight_factor
         self.search, self.rotate, self.translate = search, rotate, translate
         self.policy_keys = dict(policy_keys)
+        if bin_priority not in ('radio','first_fit'):
+            raise ValueError('Unknown bin priority')
+        self.bin_priority=bin_priority
+        self.orientation_selector=orientation_selector
+        self.random_state_key=random_state_key
         self.event = event or (lambda **e: None)
         self.cache, self.stats = {}, Counter()
         for i, p in enumerate(self.objects):
@@ -54,16 +61,25 @@ class GlobalRankedPacking:
     def ranked_bins(self, state, i):
         piece = self.objects[i]
         ranks = []
+        details = []
         for b, group in enumerate(state['layout']):
             vol = sum(p['volume'] for p in group)
             radio = sum(state['radio'][b])
             if not self.eligible(vol, radio, piece):
                 self.emit('HARD_CONSTRAINT_REJECT', piece=i, bin=b)
                 continue
-            score = (vol / self.volume) * ((self.max_radio-radio-piece['radio']) / self.max_radio)
+            score = post_placement_score(vol,piece['volume'],self.volume,
+                                         radio,piece['radio'],self.max_radio)
             ranks.append((b, score))
-        ranks.sort(key=lambda x: (-x[1], x[0]))
-        self.emit('BIN_RANK', piece=i, ranked=ranks)
+            details.append(dict(bin=b,filling_rate_before=vol/self.volume,
+                filling_rate_after=(vol+piece['volume'])/self.volume,
+                filling_rate=(vol+piece['volume'])/self.volume,
+                current_radio=radio,piece_radio=piece['radio'],max_radio=self.max_radio,
+                radio_left_after=self.max_radio-radio-piece['radio'],score=score))
+        ranks.sort(key=(lambda x: (-x[1], x[0])) if self.bin_priority=='radio' else (lambda x:x[0]))
+        self.emit('BIN_RANK', piece=i, ranked=ranks,
+                  metric='post_placement_fill_times_radio_left',
+                  details=sorted(details,key=lambda d:(-d['score'],d['bin'])))
         return [b for b, _ in ranks]
 
     def empty_state(self, bins=0):
@@ -86,7 +102,11 @@ class GlobalRankedPacking:
             self.emit('HARD_CONSTRAINT_REJECT', piece=i, bin=b)
             return None
         prefix = self.prefix_key(state['layout'][b], state['order'][b])
-        key = (i, orientation, b, prefix, self.policy_keys[mode])
+        policy=self.policy_keys[mode]
+        # A cached stochastic CA success must not freeze future random draws.
+        if mode=='CA' and self.random_state_key is not None:
+            policy=policy+(self.random_state_key(),)
+        key = (i, orientation, b, prefix, policy)
         axis, degree = orientation.split('_')
         trial = dict(self.objects[i], orientation=orientation)
         trial['array'] = self.rotate(self.objects[i]['array'], int(degree), axis)
@@ -155,17 +175,20 @@ class GlobalRankedPacking:
             if np.any(state['occupancy'][b] > 1):
                 raise ValueError('Bin contains overlapping voxels')
 
-    def construct(self, orientations):
+    def construct(self, orientations, piece_orientations=None, mode='CA'):
         state = self.empty_state()
         for i in range(len(self.objects)):
             placed = False
             bins = self.ranked_bins(state, i)
             bins.append(self.add_bin(state))
             for b in bins:
-                choices = [self.query(state, i, o, b, 'CA') for o in orientations]
+                allowed = [piece_orientations[i]] if piece_orientations is not None else orientations
+                choices = [self.query(state, i, o, b, mode) for o in allowed]
                 choices = [x for x in choices if x is not None]
                 if choices:
-                    _, info = min(choices, key=lambda x: x[0])
+                    selected=(self.orientation_selector(choices) if mode=='CA' and self.orientation_selector
+                              else min(choices,key=lambda x:x[0]))
+                    _, info = selected
                     self.place(state, i, b, info)
                     placed = True
                     break
@@ -218,7 +241,25 @@ def _geometry_search(nfv_pool, ifv_pool, size, shape, strategy, selection_type,
     from SCH_iter_ls import score_position_pes
 
     def search(info, state, b, mode, i):
+        def record(e):
+            if observer:
+                observer(dict(e, piece_index=i, bin_index=b, orientation=info['orientation']))
         if not state['layout'][b]:
+            if mode=='CA' and tolerance is not None:
+                if shape=='cube':
+                    from itertools import product
+                    occupied=np.argwhere(info['array']!=0)
+                    if not len(occupied):return False
+                    lower,upper=occupied.min(0),occupied.max(0)
+                    ranges=[tuple(dict.fromkeys((-int(lo),int(limit-1-hi))))
+                            for lo,hi,limit in zip(lower,upper,size)]
+                    positions=list(product(*ranges))
+                else:
+                    from SCH_iter_ls import selection_process_bottom_top_extrema
+                    region=ifv_pool.retrieve_ifv(info,size,shape)
+                    positions=selection_process_bottom_top_extrema(region)
+                return score_position_pes(info['array'],state['occupancy'][b],[],None,strategy,size,True,
+                    positions=positions,rcl_tolerance=tolerance,position_rng=rng,rcl_observer=record)
             if shape == 'cube':
                 position = (0,0,0)
             else:
@@ -230,9 +271,6 @@ def _geometry_search(nfv_pool, ifv_pool, size, shape, strategy, selection_type,
                 position = (x,y,0)
             return score_position_pes(info['array'], state['occupancy'][b],
                                       state['layout'][b], position, strategy, size, True)
-        def record(e):
-            if observer:
-                observer(dict(e, piece_index=i, bin_index=b, orientation=info['orientation']))
         return SC_heuristic(nfv_pool, ifv_pool, info, state['layout'], state['occupancy'], b,
                             size, strategy, 5, 'z', shape,
                             selection_type if mode == 'CA' else 'bounding_box',
