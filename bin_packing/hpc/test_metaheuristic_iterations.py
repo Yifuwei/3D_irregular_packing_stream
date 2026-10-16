@@ -28,7 +28,8 @@ class IterationExperimentTests(unittest.TestCase):
                 self.assertEqual(kw['iter_limit_per_iter'], config['ls_limit'])
                 self.assertIsNone(kw['restart_limit'])
                 if config['algorithm']=='improved_GRASP':
-                    self.assertEqual(kw['no_improvement_limit'], 150)
+                    self.assertEqual(kw['no_improvement_limit'], config['ls_limit'])
+                    self.assertIsNone(kw['ls_evaluation_limit'])
                 else:
                     self.assertEqual(kw['kick_seed'], 33)
 

@@ -84,10 +84,11 @@ def prepare(project, datasets, shapes, seeds, time_limit=3600,
     return dict(schema_version=1, time_limit=time_limit, datasets=datasets,
                 shapes=shapes, seeds=seeds, tasks=tasks,
                 source_hashes=source_hashes(project), geometries=list(geometries.values()),
+                grasp_restart_policy='consecutive_rejected_LS_evaluations; improvements reset counter',
                 common=dict(pes=pes, selection_range=selection_range,
                             kick_level='medium', rcl_tolerance=.10,
                             random_CA_threshold=5, restart_limit=None,
-                            no_improvement_limit=150, accessible_check=True,
+                            no_improvement_limit=None, accessible_check=True,
                             flag_NFV_POOL=False, total_iteration_limit=None),
                 internal_seed_policy='time_ns mixed with process, host and task identity; actual seeds saved per run',
                 selection_basis='Default datasets are min/median/max of existing CA mean runtime; override explicitly if desired.')
@@ -116,7 +117,8 @@ def algorithm_kwargs(task, manifest, search_seeds):
                   restart_limit=None, rcl_tolerance=settings['rcl_tolerance'],
                   random_CA_threshold=settings['random_CA_threshold'])
         if task['algorithm'] == 'improved_GRASP':
-            kw['no_improvement_limit'] = settings['no_improvement_limit']
+            kw['no_improvement_limit'] = task['ls_limit']
+            kw['ls_evaluation_limit'] = None
         else:
             kw.update(kick_trigger_time=task['kick_trigger'],
                       kick_level=settings['kick_level'], kick_seed=search_seeds['kick'])

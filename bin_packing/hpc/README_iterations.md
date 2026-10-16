@@ -6,11 +6,13 @@
 
 | 算法 | 配置 |
 |---|---|
-| improved_GRASP | LS每轮100/125/150，停滞重启阈值统一150 |
+| improved_GRASP | 连续100/125/150次LS无改善后重构；接受改善后清零，不设每轮总LS上限 |
 | improved_ILS | kick阈值100/125/150，总iteration_limit=None |
 | improved_GRASP_ILS | 每轮300次LS，kick阈值100/125/150 |
 
 混合算法kick计入额外iteration，不消耗300次LS额度。第300次LS后允许满足阈值的kick，随后重启。持续失败时三组分别最多3/2/2次kick。
+
+2026-10-16起，improved_GRASP的iter_limit_per_iter表示连续失败阈值；no_improvement_limit显式设置时优先于它，ls_evaluation_limit=None表示无总评估上限。G100/G125/G150使用此新协议。此前按每轮总评估预算生成的结果仍属于旧协议，不能混用或用旧manifest断点续跑到新协议；新实验必须使用新结果目录。CA+50等固定工作量实验应显式传ls_evaluation_limit=50，并保留冻结包。
 
 公共设置：SCH、minimum_aabb_volume、bottom_top、accessibility=True、medium kick、RCL tolerance=0.10。输入使用既有 *_999999_1.txt 实例；实际radio/rho由该实例读取。输入顺序使用对应seq seed。内部搜索种子在每个任务启动时由time.time_ns()、进程ID、主机名和任务ID混合生成，与顺序seed无关；piece/position/kick/Python全局随机源使用各自生成的种子，实际值和时间戳保存到task_N.json。单独ILS的NumPy全局kick随机源使用生成的kick种子。每轮重启不重新设种子。
 
