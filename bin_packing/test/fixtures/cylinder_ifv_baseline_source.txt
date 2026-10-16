@@ -1,0 +1,62 @@
+# Frozen original algorithm, before convex hull optimization.
+
+@njit
+def njit_get_ifv_cylinder(ongoing_array, obj_length, obj_width, obj_height, container_size): 
+    
+    h = int(container_size[0])
+    w = int(container_size[1])
+    d = int(container_size[2])
+    
+    ifv = np.zeros((h,w,d), dtype=np.int32)      
+    # print("DEBUG: ifv.shape:", ifv.shape, "container_size:", container_size)
+    
+    # obj_length, obj_width, obj_height = get_bounding_box_njit_itself(ongoing_info)      
+      
+    available_x = max(0, h - obj_length + 1)
+    available_y = max(0, w - obj_width + 1)
+    available_z = max(0, d - obj_height + 1)
+
+        
+    radius = h / 2
+    # circle = np.zeros((h, w), dtype=np.int8)
+    cx, cy = h / 2, w / 2
+    
+    y_indices, x_indices = np.indices((h, w))
+    circle = ((x_indices - cx) ** 2 + (y_indices - cy) ** 2 > radius ** 2).astype(np.int32)
+    
+    # for i in range(container_size[0]):
+    #     for j in range(container_size[1]):
+    #         if (i - cx) ** 2 + (j - cy) ** 2 > radius ** 2:
+    #             circle[i, j] = 1  
+
+    projection = max_along_axis_2(ongoing_array).astype(np.int32)
+    
+    for i in range(available_x):
+        for j in range(available_y):
+            
+            trans_projection = np.zeros_like(projection, dtype=np.int32)
+            
+            trans_projection[i: h, j: w] = projection[:h-i, :w-j]
+            
+            check = trans_projection + circle  
+            
+            if np.all(check <= 1):
+                ifv[i, j, :available_z] = 1
+                
+    return ifv
+
+@njit
+def max_along_axis_2(arr):
+
+    shape_x, shape_y, shape_z = arr.shape
+    result = np.zeros((shape_x, shape_y), dtype=arr.dtype)
+
+    for i in range(shape_x):
+        for j in range(shape_y):
+            for k in range(shape_z):
+                
+                if arr[i, j, k] == 1:
+                    result[i, j] = 1
+                    break
+    
+    return result

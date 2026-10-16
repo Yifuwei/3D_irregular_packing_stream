@@ -12,7 +12,7 @@ SOURCE = Path(__file__).resolve().parents[1] / 'src' / 'new_ILS_southampton.py'
 
 class ImprovedGraspTests(unittest.TestCase):
     def run_search(self, constructions, moves=(), budget=100, orientations=None,
-                   iterations=10, stall_limit=1, restarts=2):
+                   iterations=10, stall_limit=1, restarts=2, total_cap=None):
         clock = [0]
         constructions, moves = iter(constructions), iter(moves)
         baselines = []
@@ -65,7 +65,7 @@ class ImprovedGraspTests(unittest.TestCase):
             orientations or ['x_0', 'x_90'], 'SCH', 'bounding_box', 1,
             True, 'minimum_aabb_volume', None, (1, 1, 1), 'cube', iterations,
             budget, 1, False, False, False, restart_limit=restarts,
-            no_improvement_limit=stall_limit)
+            no_improvement_limit=stall_limit, ls_evaluation_limit=total_cap)
         return output, baselines
 
     def test_accepts_local_improvement_below_global_threshold(self):
@@ -79,14 +79,14 @@ class ImprovedGraspTests(unittest.TestCase):
         self.assertEqual([s[0] for s in self.selections], [True, True, False, False])
 
     def test_rejected_candidate_preserves_exclusion_and_changes_stage(self):
-        self.run_search([3], [3, 2, 2], iterations=3, stall_limit=3, restarts=1)
+        self.run_search([3], [3, 2, 2], iterations=3, stall_limit=3, restarts=1, total_cap=3)
         self.assertEqual([s[0] for s in self.selections], [True, True, False])
         self.assertAlmostEqual(self.selections[1][1], 2 / 3)
         self.assertEqual(self.selections[2][1:], (1, 'x_90', 0))
 
     def test_restart_reenables_exclusion(self):
-        self.run_search([5, 4], [3, 2], iterations=1)
-        self.assertEqual([s[0] for s in self.selections], [True, True])
+        self.run_search([5, 4], [3, 3, 2, 2], iterations=1)
+        self.assertEqual([s[0] for s in self.selections], [True, False, True, False])
 
     def test_real_selector_allows_last_bin_when_exclusion_disabled(self):
         tree = ast.parse(SOURCE.read_text(encoding='utf-8'))
@@ -114,9 +114,27 @@ class ImprovedGraspTests(unittest.TestCase):
         self.assertEqual(output[0], 2)
 
     def test_repacking_limit_per_restart(self):
-        output, baselines = self.run_search([5, 4], [3, 2], iterations=1)
+        output, baselines = self.run_search([5, 4], [3, 2], iterations=1, total_cap=1)
         self.assertEqual(len(baselines), 2)
         self.assertEqual(output[0], 2)
+
+    def test_improvements_reset_stall_and_allow_more_than_threshold(self):
+        output, baselines = self.run_search([5], [5, 4, 4, 3, 3, 3],
+                                           iterations=2, stall_limit=None, restarts=1)
+        self.assertEqual(len(baselines), 6)
+        self.assertEqual([s for s, _ in baselines], [5,5,4,4,3,3])
+        self.assertEqual(output[0], 3)
+
+    def test_one_hundred_rejections_after_improvement(self):
+        output, baselines = self.run_search([5], [5]*99+[4]+[4]*100,
+                                           iterations=100, stall_limit=None, restarts=1,budget=1000)
+        self.assertEqual(len(baselines),200)
+        self.assertEqual(output[0],4)
+
+    def test_restart_after_consecutive_failure_threshold(self):
+        _, baselines = self.run_search([5,6], [5,5,6,6],
+                                      iterations=2,stall_limit=None,restarts=2)
+        self.assertEqual([s for s,_ in baselines],[5,5,6,6])
 
 
 if __name__ == '__main__':

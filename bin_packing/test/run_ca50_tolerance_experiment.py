@@ -48,6 +48,8 @@ def fixed_work_call(function, *args, **kwargs):
     bound = inspect.signature(function).bind(*args, **kwargs)
     bound.arguments.update(iter_limit_per_iter=50, time_limit=float('inf'),
                            restart_limit=1, no_improvement_limit=50)
+    if 'ls_evaluation_limit' in inspect.signature(function).parameters:
+        bound.arguments['ls_evaluation_limit'] = 50
     return function(*bound.args, **bound.kwargs)
 
 

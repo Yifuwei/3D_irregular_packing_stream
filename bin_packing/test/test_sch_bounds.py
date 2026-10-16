@@ -34,6 +34,7 @@ SCH = load_functions("SCH_iter_ls.py", {
 })
 LIB = load_functions("function_lib.py", {
     "IFV_POOL", "aabb_rotate", "njit_get_ifv_cylinder", "max_along_axis_2",
+    "njit_cylinder_xy", "njit_expand_cylinder_xy",
 })
 
 
