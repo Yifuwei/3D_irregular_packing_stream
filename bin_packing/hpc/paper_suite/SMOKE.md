@@ -1,92 +1,74 @@
-# 一键 GPU smoke run
+> Current submission default (2026-10-26): stop after calibration and CA sensitivity. RCL/tuning/full are not submitted. Use --through full only when intentionally resuming the later experiments. run_smoke.sh also stops at sensitivity by default; inspect results/sensitivity/completion.json. Full-workflow smoke verification requires an explicitly completed full workflow.
 
-用途：在 AIRE 上用真实 GPU 跑通四阶段，并自动检查参数选择和传递。结果放入独立 `ejor_smoke_*` 包，不用于正式论文结论。
+# 新版实验参数与运行顺序
 
-这是小实例流程测试。最大实例32GiB内存测试请运行 `bash bin_packing/hpc/paper_suite/run_memory_smoke.sh`，三算法各3600秒、串行；全部参数和监控命令见 [EXPERIMENT_PARAMETERS.md](EXPERIMENT_PARAMETERS.md)。
+协议：`ejor-pooled-rcl-piece-stall-v2`。依据10月20日Word及随后确认。完整参数和每一个任务见同目录 `EXPERIMENT_PARAMETERS.json`；每次 prepare 后还会生成该 bundle 专属的 `parameter_plan.json` 和 `manifest.json`。
 
-|阶段|小规模设置|任务数|
-|---|---|---:|
-|容量标定|shapesnew，seed=3，cube/cylinder|2|
-|RCL|三个 tolerance；一次构造 + 3 次 LS|6|
-|Iteration|保留 GRASP 四组、ILS 三组、hybrid 三组；整体 30 秒/任务|20|
-|Full|三算法 × 三档 weight × 三档 radiation × 两种箱形；整体 30 秒/任务|54|
+## 共用设置
 
-合计 82 个任务。默认同时一张 GPU，每任务 4 CPU、16G 主存，Slurm walltime 为 1 小时/任务。30 秒是整体算法预算；初始构造或已启动的 packing 可能超过软上限。单箱时允许 LS 提前停止。短预算不保证触发 100/125/150 次 kick，控制流已有独立 CPU 测试。
+- 15 datasets，cube/cylinder；输入 sequence seeds 为3、7、13、19、53。调参使用3、7、13。
+- 选定 CA 的 PES/range 按 dataset/shape 从已完成的12组 geometry-only CA 中读取。
+- 输入顺序不再 shuffle。内部 piece/position/kick/global RNG 独立于 sequence seed，并记录实际 seeds。
+- 强/中/弱 weight = max(0.5/0.75/1.0 × U*，最大物体体积比) × bin volume，weight factor=1。
+- RUB = rmax + 1000 max(0,0.2n*−1)；radiation 强/中/弱 = rmax、(rmax+RUB)/2、RUB。
+- U* 是删除体积最少 bin 后的平均 filling rate；单箱采用 U*=U。n* 也删除同一箱后计算。
+- n*≤5时保留九个名义组合，但标注 radiation capacities 重合。全零 radiation 使用1e-12作为实现容量。
+- 有约束时先过滤不合法 bin，再按放入后 R/Rmax + U/Umax 降序；Umax=min(1,rho,Wmax/(weight factor×Vbin))。无约束使用 first fit。
+- 成功/失败缓存仅在单次算法运行内保留；CA候选池缓存坐标，抽样每次重新执行。
+- 全局参数选择以所有匹配 cell 的平均 N−U* 最小为准。平局顺序：RCL10、RCL20、TOP10、TOP30；kick 25%、50%、75%。不使用rank，不衡量多样性。
 
-## 提交
+## 各阶段
 
-将最新脚本同步到 AIRE，激活已有 packing 环境后，在 repo 根目录执行：
+| 阶段 | 参数 | 正式任务数 | 算法预算 |
+|---|---|---:|---|
+| calibration | 每dataset/shape五个sequence；优先恢复已有CA JSON | 150个reference；恢复后无需GPU | 固定CA一次 |
+| sensitivity | 已选CA；15×2×5×9约束组合 | 1350 | 固定CA一次，无LS |
+| rcl | 15×2×3×4规则×9约束组合 | 3240 | 随机构造一次，LS=0 |
+| tuning | shapesnew、Merged4_normal、st04_Example5_normal；2形状×3seeds×3强度×9约束 | 486 | 每次1800秒整体时间 |
+| full | 15×2×5×9约束×3算法 | 4050 | 每次3600秒整体时间 |
 
-```bash
-bash bin_packing/hpc/paper_suite/run_smoke.sh
-```
+RCL规则为10%、20%、Top10、Top30。每个物体在当前bin的10个方向各评价至多16个底/顶极值位置，合并池后一次筛选和均匀抽样。位置数不足时Top-k取实际数量。
 
-如果当前就在 `bin_packing/hpc`，执行 `bash paper_suite/run_smoke.sh` 即可。脚本自动推导 repo 路径，不依赖当前工作目录。
+ILS：加权概率选择物体；每次最多9个替代方向，first improvement即接受；连续ceil(n/2)个完整失败物体搜索触发kick，改善后清零。kick强度ceil(p*n)，p=25%、50%、75%。
 
-显式指定输出位置（必须为新目录）：
+GRASP：顺序完整邻域搜索，first improvement后从第一个物体重启；完整一遍无改善才重构，无100/125/150调参。
 
-```bash
-EJOR_OUTPUT=/mnt/scratch/pmywe/GPU/ejor_flow_smoke_v1 \
-bash bin_packing/hpc/paper_suite/run_smoke.sh
-```
+GRASP_ILS：继承统一RCL和ILS强度，触发ceil(n/2)；每轮9n次LS repacking，改善不清零；kick不占9n预算，但占整体时间。预算耗尽直接重新构造，无独立iteration实验。
 
-CA 汇总不在默认路径时增加 `CA_SUMMARY=/path/to/summary_by_dataset.csv`。可选 `SMOKE_TIME_LIMIT=60` 改为 60 秒，`MAX_PARALLEL=2` 改为两张并行 GPU。默认保持 30 秒、并行 1。不预估固定完成时间：还受排队、CUDA/JIT 和 packing 耗时影响。
+时间上限包括构造、LS、kick，不执行丢弃的CA预热。已启动的packing调用允许完成，所以可能超出软预算一次调用的时间。
 
-仅查看提交命令（会准备冻结包，不会提交）：
+## HPC 命令
 
-```bash
-bash bin_packing/hpc/paper_suite/run_smoke.sh --dry-run
-```
-
-dry-run 后如要运行同一个已准备的包，应使用输出路径，不要再次 run_smoke 创建新包：
-
-```bash
-python BUNDLE/driver/suite.py submit-all --bundle BUNDLE \
-  --max-parallel 1 --walltime 01:00:00
-```
-
-## 自动流程与验收
-
-```text
-calibration → 容量 JSON
-    → RCL → 最优 tolerance JSON
-    → iteration → 最优 iteration JSON
-    → full → CSV 汇总 → 自动 smoke 验收
-```
-
-阶段之间使用 Slurm afterok 依赖；每个阶段 GPU 任务结束后由 CPU 汇总检查完整性并选参数。后续 worker 在实际启动时读取选择文件，不需要在提交时预知最优值。
-
-full 汇总成功后自动生成 `BUNDLE/smoke_verification.json`，预期：
-
-```json
-{
-  "status": "PASS",
-  "counts": {
-    "calibration": {"expected": 2, "success": 2},
-    "rcl": {"expected": 6, "success": 6},
-    "tuning": {"expected": 20, "success": 20},
-    "full": {"expected": 54, "success": 54}
-  },
-  "problems": []
-}
-```
-
-报告还包含 bundle_id 和检查项目。检查包括：冻结代码/输入哈希；所有 task 身份和验证标记；阶段完整性；从原始 task 重新计算选定参数；检查每个后续任务记录的真实 search_settings 与选定参数一致；reference/RCL 工作量；无约束/有约束模式；full 各任务的容量；最终 CSV 存在。
-
-查看报告：
+在AIRE进入 `bin_packing/hpc/paper_suite`，先加载既有packing环境。
 
 ```bash
-python -m json.tool BUNDLE/smoke_verification.json
+# 小实例全流程：两种形状，seed3，算法整体时间30秒
+bash run_smoke.sh
+
+# 大实例内存：st04_Example5_normal / cylinder / seed3
+# 三个算法各3600秒；每任务1GPU、4CPU、32G；并发1
+bash run_memory_smoke.sh
+
+# 正式全阶段提交；自动从已有CA JSON恢复calibration
+bash run_all.sh
+
+# 只查看提交图，不提交
+bash run_all.sh --dry-run
 ```
 
-报告不存在表示最终验收尚未运行，不表示通过。手工检查（未完成时会输出 FAIL 并非零退出）：
+默认正式并发3；shapesnew/chess任务16G，其余32G；每任务1GPU、4CPU。普通任务Slurm walltime默认12小时；内存实验6小时。CPU gate为1CPU、2G、30分钟。
+
+小smoke默认任务数：calibration2、sensitivity18、rcl72、tuning54、full54，共200；如果指定CA_JSON_DIR恢复历史reference，calibration会是10个已恢复reference。仅cube时各阶段为1、9、36、27、27，共100。
 
 ```bash
-python BUNDLE/driver/suite.py verify-smoke --bundle BUNDLE
+# BUNDLE 替换为提交输出的实际路径
+python "$BUNDLE/driver/suite.py" verify-smoke --bundle "$BUNDLE"
+python "$BUNDLE/driver/memory_probe.py" check --bundle "$BUNDLE"
+
+# 恢复：只提交缺失/失败任务，保留已完成结果
+bash submit_all.sh "$BUNDLE" --pending
 ```
 
-某阶段失败会阻止下游；先查看 `logs/` 和 `results/<stage>/completion.json`，以及失败 task 的 error。取消同包剩余任务后，按 README 的 unlock 和 `submit-all --pending` 恢复，仍使用 `--max-parallel 1 --walltime 01:00:00`。
+每阶段GPU结束后CPU gate核对完整结果，写入runs.csv、summary.csv（sensitivity/full）和selection.json。下一阶段只有gate成功才启动；full读取统一RCL、统一kick强度及calibration容量。不需要提前手动知道最佳参数。
 
-## 已验证范围
-
-新增自动验收及四阶段参数交接通过本地 12 项 suite 测试，其中模拟完整四阶段能得到 PASS，错误 tolerance 和缺少 task 均得到 FAIL。这些本地测试使用模拟搜索结果；真实 GPU smoke 需要在 AIRE 执行上述提交命令。
+旧版冻结bundle继续用其自身driver；新版必须prepare新目录。不要把旧100/125/150或CA+50结果混入本协议。

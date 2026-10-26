@@ -1,183 +1,74 @@
-# 实验顺序与运行命令
+> Current submission default (2026-10-26): stop after calibration and CA sensitivity. RCL/tuning/full are not submitted. Use --through full only when intentionally resuming the later experiments. run_smoke.sh also stops at sensitivity by default; inspect results/sensitivity/completion.json. Full-workflow smoke verification requires an explicitly completed full workflow.
 
-本说明对应 2026-10-16 的实现。所有命令在 AIRE repo 根目录执行。使用正式数据前，需要将本地更新的代码与 CA 汇总 CSV 上传到 AIRE；本地文件修改不会自动出现在远端。
+# 新版实验参数与运行顺序
 
-## 顺序和各阶段的自动输出
+协议：`ejor-pooled-rcl-piece-stall-v2`。依据10月20日Word及随后确认。完整参数和每一个任务见同目录 `EXPERIMENT_PARAMETERS.json`；每次 prepare 后还会生成该 bundle 专属的 `parameter_plan.json` 和 `manifest.json`。
 
-|顺序|阶段|正式任务数|如何决定参数|成功后写出|
-|---|---|---:|---|---|
-|0|读取已完成的 CA 参数结果|不重跑 1800 次|每 dataset/shape 取最低平均 N−U*，平局取更短时间，冻结 PES/reference range|`manifest.json` 的 `ca_parameters`|
-|1|容量标定 calibration|150|15 dataset × 2 shape × 5 顺序 seed 的 reference CA，按 U*/n* 计算三档容量|`results/calibration/selection.json`|
-|2|RCL tolerance|270|15 × 2 × 3 seed × 3 tolerance；每次随机 CA + 50 LS；每 dataset/shape 选最低平均 N−U*|`results/rcl/selection.json`|
-|3|Iteration tuning|180|3 代表 dataset × 2 shape × 3 seed × 10 配置，各 3600 秒；按 dataset/shape 内的 seed 均值排名，再选平均排名最低的配置|`results/tuning/selection.json`|
-|4|完整实验 full|4050|读取已选 tolerance、iteration 和容量；15 × 2 × 5 seed × 3 算法 × 3 weight × 3 radiation，各 3600 秒|`results/full/runs.csv`、`summary.csv`|
+## 共用设置
 
-四种 GRASP 配置：NI100、B100、B125、B150；三种 ILS 配置：K100、K125、K150；三种 hybrid 配置：B300_K100、B300_K125、B300_K150。全部使用 first-improvement LS。
+- 15 datasets，cube/cylinder；输入 sequence seeds 为3、7、13、19、53。调参使用3、7、13。
+- 选定 CA 的 PES/range 按 dataset/shape 从已完成的12组 geometry-only CA 中读取。
+- 输入顺序不再 shuffle。内部 piece/position/kick/global RNG 独立于 sequence seed，并记录实际 seeds。
+- 强/中/弱 weight = max(0.5/0.75/1.0 × U*，最大物体体积比) × bin volume，weight factor=1。
+- RUB = rmax + 1000 max(0,0.2n*−1)；radiation 强/中/弱 = rmax、(rmax+RUB)/2、RUB。
+- U* 是删除体积最少 bin 后的平均 filling rate；单箱采用 U*=U。n* 也删除同一箱后计算。
+- n*≤5时保留九个名义组合，但标注 radiation capacities 重合。全零 radiation 使用1e-12作为实现容量。
+- 有约束时先过滤不合法 bin，再按放入后 R/Rmax + U/Umax 降序；Umax=min(1,rho,Wmax/(weight factor×Vbin))。无约束使用 first fit。
+- 成功/失败缓存仅在单次算法运行内保留；CA候选池缓存坐标，抽样每次重新执行。
+- 全局参数选择以所有匹配 cell 的平均 N−U* 最小为准。平局顺序：RCL10、RCL20、TOP10、TOP30；kick 25%、50%、75%。不使用rank，不衡量多样性。
 
-容量标定与 RCL 在科学上互不依赖；当前脚本串行执行它们，以控制 GPU 并行总数。Iteration 阶段中的 ILS 不需要 tolerance，但统一等待 RCL 阶段完成，便于整套实验管理。无约束阶段使用 first-fit；full 启用 weight/radiation 硬约束和 bin priority。
+## 各阶段
 
-## 为什么可以提前提交全部任务
+| 阶段 | 参数 | 正式任务数 | 算法预算 |
+|---|---|---:|---|
+| calibration | 每dataset/shape五个sequence；优先恢复已有CA JSON | 150个reference；恢复后无需GPU | 固定CA一次 |
+| sensitivity | 已选CA；15×2×5×9约束组合 | 1350 | 固定CA一次，无LS |
+| rcl | 15×2×3×4规则×9约束组合 | 3240 | 随机构造一次，LS=0 |
+| tuning | shapesnew、Merged4_normal、st04_Example5_normal；2形状×3seeds×3强度×9约束 | 486 | 每次1800秒整体时间 |
+| full | 15×2×5×9约束×3算法 | 4050 | 每次3600秒整体时间 |
 
-提前提交的是 Slurm 作业和依赖关系，并没有提前替未来实验填入一个默认 tolerance。
+RCL规则为10%、20%、Top10、Top30。每个物体在当前bin的10个方向各评价至多16个底/顶极值位置，合并池后一次筛选和均匀抽样。位置数不足时Top-k取实际数量。
 
-```text
-calibration GPU 数组
-    ↓ afterany：数组结束后运行汇总检查
-calibration CPU 汇总：完整性验证 → 保存容量 → 成功退出
-    ↓ afterok：只有上一步成功才释放
-RCL GPU 数组
-    ↓ afterany
-RCL CPU 汇总：验证全部 270 结果 → 自动选择 tolerance → 写 selection.json
-    ↓ afterok
-iteration GPU 数组：启动时读取 RCL selection.json
-    ↓ afterany
-iteration CPU 汇总：自动选择三个算法的 iteration 配置 → 写 selection.json
-    ↓ afterok
-full GPU 数组：启动时读取 tolerance、iteration、容量三个 selection.json
-    ↓ afterany
-full CPU 汇总：逐实例及分组结果 CSV
-```
+ILS：加权概率选择物体；每次最多9个替代方向，first improvement即接受；连续ceil(n/2)个完整失败物体搜索触发kick，改善后清零。kick强度ceil(p*n)，p=25%、50%、75%。
 
-`suite.py::submit()` 用 `sbatch --parsable` 获取作业 ID，拼接 `--dependency=afterany:...` 和 `--dependency=afterok:...`。阶段结束后 `suite.py::collect()` 检查每个预期 task 的身份、成功状态和验证标记，全部有效才选参数。缺失/失败会非零退出，下游不会执行。
+GRASP：顺序完整邻域搜索，first improvement后从第一个物体重启；完整一遍无改善才重构，无100/125/150调参。
 
-参数选择使用 `protocol.py::select_tolerances()` 和 `select_tuning()`。真正启动 GPU worker 后，`worker.py::read_selections()` 从磁盘读取刚产生的 JSON，`settings_for()` 再把选值填入算法调用。例如 RCL 选出某 dataset/cube 的 0.15，后续 GRASP 与 GRASP_ILS 在该 dataset/cube 就使用 `rcl_tolerance=0.15`。ILS 不使用 RCL。
+GRASP_ILS：继承统一RCL和ILS强度，触发ceil(n/2)；每轮9n次LS repacking，改善不清零；kick不占9n预算，但占整体时间。预算耗尽直接重新构造，无独立iteration实验。
 
-RCL 平局保留所有并列 tolerance，确定性取较小值；iteration 平均排名平局按 config_id 取值。所有候选原始结果均保留，因此可以检查自动选择依据。
+时间上限包括构造、LS、kick，不执行丢弃的CA预热。已启动的packing调用允许完成，所以可能超出软预算一次调用的时间。
 
-## 环境与冻结包
+## HPC 命令
+
+在AIRE进入 `bin_packing/hpc/paper_suite`，先加载既有packing环境。
 
 ```bash
-cd /mnt/scratch/pmywe/GPU/3D_irregular_packing_stream
-module load miniforge
-source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate packing
+# 小实例全流程：两种形状，seed3，算法整体时间30秒
+bash run_smoke.sh
+
+# 大实例内存：st04_Example5_normal / cylinder / seed3
+# 三个算法各3600秒；每任务1GPU、4CPU、32G；并发1
+bash run_memory_smoke.sh
+
+# 正式全阶段提交；自动从已有CA JSON恢复calibration
+bash run_all.sh
+
+# 只查看提交图，不提交
+bash run_all.sh --dry-run
 ```
 
-确认 `CA param test result/summary_by_dataset.csv` 在远端存在。默认 CA 汇总目录不一定随 Git 上传，可以自己指定 CSV 路径。
+默认正式并发3；shapesnew/chess任务16G，其余32G；每任务1GPU、4CPU。普通任务Slurm walltime默认12小时；内存实验6小时。CPU gate为1CPU、2G、30分钟。
 
-创建正式包（目录必须是全新的；不要指向旧结果）：
+小smoke默认任务数：calibration2、sensitivity18、rcl72、tuning54、full54，共200；如果指定CA_JSON_DIR恢复历史reference，calibration会是10个已恢复reference。仅cube时各阶段为1、9、36、27、27，共100。
 
 ```bash
-export BUNDLE=/mnt/scratch/pmywe/GPU/ejor_paper_20261016_v1
-python bin_packing/hpc/paper_suite/suite.py prepare \
-  --ca-summary "CA param test result/summary_by_dataset.csv" \
-  --output "$BUNDLE"
+# BUNDLE 替换为提交输出的实际路径
+python "$BUNDLE/driver/suite.py" verify-smoke --bundle "$BUNDLE"
+python "$BUNDLE/driver/memory_probe.py" check --bundle "$BUNDLE"
+
+# 恢复：只提交缺失/失败任务，保留已完成结果
+bash submit_all.sh "$BUNDLE" --pending
 ```
 
-准备只会复制所需源码和输入、生成清单，不使用 GPU。可以先查看正式提交图：
+每阶段GPU结束后CPU gate核对完整结果，写入runs.csv、summary.csv（sensitivity/full）和selection.json。下一阶段只有gate成功才启动；full读取统一RCL、统一kick强度及calibration容量。不需要提前手动知道最佳参数。
 
-```bash
-python "$BUNDLE/driver/suite.py" submit-all \
-  --bundle "$BUNDLE" --max-parallel 3 --dry-run
-```
-
-## 方式 A 一次提交全部
-
-已经 prepare 好的包：
-
-```bash
-python "$BUNDLE/driver/suite.py" submit-all \
-  --bundle "$BUNDLE" --max-parallel 3
-```
-
-如果想用一条命令同时 prepare + submit，则不用前面的 prepare，而执行：
-
-```bash
-EJOR_OUTPUT=/mnt/scratch/pmywe/GPU/ejor_paper_20261016_v1 \
-MAX_PARALLEL=3 bash bin_packing/hpc/paper_suite/run_all.sh
-```
-
-这两条是替代方案，不要对同一个包重复提交。不同内存组和数组分片串行，最多同时 3 个 GPU worker；小组 16G、其他 32G，每个 worker 1 GPU/4 CPU。超过账户待提交任务数限制时，可以用下面的分步方式。
-
-## 方式 B 分步提交
-
-使用同一个正式 `BUNDLE`。每一步等待该阶段 GPU 任务和 CPU 汇总任务完成，再执行下一步；不要在同包任务仍排队时重复提交。
-
-第一步，只提交容量标定：
-
-```bash
-python "$BUNDLE/driver/suite.py" submit-all \
-  --bundle "$BUNDLE" --through calibration --pending --max-parallel 3
-```
-
-确认 `results/calibration/completion.json` 的 incomplete 为空，并生成 selection.json。第二步：
-
-```bash
-python "$BUNDLE/driver/suite.py" submit-all \
-  --bundle "$BUNDLE" --through rcl --pending --max-parallel 3
-```
-
-第三步：
-
-```bash
-python "$BUNDLE/driver/suite.py" submit-all \
-  --bundle "$BUNDLE" --through tuning --pending --max-parallel 3
-```
-
-第四步：
-
-```bash
-python "$BUNDLE/driver/suite.py" submit-all \
-  --bundle "$BUNDLE" --through full --pending --max-parallel 3
-```
-
-`--through` 包括之前的阶段；`--pending` 跳过已成功的 GPU 任务，只重新做轻量汇总检查并补交后续任务。通常不需要手工 collect，Slurm CPU 汇总任务会自动运行。
-
-查看选出的 tolerance 和 iteration：
-
-```bash
-python -m json.tool "$BUNDLE/results/rcl/selection.json"
-python -m json.tool "$BUNDLE/results/tuning/selection.json"
-```
-
-## 每阶段已经做过哪些测试
-
-2026-10-16 本地合并运行 63 项 CPU 测试，全部通过。没有连接 AIRE，不能将这些测试表述为完成了真实 GPU 实验。
-
-|阶段|已实际运行的本地测试|结果|
-|---|---|---|
-|准备|冻结文件、输入复制、SHA256、完整计划 150/270/180/4050、数组分片和资源依赖|通过|
-|calibration|三档容量公式、最大单体下界、完整阶段汇总写出 selection|通过|
-|rcl|两级 RCL、负/零 PES、cube/cylinder 新空箱、真实 controller CA+50；模拟 cube=15%/cylinder=20% 的结果能写出不同最优值|通过|
-|tuning|GRASP 四组、ILS 无额外 iteration cap、hybrid 300 LS 与 kick 分离；实际读入上一步选择文件|通过|
-|full|模拟完整参数交接：GRASP B125、ILS K150、hybrid B300_K125、对应 tolerance 与容量；汇总全部 54 个 smoke 配置生成 CSV|通过|
-|失败／恢复|RCL 缺少一个结果不生成 tolerance、下游读取失败；跳过成功任务、依赖 afterok/afterany 检查|通过|
-
-表中的 15%/20% 和 B125/K150/B300_K125 是测试人为设定的期望值，不是目前真实实验得出的最优参数。四阶段交接测试执行真实的汇总、JSON 写读和算法参数组装，仅 GPU 搜索结果使用模拟数据。
-
-复现流程测试：
-
-```bash
-python -m unittest discover -s bin_packing/hpc/paper_suite -p test_suite.py -v
-python -m unittest discover -s bin_packing/test -p test_paper_controllers.py -v
-```
-
-## AIRE 上逐阶段验证的小包
-
-这个小包运行真实 GPU，覆盖四阶段的自动参数选择与交接。与正式包分开，禁止混入正式结果：
-
-```bash
-export SMOKE=/mnt/scratch/pmywe/GPU/ejor_flow_smoke_20261016_v1
-python bin_packing/hpc/paper_suite/suite.py prepare \
-  --ca-summary "CA param test result/summary_by_dataset.csv" \
-  --output "$SMOKE" --datasets shapesnew --tuning-datasets shapesnew \
-  --time-limit 30 --smoke
-python "$SMOKE/driver/suite.py" submit-all \
-  --bundle "$SMOKE" --max-parallel 1
-```
-
-共 82 个小任务：calibration 2、RCL 6、tuning 20、full 54。一个 dataset、seed=3、两个 shape；RCL 为 CA+3 LS，其余有时间预算的任务为 30 秒。验证文件、CUDA、Slurm 和参数交接；短预算不保证真实搜索触发 100/125/150 次 kick，阈值控制流已由 CPU 测试覆盖。
-
-完成后检查四个 `results/<stage>/completion.json`：success 应分别是 2、6、20、54，incomplete 均为空；full 应产生 summary.csv。确认小包成功后，再提交正式包。
-
-## 失败时
-
-检查 `logs/`、失败的 task JSON 以及 completion.json；先取消同包所有活动/等待任务。确认没有同包任务后清理中断 lock，再补交：
-
-```bash
-python "$BUNDLE/driver/suite.py" unlock --bundle "$BUNDLE"
-python "$BUNDLE/driver/suite.py" submit-all \
-  --bundle "$BUNDLE" --pending --max-parallel 3
-```
-
-如果是内存不足，可恢复时增加 `--large-memory`。如果要改算法源码或实验协议，准备一个新包；不能修改冻结 runtime 后接着混跑旧结果。
+旧版冻结bundle继续用其自身driver；新版必须prepare新目录。不要把旧100/125/150或CA+50结果混入本协议。

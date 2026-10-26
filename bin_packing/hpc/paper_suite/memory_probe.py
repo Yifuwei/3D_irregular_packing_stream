@@ -16,17 +16,20 @@ def prepare(project,summary,output,time_limit=3600):
         m=freeze(project,summary,output,['st04_Example5_normal'],['st04_Example5_normal'],time_limit,
                  True,('cylinder',))
     template=m['profile']['plans']['tuning'][0]
-    chosen={'G_NI100','I_K100','GI_B300_K100'}
-    cases=[]
-    for case in m['profile']['plans']['tuning']:
-        if case['config_id'] in chosen and case['shape']=='cylinder' and case['seed']==3:
-            cases.append(dict(case,task_id=len(cases),stage='memory',protocol=VERSION+'-memory-only'))
+    cases=[dict(template,task_id=i,stage='memory',protocol=VERSION+'-memory-only',
+                algorithm=algorithm,config_id='MEMORY_'+algorithm,kick='auto',kick_level='medium')
+           for i,algorithm in enumerate(('improved_ILS','improved_GRASP','improved_GRASP_ILS'))]
     if len(cases)!=3:raise ValueError('Memory probe must contain exactly three algorithms')
     m['profile']['plans']={'memory':cases}
     m['profile']['protocol']=VERSION+'-memory-only'
-    m['profile']['resource_probe']=dict(tolerance=.15,constraint_mode='geometry_only',
+    m['profile']['resource_probe']=dict(tolerance=.10,constraint_mode='geometry_only',
         note='Resource-only configurations, not selected performance optima; no discarded CA warmup',
         dataset=template['dataset'],shape='cylinder',seed=3,time_limit=time_limit)
+    parameter_path=output/'parameter_plan.json'
+    parameter_plan=json.loads(parameter_path.read_text())
+    parameter_plan['profile']=m['profile']
+    save(parameter_path,parameter_plan)
+    m['files_sha256']['parameter_plan.json']=hashlib.sha256(parameter_path.read_bytes()).hexdigest()
     save(output/'memory_task_map.json',list(range(len(cases))))
     m['files_sha256']['memory_task_map.json']=hashlib.sha256((output/'memory_task_map.json').read_bytes()).hexdigest()
     save(output/'manifest.json',m)

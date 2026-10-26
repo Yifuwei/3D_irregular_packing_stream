@@ -18,5 +18,5 @@ python "$script_dir/suite.py" prepare --project "$project" --ca-summary "$summar
     --shapes "${smoke_shapes[@]}" "${reference_args[@]}" \
     --time-limit "${SMOKE_TIME_LIMIT:-30}" --smoke
 python "$bundle/driver/suite.py" submit-all --bundle "$bundle" \
-    --max-parallel "${MAX_PARALLEL:-1}" --walltime "${SMOKE_WALLTIME:-01:00:00}" "$@"
-printf 'Smoke bundle: %s\nFinal automatic check: %s/smoke_verification.json\n' "$bundle" "$bundle"
+    --max-parallel "${MAX_PARALLEL:-1}" --walltime "${SMOKE_WALLTIME:-01:00:00}" --through sensitivity "$@"
+printf 'Smoke bundle: %s\nCA sensitivity completion: %s/results/sensitivity/completion.json\n' "$bundle" "$bundle"

@@ -1,121 +1,74 @@
-# EJOR 实验流程
+> Current submission default (2026-10-26): stop after calibration and CA sensitivity. RCL/tuning/full are not submitted. Use --through full only when intentionally resuming the later experiments. run_smoke.sh also stops at sensitivity by default; inspect results/sensitivity/completion.json. Full-workflow smoke verification requires an explicitly completed full workflow.
 
-对应 2026-10-16 的《EJOR paper update summary.docx》。所有新实验使用独立的冻结代码包，不复用旧 iteration 实验的结果。入口为 `suite.py`，准备、汇总和提交只依赖 Python 标准库；GPU worker 使用已有的 AIRE `packing` conda 环境。
+# 新版实验参数与运行顺序
 
-## 实验及依赖
+协议：`ejor-pooled-rcl-piece-stall-v2`。依据10月20日Word及随后确认。完整参数和每一个任务见同目录 `EXPERIMENT_PARAMETERS.json`；每次 prepare 后还会生成该 bundle 专属的 `parameter_plan.json` 和 `manifest.json`。
 
-|阶段|运行内容|正式任务数|下一阶段使用的结果|
+## 共用设置
+
+- 15 datasets，cube/cylinder；输入 sequence seeds 为3、7、13、19、53。调参使用3、7、13。
+- 选定 CA 的 PES/range 按 dataset/shape 从已完成的12组 geometry-only CA 中读取。
+- 输入顺序不再 shuffle。内部 piece/position/kick/global RNG 独立于 sequence seed，并记录实际 seeds。
+- 强/中/弱 weight = max(0.5/0.75/1.0 × U*，最大物体体积比) × bin volume，weight factor=1。
+- RUB = rmax + 1000 max(0,0.2n*−1)；radiation 强/中/弱 = rmax、(rmax+RUB)/2、RUB。
+- U* 是删除体积最少 bin 后的平均 filling rate；单箱采用 U*=U。n* 也删除同一箱后计算。
+- n*≤5时保留九个名义组合，但标注 radiation capacities 重合。全零 radiation 使用1e-12作为实现容量。
+- 有约束时先过滤不合法 bin，再按放入后 R/Rmax + U/Umax 降序；Umax=min(1,rho,Wmax/(weight factor×Vbin))。无约束使用 first fit。
+- 成功/失败缓存仅在单次算法运行内保留；CA候选池缓存坐标，抽样每次重新执行。
+- 全局参数选择以所有匹配 cell 的平均 N−U* 最小为准。平局顺序：RCL10、RCL20、TOP10、TOP30；kick 25%、50%、75%。不使用rank，不衡量多样性。
+
+## 各阶段
+
+| 阶段 | 参数 | 正式任务数 | 算法预算 |
 |---|---|---:|---|
-|calibration|每个 dataset/shape 五个顺序 seed 的 geometry-only CA|150|三个 weight 和三个 radiation capacity|
-|rcl|10%、15%、20%；一次随机 CA + 50 次实际 LS evaluation|270|每个 dataset/shape 的最佳 tolerance|
-|tuning|三个代表数据集、两种箱形、三个 seed、十个配置|180|三个算法各自的 iteration 配置|
-|full|15 数据集 × 2 箱形 × 3 weight × 3 radiation × 3 算法 × 5 seed|4050|算法比较结果|
+| calibration | 每dataset/shape五个sequence；优先恢复已有CA JSON | 150个reference；恢复后无需GPU | 固定CA一次 |
+| sensitivity | 已选CA；15×2×5×9约束组合 | 1350 | 固定CA一次，无LS |
+| rcl | 15×2×3×4规则×9约束组合 | 3240 | 随机构造一次，LS=0 |
+| tuning | shapesnew、Merged4_normal、st04_Example5_normal；2形状×3seeds×3强度×9约束 | 486 | 每次1800秒整体时间 |
+| full | 15×2×5×9约束×3算法 | 4050 | 每次3600秒整体时间 |
 
-共4650条计划，其中150条calibration可由历史CA导入，导入后只需4500个GPU任务。tuning和full各任务整体预算3600秒，名义合计4230 GPU-hours，另加RCL固定工作量耗时。文件加载另计；算法入口内初始化、CA、LS、kick和重构均计入预算，不执行被丢弃的CA预热。已开始的packing允许完成，因此是软上限。
+RCL规则为10%、20%、Top10、Top30。每个物体在当前bin的10个方向各评价至多16个底/顶极值位置，合并池后一次筛选和均匀抽样。位置数不足时Top-k取实际数量。
 
-CA的1800次参数实验已完成。按dataset/shape平均N−U*最低、平局时间最短，固定PES和reference range。原始JSON中的placements结合实例体积可恢复n*：`prepare --ca-json-dir PATH` 会校验并导入150条参考结果，避免GPU重跑。`run_all.sh` 自动使用存在的 `bin_packing/hpc_results/CA_jsons_results`，可用CA_JSON_DIR覆盖；没有历史目录时才重新运行reference CA。GRASP的随机位置RCL始终使用top/bottom最多16个去重点，LS使用选定range。
+ILS：加权概率选择物体；每次最多9个替代方向，first improvement即接受；连续ceil(n/2)个完整失败物体搜索触发kick，改善后清零。kick强度ceil(p*n)，p=25%、50%、75%。
 
-全部阶段的参数、数值和两个测试入口见 [EXPERIMENT_PARAMETERS.md](EXPERIMENT_PARAMETERS.md)，逐任务计划和30组容量见 `EXPERIMENT_PARAMETERS.json`。小实例全流程用 `run_smoke.sh`；最大实例32G主存压力测试用 `run_memory_smoke.sh`，二者用途独立。
+GRASP：顺序完整邻域搜索，first improvement后从第一个物体重启；完整一遍无改善才重构，无100/125/150调参。
 
-调参默认代表数据集：`shapesnew`、`Merged4_normal`、`st04_Example5_normal`。它们是本流程采用的小/中/大实例方案，可用 `--tuning-datasets` 显式替换；不是按文件字节数自动推断规模。
+GRASP_ILS：继承统一RCL和ILS强度，触发ceil(n/2)；每轮9n次LS repacking，改善不清零；kick不占9n预算，但占整体时间。预算耗尽直接重新构造，无独立iteration实验。
 
-## 一次性提交
+时间上限包括构造、LS、kick，不执行丢弃的CA预热。已启动的packing调用允许完成，所以可能超出软预算一次调用的时间。
 
-在 AIRE 的 repo 根目录，先加载已有 Python 环境，确保最新代码、instances、data 和 CA 汇总 CSV 已上传：
+## HPC 命令
 
-```bash
-module load miniforge
-source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate packing
-
-MAX_PARALLEL=3 bash bin_packing/hpc/paper_suite/run_all.sh
-```
-
-这条命令创建 `bin_packing/hpc_results/ejor_日期时间_PID/`，冻结所需源码和数据，并一次提交所有阶段的 Slurm 依赖图。默认按 16G/32G 分组，每个任务一张 GPU、4 CPU；不同内存组和数组分片串行，因此同时使用 GPU 不超过 3 张。默认 Slurm walltime 为 12 小时，用于容纳无 3600 秒限制的 reference CA 和 CA+50 LS；算法的 3600 秒预算独立设置。固定工作量任务如果超出 walltime 会失败并阻止下游，不会把不完整结果当作有效的 CA+50。
-
-`CA param test result` 未被 Git 跟踪时，需要另行上传 CSV。自定义路径：
+在AIRE进入 `bin_packing/hpc/paper_suite`，先加载既有packing环境。
 
 ```bash
-CA_SUMMARY=/mnt/scratch/pmywe/ca_results/summary_by_dataset.csv \
-EJOR_OUTPUT=/mnt/scratch/pmywe/GPU/ejor_v1 \
-MAX_PARALLEL=3 bash bin_packing/hpc/paper_suite/run_all.sh
+# 小实例全流程：两种形状，seed3，算法整体时间30秒
+bash run_smoke.sh
+
+# 大实例内存：st04_Example5_normal / cylinder / seed3
+# 三个算法各3600秒；每任务1GPU、4CPU、32G；并发1
+bash run_memory_smoke.sh
+
+# 正式全阶段提交；自动从已有CA JSON恢复calibration
+bash run_all.sh
+
+# 只查看提交图，不提交
+bash run_all.sh --dry-run
 ```
 
-仅查看将提交的命令，可以在 `run_all.sh` 后加 `--dry-run`；它会准备冻结包，但不会提交。若集群限制同时待排队任务数，不必一次提交 4650 个，可用 `--through tuning` 先提交前三阶段，后面用同一冻结包 `submit-all --pending` 接上完整实验。数组按最多 900 个本地下标分片，避免把 4050 直接用作数组索引。
+默认正式并发3；shapesnew/chess任务16G，其余32G；每任务1GPU、4CPU。普通任务Slurm walltime默认12小时；内存实验6小时。CPU gate为1CPU、2G、30分钟。
 
-阶段之间设置 CPU 汇总任务：GPU 数组全部结束（afterany）后检查每一个预期结果，仅当全部有效且通过验证才写出 selection 并正常退出。下一阶段依赖该汇总任务 afterok。失败时下游可能显示 DependencyNeverSatisfied；检查、取消这些阻塞的后续任务，再恢复。不会在参数尚未选出时提前使用默认参数运行 full。
-
-## 分步准备与提交
+小smoke默认任务数：calibration2、sensitivity18、rcl72、tuning54、full54，共200；如果指定CA_JSON_DIR恢复历史reference，calibration会是10个已恢复reference。仅cube时各阶段为1、9、36、27、27，共100。
 
 ```bash
-python bin_packing/hpc/paper_suite/suite.py prepare \
-  --ca-summary "CA param test result/summary_by_dataset.csv" \
-  --output /mnt/scratch/pmywe/GPU/ejor_v1
+# BUNDLE 替换为提交输出的实际路径
+python "$BUNDLE/driver/suite.py" verify-smoke --bundle "$BUNDLE"
+python "$BUNDLE/driver/memory_probe.py" check --bundle "$BUNDLE"
 
-python /mnt/scratch/pmywe/GPU/ejor_v1/driver/suite.py submit-all \
-  --bundle /mnt/scratch/pmywe/GPU/ejor_v1 --max-parallel 3 --dry-run
-
-python /mnt/scratch/pmywe/GPU/ejor_v1/driver/suite.py submit-all \
-  --bundle /mnt/scratch/pmywe/GPU/ejor_v1 --max-parallel 3
+# 恢复：只提交缺失/失败任务，保留已完成结果
+bash submit_all.sh "$BUNDLE" --pending
 ```
 
-提交选项：`--small-memory 16 --large-memory 32 --walltime 12:00:00 --partition gpu`。`chess`/`shapesnew` 默认归小内存组，其余归 32G；这是保守起始策略，不能证明每种后续 packing 状态都不会超过 32G。CPU 汇总使用集群默认分区；如需要可传 `--control-partition <cpu分区名>`。环境变量 `HPC_MODULE`、`HPC_ENV` 默认分别为 `miniforge`、`packing`，可覆盖；设为 `none` 可跳过相应操作。
+每阶段GPU结束后CPU gate核对完整结果，写入runs.csv、summary.csv（sensitivity/full）和selection.json。下一阶段只有gate成功才启动；full读取统一RCL、统一kick强度及calibration容量。不需要提前手动知道最佳参数。
 
-冻结包可以在 Windows 本地生成，然后整个目录上传到 AIRE；包内不依赖原机器的绝对路径。冻结后不要修改 `driver`、`runtime` 或 inputs，worker 会校验所需文件 SHA256。需要改算法时创建新包，不能将新代码结果混入旧协议。
-
-## 一次小规模流程验证
-
-推荐直接执行 `bash bin_packing/hpc/paper_suite/run_smoke.sh`。它提交真实 GPU 的 82 个小任务，并在最终汇总后自动生成 `smoke_verification.json`。具体命令及 PASS 标准见 [SMOKE.md](SMOKE.md)。以下是等价的分步准备方式。
-
-这用于验证提交依赖和结果格式，不用于正式参数选择：
-
-```bash
-python bin_packing/hpc/paper_suite/suite.py prepare \
-  --ca-summary "CA param test result/summary_by_dataset.csv" \
-  --output /mnt/scratch/pmywe/GPU/ejor_smoke \
-  --datasets shapesnew --tuning-datasets shapesnew --time-limit 30 --smoke
-python /mnt/scratch/pmywe/GPU/ejor_smoke/driver/suite.py submit-all \
-  --bundle /mnt/scratch/pmywe/GPU/ejor_smoke --max-parallel 1
-```
-
-smoke 包只用一个 dataset、顺序 seed=3，两个箱形；reference 每形一个 seed，RCL 改为 CA+3 LS，仍覆盖三种 tolerance、十个 tuning 配置和九种容量组合。包内 `smoke=true` 明确标识，不应进入正式实验汇总。
-
-## 监控与断点恢复
-
-```bash
-squeue -u "$USER"
-sstat -j JOBID --allsteps --format=JobID,AveRSS,MaxRSS
-sacct -j ARRAY_JOBID --format=JobID,State,Elapsed,ReqMem,MaxRSS,AllocTRES
-```
-
-单任务结果位于 `results/<stage>/task_<id>.json`，逐次构造/LS/kick 日志为对应 `task_<id>_events.jsonl`；日志在 `logs/`。每个结果记录输入顺序 seed、独立内部随机种子、容量、参数、N/U/U*、N−U*、构造/LS/kick 次数、RCL 大小分布、缓存命中计数、运行时间和 Linux MaxRSS。最终 packing 保存各物体的 orientation/translation，结合冻结输入可恢复，不保存庞大的完整体素布局。
-
-自动验证物体完整性、边界、碰撞、occupancy、N/U/U*，另外验证 weight/radiation；可达性由 packing engine 检查，未独立重新验证。
-
-若失败或中断，先用 `scancel` 取消同包所有尚在运行/等待的后续任务。`submit-all` 会拒绝与同包活动任务重叠提交。只有确认队列中同包没有任务后，才可清理中断留下的 lock：
-
-```bash
-python BUNDLE/driver/suite.py unlock --bundle BUNDLE
-python BUNDLE/driver/suite.py submit-all --bundle BUNDLE --pending --max-parallel 3
-```
-
-成功且 bundle/case 身份匹配的任务跳过；失败报告与中断事件会归档后重跑。依赖选择重新汇总；没有合法结果的阶段不会输出有效 selection。若需要更多内存，可在恢复时提高 `--large-memory`。同一包禁止重叠提交。
-
-手工汇总（允许在任务完成前查看 runs.csv，但不完整阶段返回非零）：
-
-```bash
-python BUNDLE/driver/suite.py collect --bundle BUNDLE --stage full
-```
-
-各阶段生成 `runs.csv`、`completion.json`，全部成功后生成 `selection.json`；full 另有 `summary.csv`，按 dataset/shape/weight/radiation/algorithm 聚合五个 seed 的均值和标准差。RCL 以同一 dataset/shape 下平均 N−U* 最小选择，平局记录全部候选并取较小 tolerance。Iteration 配置先算各 dataset/shape 的 seed 平均目标值，再算配置排名，最后用平均排名选择，避免大 N 数据集支配跨数据集平均；排名平局按 config_id 固定取值。完整实验保留每个实例的原始 N−U*，不将不同数据集的 N−U* 原值直接平均作为唯一总排名。
-
-## 已检查的参数语义
-
-* G_NI100：连续 100 次 LS 无改善才重新构造，改善清零，无总 LS 次数上限。
-* G_B100/G_B125/G_B150：每轮最多 100/125/150 次实际 LS evaluation，改善不重置该总预算。
-* I_K100/I_K125/I_K150：连续失败达到阈值触发 kick，无总 iteration limit；受整体 3600 秒控制。
-* GI_B300_K100/K125/K150：每轮 300 次 LS evaluation，连续失败触发 kick；kick 单独计数，不占 300。持续无改善时最多 3/2/2 次 kick，最后一次 LS 也可触发 kick。
-* LS 按大小和原 packing 顺序概率选物体，阶段由连续失败数决定；orientation 采用 first-improvement：找到改善即接受并重新选物体，并非每次都评估完全部 orientation。
-* 两级 RCL：每个 orientation 内按同一 tau 随机抽位置，再对各 orientation 抽出的 PES 按同一 tau 过滤、随机抽 orientation；不是把全部 orientation-position 放进一个全局 RCL。两层容差可能叠加。
-* geometry-only 使用 first-fit；有约束 full 使用放入物体后的 filling × radiation-left ratio 排序，并先做 weight/radiation 硬过滤。两者均用 run-scoped 状态缓存。
-* 输入实例已打乱，worker 不重新 shuffle。顺序 seed 与内部搜索随机种子分离；内部种子按 time_ns、host、pid 和任务身份生成并保存。
+旧版冻结bundle继续用其自身driver；新版必须prepare新目录。不要把旧100/125/150或CA+50结果混入本协议。

@@ -1,19 +1,23 @@
-"""Standard-library protocol definitions, calibration and parameter selection."""
+"""October 20 protocol: pooled RCL, size-scaled kicks, constrained tuning."""
 import math
 import statistics
 from collections import defaultdict
 
-VERSION='ejor-two-level-rcl-v1'
+VERSION='ejor-pooled-rcl-piece-stall-v2'
 LEVELS=('strong','medium','weak')
 SHAPES=('cube','cylinder')
-TOLERANCES=(.10,.15,.20)
+STAGES=('calibration','sensitivity','rcl','tuning','full')
+TOLERANCES=(.10,.20)
+RCL_CONFIGS=(dict(config_id='RCL10',tolerance=.10,top_k=None),
+             dict(config_id='RCL20',tolerance=.20,top_k=None),
+             dict(config_id='TOP10',tolerance=None,top_k=10),
+             dict(config_id='TOP30',tolerance=None,top_k=30))
 
 
 def tuning_configs():
-    return ([dict(config_id='G_NI100',algorithm='improved_GRASP',stall=100,total_cap=None)]
-            +[dict(config_id=f'G_B{n}',algorithm='improved_GRASP',stall=n,total_cap=n) for n in (100,125,150)]
-            +[dict(config_id=f'I_K{n}',algorithm='improved_ILS',kick=n) for n in (100,125,150)]
-            +[dict(config_id=f'GI_B300_K{n}',algorithm='improved_GRASP_ILS',ls_budget=300,kick=n) for n in (100,125,150)])
+    return [dict(config_id=f'I_S{round(f*100)}',algorithm='improved_ILS',
+                 kick='auto',kick_level=level,kick_fraction=f)
+            for level,f in (('small',.25),('medium',.5),('large',.75))]
 
 
 def make_plan(datasets,tuning_datasets,seeds=(3,7,13),reference_seeds=(3,7,13,19,53),
@@ -27,35 +31,40 @@ def make_plan(datasets,tuning_datasets,seeds=(3,7,13),reference_seeds=(3,7,13,19
     for values in (seeds,reference_seeds,full_seeds):
         if not values or len(values)!=len(set(values)):
             raise ValueError('Seeds must be nonempty and distinct')
-    plans={stage:[] for stage in ('calibration','rcl','tuning','full')}
+    plans={stage:[] for stage in STAGES}
     def add(stage,**kw):
         plans[stage].append(dict(task_id=len(plans[stage]),stage=stage,protocol=VERSION,**kw))
     for dataset in datasets:
         for shape in shapes:
             for seed in reference_seeds:
-                add('calibration',dataset=dataset,shape=shape,seed=seed,algorithm='improved_ILS',config_id='CA_REFERENCE')
-            for seed in seeds:
-                for tolerance in TOLERANCES:
-                    add('rcl',dataset=dataset,shape=shape,seed=seed,algorithm='improved_GRASP',
-                        config_id=f'RCL{round(tolerance*100)}',tolerance=tolerance,ls_budget=50)
-            if dataset in tuning_datasets:
-                for seed in seeds:
-                    for config in tuning_configs():
-                        add('tuning',dataset=dataset,shape=shape,seed=seed,**config)
-            for seed in full_seeds:
-                for algorithm in ('improved_ILS','improved_GRASP','improved_GRASP_ILS'):
-                    for weight in LEVELS:
-                        for radiation in LEVELS:
+                add('calibration',dataset=dataset,shape=shape,seed=seed,
+                    algorithm='improved_ILS',config_id='CA_REFERENCE')
+            for weight in LEVELS:
+                for radiation in LEVELS:
+                    constraints=dict(weight_level=weight,radio_level=radiation)
+                    for seed in full_seeds:
+                        add('sensitivity',dataset=dataset,shape=shape,seed=seed,
+                            algorithm='improved_ILS',config_id='CA_SENSITIVITY',**constraints)
+                        for algorithm in ('improved_ILS','improved_GRASP','improved_GRASP_ILS'):
                             add('full',dataset=dataset,shape=shape,seed=seed,algorithm=algorithm,
-                                config_id=f'{algorithm}_W{weight}_R{radiation}',weight_level=weight,
-                                radio_level=radiation)
+                                config_id=f'{algorithm}_W{weight}_R{radiation}',**constraints)
+                    for seed in seeds:
+                        for config in RCL_CONFIGS:
+                            add('rcl',dataset=dataset,shape=shape,seed=seed,
+                                algorithm='improved_GRASP',ls_budget=0,**config,**constraints)
+                        if dataset in tuning_datasets:
+                            for config in tuning_configs():
+                                add('tuning',dataset=dataset,shape=shape,seed=seed,**config,**constraints)
     return dict(protocol=VERSION,datasets=list(datasets),tuning_datasets=list(tuning_datasets),
                 seeds=list(seeds),reference_seeds=list(reference_seeds),full_seeds=list(full_seeds),
-                time_limit=time_limit,smoke=smoke,shapes=list(shapes),plans=plans)
+                time_limit=time_limit,tuning_time_limit=min(time_limit,30.) if smoke else 1800.,
+                smoke=smoke,shapes=list(shapes),plans=plans,
+                selection_metric='mean_N_minus_U_star',selection_scope='global',
+                duplicate_capacity_policy='keep nominal level combinations; annotate equal capacities')
 
 
 def choose_ca_parameters(rows,datasets):
-    """Historical CA data only; minimize dataset/shape mean N-U*, break ties by time."""
+    """Historical geometry-only CA: choose PES/range per dataset and shape."""
     selected={}
     for dataset in datasets:
         for shape in SHAPES:
@@ -77,60 +86,50 @@ def calibrate(records,weight_factor=1.):
     ustar=statistics.mean(r['best_U_star'] for r in records)
     nstar=statistics.mean(r['mean_piece_count_without_emptiest'] for r in records)
     volumes={r['bin_capacity'] for r in records}
-    if len(volumes)!=1:
-        raise ValueError('Reference bin sizes differ across order seeds')
+    if len(volumes)!=1:raise ValueError('Reference bin sizes differ across order seeds')
     capacity=volumes.pop()
     largest=max(r['max_piece_volume'] for r in records)
     rmax=max(r['max_piece_radio'] for r in records)
-    reference_radio=rmax+1000*max(0.,.2*nstar-1)
-    # All-zero-radiation instances have an unconstraining positive implementation cap.
-    reference_radio=max(reference_radio,1e-12)
+    rub=rmax+1000*max(0.,.2*nstar-1)
+    radio={level:max(value,1e-12) for level,value in zip(LEVELS,(rmax,(rmax+rub)/2,rub))}
     rho={level:max(mult*ustar,largest/capacity) for level,mult in zip(LEVELS,(.5,.75,1.))}
     return dict(U_star_reference=ustar,n_star_reference=nstar,bin_capacity=capacity,
                 max_piece_volume=largest,max_piece_radio=rmax,weight_factor=weight_factor,
                 weight_capacity={level:max(largest,rho[level]*capacity)*weight_factor for level in LEVELS},
-                weight_capacity_ratio=rho,
-                radiation_reference=reference_radio,
-                radio_capacity={level:reference_radio*mult for level,mult in zip(LEVELS,(1.,1.5,2.))},
+                weight_capacity_ratio=rho,radiation_reference=rub,radio_capacity=radio,
+                coincident_radio_levels=len(set(radio.values()))<3,
                 reference_count=len(records),single_bin_convention='U*=U and n*=piece_count')
 
 
-def select_tolerances(records):
-    grouped=defaultdict(lambda:defaultdict(list))
+def _global_selection(records,configs):
+    """Arithmetic mean across matched dataset/shape/seed/constraint cells."""
+    groups=defaultdict(dict)
+    expected={c['config_id'] for c in configs}
     for r in records:
-        grouped[f"{r['dataset']}|{r['shape']}"][r['tolerance']].append(r['objective'])
-    selected={}
-    for key,values in grouped.items():
-        if set(values)!=set(TOLERANCES):
-            raise ValueError('Incomplete tolerance candidates')
-        means={tau:statistics.mean(scores) for tau,scores in values.items()}
-        best=min(means.values())
-        ties=[tau for tau in sorted(means) if abs(means[tau]-best)<=1e-9]
-        selected[key]=dict(tolerance=min(ties),tied_tolerances=ties,
-                           mean_objectives={str(k):v for k,v in means.items()})
-    return selected
+        key=tuple(r.get(k) for k in ('dataset','shape','seed','weight_level','radio_level'))
+        name=r['config_id']
+        if name not in expected or name in groups[key]:raise ValueError('Unknown/duplicate tuning record')
+        if not math.isfinite(r['objective']):raise ValueError('Nonfinite objective')
+        groups[key][name]=r['objective']
+    if not groups or any(set(v)!=expected for v in groups.values()):
+        raise ValueError('Incomplete matched parameter candidates')
+    means={c['config_id']:statistics.mean(v[c['config_id']] for v in groups.values()) for c in configs}
+    best=min(means.values())
+    ties=[c['config_id'] for c in configs if abs(means[c['config_id']]-best)<=1e-9]
+    name=ties[0]
+    return dict(next(c for c in configs if c['config_id']==name),scope='global',
+                metric='mean_N_minus_U_star',mean_objective=means[name],
+                mean_objectives=means,tied_configs=ties,matched_cells=len(groups))
+
+
+def select_tolerances(records):
+    return dict(global_rcl=_global_selection(records,RCL_CONFIGS))
 
 
 def select_tuning(records):
-    groups=defaultdict(lambda:defaultdict(list))
-    for r in records:
-        groups[(r['algorithm'],r['dataset'],r['shape'])][r['config_id']].append(r['objective'])
-    rank_values=defaultdict(list)
-    for (algorithm,dataset,shape),values in groups.items():
-        expected={c['config_id'] for c in tuning_configs() if c['algorithm']==algorithm}
-        if set(values)!=expected:
-            raise ValueError('Incomplete tuning configurations')
-        means={name:statistics.mean(scores) for name,scores in values.items()}
-        for name,score in means.items():
-            lower=sum(other<score-1e-9 for other in means.values())
-            tied=sum(abs(other-score)<=1e-9 for other in means.values())
-            rank_values[(algorithm,name)].append(1+lower+(tied-1)/2)
-    output={}
-    for algorithm in ('improved_GRASP','improved_ILS','improved_GRASP_ILS'):
-        candidates={name:statistics.mean(v) for (alg,name),v in rank_values.items() if alg==algorithm}
-        if not candidates:
-            raise ValueError('No tuning data for '+algorithm)
-        name=min(candidates,key=lambda n:(candidates[n],n))
-        output[algorithm]=dict(next(c for c in tuning_configs() if c['config_id']==name),
-                               mean_rank=candidates[name],ranks=candidates)
-    return output
+    selected=_global_selection(records,tuning_configs())
+    return {'improved_ILS':selected,
+            'improved_GRASP':dict(algorithm='improved_GRASP',ls_policy='systematic'),
+            'improved_GRASP_ILS':dict(algorithm='improved_GRASP_ILS',
+                ls_budget='9*n',kick='auto',kick_level=selected['kick_level'],
+                kick_fraction=selected['kick_fraction'],inherited_from='improved_ILS')}

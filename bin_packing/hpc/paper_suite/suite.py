@@ -12,10 +12,9 @@ import sys
 import uuid
 from collections import defaultdict
 
-from protocol import make_plan, choose_ca_parameters, calibrate, select_tolerances, select_tuning
+from protocol import make_plan, choose_ca_parameters, calibrate, select_tolerances, select_tuning, STAGES, VERSION
 from worker import run, valid_saved
 
-STAGES=('calibration','rcl','tuning','full')
 
 
 def save(path,value):
@@ -36,8 +35,6 @@ def freeze(project,summary,output,datasets=None,tuning=None,time_limit=3600,smok
     profile=make_plan(datasets,tuning,time_limit=time_limit,smoke=smoke,shapes=shapes,
                       **(dict(seeds=(3,),reference_seeds=(3,7,13,19,53) if ca_json_dir else (3,),
                               full_seeds=(3,)) if smoke else {}))
-    if smoke:
-        for case in profile['plans']['rcl']:case['ls_budget']=3
     ca=choose_ca_parameters(rows,datasets)
     ca={key:value for key,value in ca.items() if key.split('|')[-1] in shapes}
     # RCL experiment always uses top/bottom extremal layers; PES follows CA tuning.
@@ -59,13 +56,17 @@ def freeze(project,summary,output,datasets=None,tuning=None,time_limit=3600,smok
                 copy(source,'driver/'+source.name)
         copy(summary,'inputs/ca_reference_summary.csv')
         geometry={}
+        piece_counts={}
         for cases in profile['plans'].values():
             for case in cases:
                 name=f"{case['dataset']}_seq{case['seed']}_{case['shape']}_999999_1.txt"
                 case['instance']=name
-                if name in geometry:continue
+                if name in geometry:
+                    case['piece_count']=piece_counts[name]
+                    continue
                 source=project/'instances'/name
                 lines=source.read_text(encoding='utf-8-sig').splitlines()
+                case['piece_count']=piece_counts[name]=sum(bool(line.strip()) for line in lines[1:])
                 if lines[0].split()[0]!=case['shape']:raise ValueError('Instance shape mismatch: '+name)
                 copy(source,'runtime/bin_packing/instances/'+name)
                 paths=[]
@@ -79,6 +80,18 @@ def freeze(project,summary,output,datasets=None,tuning=None,time_limit=3600,smok
                     if not (output/dest).exists():copy(data,dest)
                     paths.append(dest)
                 geometry[name]=sorted(set(paths))
+        save(output/'parameter_plan.json',dict(protocol=VERSION,profile=profile,ca_parameters=ca,
+            conventions=dict(kick_trigger='ceil(n/2) complete failed piece searches; reset on improvement',
+                kick_size='ceil(fraction*n) changed orientation labels',
+                hybrid_budget='9*n LS repacking calls per construction; never reset on improvement',
+                kick_charged_to_ls_budget=False,kick_charged_to_wall_time=True,
+                orientation_labels=10,alternative_labels_per_piece=9,
+                rcl_pool='up to 160 orientation-position pairs in current bin; bottom/top extrema',
+                score='used_radio/max_radio + used_U/Umax',
+                Umax='min(1,rho,max_weight/(weight_factor*bin_volume))',
+                objective='N-U_star; U_star excludes the least-filled bin by volume',
+                parameter_selection='global arithmetic mean across matched cells; candidate order breaks ties',
+                deadline='includes construction, LS and kicks; finish one in-flight call before stopping')))
         recovered=[]
         if ca_json_dir:
             from ca_reference import recover_selected
@@ -112,6 +125,8 @@ def freeze(project,summary,output,datasets=None,tuning=None,time_limit=3600,smok
 
 def collect(bundle,stage):
     manifest=json.loads((bundle/'manifest.json').read_text())
+    if manifest['profile']['protocol']!=VERSION:
+        raise ValueError('Use the frozen driver belonging to this bundle; protocol mismatch')
     cases=manifest['profile']['plans'][stage]
     records=[]
     incomplete=[]
@@ -150,6 +165,10 @@ def collect(bundle,stage):
                 samples=[r[field] for r in values]
                 row[field+'_mean']=statistics.mean(samples)
                 row[field+'_std']=statistics.stdev(samples) if len(samples)>1 else 0.
+            if stage=='sensitivity':
+                baseline=manifest['ca_parameters'][f'{key[0]}|{key[1]}']['reference_mean_objective']
+                row['geometry_reference_objective_mean']=baseline
+                row['objective_change_from_geometry']=row['objective_mean']-baseline
             selection.append(row)
         with (root/'summary.csv').open('w',encoding='utf-8',newline='') as stream:
             writer=csv.DictWriter(stream,fieldnames=list(selection[0]));writer.writeheader();writer.writerows(selection)
@@ -174,6 +193,8 @@ def submit(bundle,max_parallel=3,small_memory=16,large_memory=32,walltime='12:00
     bundle=bundle.resolve()
     if ',' in str(bundle) or '\n' in str(bundle):raise ValueError('Bundle path cannot contain commas/newlines')
     manifest=json.loads((bundle/'manifest.json').read_text())
+    if manifest['profile']['protocol']!=VERSION:
+        raise ValueError('Use the frozen driver belonging to this bundle; protocol mismatch')
     if not dry_run:
         # Prevent overlapping submissions to the same output bundle.
         jobs=subprocess.check_output(['squeue','-h','-u',os.environ['USER'],'-o','%A'],text=True).split()
@@ -252,7 +273,7 @@ def main():
             p.add_argument('--max-parallel',type=int,default=3)
             p.add_argument('--small-memory',type=int,default=16);p.add_argument('--large-memory',type=int,default=32)
             p.add_argument('--walltime',default='12:00:00');p.add_argument('--dry-run',action='store_true')
-            p.add_argument('--pending',action='store_true');p.add_argument('--through',choices=STAGES,default='full')
+            p.add_argument('--pending',action='store_true');p.add_argument('--through',choices=STAGES,default='sensitivity')
             p.add_argument('--partition',default='gpu');p.add_argument('--control-partition')
     args=parser.parse_args()
     if args.command=='prepare':

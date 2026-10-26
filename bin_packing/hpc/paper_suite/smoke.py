@@ -68,17 +68,16 @@ def verify_smoke(bundle):
                 if report.get('search_settings')!=settings or report.get('algorithm')!=algorithm:
                     problems.append('Runtime parameters disagree with selected values: '+name)
                 method=report.get('method',{})
-                if method.get('radio_priority')!=(stage=='full') or method.get('warmup')!='none':
+                if method.get('radio_priority')!=(stage in ('sensitivity','rcl','tuning','full')) or method.get('warmup')!='none':
                     problems.append('Wrong packing mode/warmup: '+name)
                 actual=report.get('counts',{})
-                if stage=='calibration' and (actual.get('construction')!=1 or actual.get('ls',0) or actual.get('kick',0)):
+                if stage in ('calibration','sensitivity') and (actual.get('construction')!=1 or actual.get('ls',0) or actual.get('kick',0)):
                     problems.append('Reference CA work count mismatch: '+name)
                 if stage=='rcl':
                     ls=actual.get('ls',0)
-                    if (actual.get('construction')!=1 or actual.get('kick',0) or
-                        not (ls==case['ls_budget'] or (report['best_N']==1 and ls<case['ls_budget']))):
+                    if (actual.get('construction')!=1 or actual.get('kick',0) or ls!=0):
                         problems.append('RCL fixed-work count mismatch: '+name)
-                if stage=='full':
+                if stage in ('sensitivity','rcl','tuning','full'):
                     limits=selections['calibration'][f"{case['dataset']}|{case['shape']}"]
                     for field,level in (('weight_capacity','weight_level'),('radio_capacity','radio_level')):
                         if not math.isclose(report[field],limits[field][case[level]],rel_tol=1e-12):

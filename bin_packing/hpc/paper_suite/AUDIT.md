@@ -1,35 +1,51 @@
-# 方法与实验要求核对
+# 2026年10月20日方法与实现对应
 
-核对来源：2026-10-16 重新读取的 `EJOR paper update summary.docx`，包括 Word 原生公式。文档只作为方法和实验规格读取，没有修改 Word。下表区分原有实现与本次补充。
+依据桌面文档 `20261020 EJOR paper update summary.docx`，并以用户随后确认的计数、全局参数选择和不评价多样性为准。没有修改原 Word。
 
-|要求|原实现状态|本次处理|
+| 文档条目 | 当前实现 | 验证 |
 |---|---|---|
-|PES 同时评价位置与 orientation，取消独立 OES|三个 improved controller 已支持统一 PES；部分旧驱动仍有历史路径|新 suite 固定使用共享 improved controller 路径，配置从已完成 CA 汇总冻结|
-|大物体加权，早期偏前/后期偏后，连续失败决定阶段；找到第一个改善即接受|已有 `improve_pieces_selection_ls` 和 first-improvement LS|已符合；保留并验证三个 controller 的真实函数体，用户再次确认采用 first-improvement|
-|有 weight/radiation 时按放入后的 filling × radiation-left ratio 排箱，无约束时 first-fit|有约束共享引擎已实现；无约束走旧的另一条路径|共享引擎增加 first-fit 模式；无约束也保留 run-scoped 缓存和相同 RCL|
-|运行内缓存成功/失败，并按物体、orientation、箱布局、搜索设置区别状态|已有确定性缓存|随机 CA 的 key 增加 RNG 状态，防止缓存固定后续重构的随机抽样；LS 继续复用确定性结果|
-|ILS 连续失败 100/125/150 触发 kick|controller 已支持|新 tuning 三组均传 `iteration_limit=None`，避免被额外总 iteration limit 提前截断|
-|位置 RCL top/bottom 至多 16 个去重点|已有候选与位置 RCL|补上新空箱的随机候选路径：cube 的极端角点、cylinder 的 IFV top/bottom 极值；不再只评价规范起点|
-|位置 RCL 后再用相同 tolerance 做 orientation RCL|原共享引擎最终仍取 orientation 的最小 PES|新增 `orientation_rcl.py`，两层按同一 tolerance 各自随机选择|
-|GRASP：NI100 和 B100/B125/B150，共四组|函数已有 NI 与独立 budget；旧 iteration 脚本只覆盖三组|新 suite 明确区分四组；NI 改善清零，B 的总预算不清零|
-|RCL 测试一次 CA + 50 次实际 LS|旧固定工作量脚本可做部分实验，完整流程没有统一衔接|新 worker 固定一次构造、50 LS、不 kick、不重构；若只需一个箱会提前停止并明确记录|
-|GRASP_ILS 每轮 300 LS，连续失败 100/125/150 kick|已有；kick 不占 300|保留并回归验证；最后一次 LS 可 kick，因此持续失败最大 kick 数是 3/2/2|
-|三算法整体 3600 秒，包括 CA|controller 已计 CA，旧 HPC runner 有额外完整 CA warm-up|新 worker 删除 warm-up；共享 wrapper 的初始化/复制也从 controller 可用预算扣除，报告完整算法入口耗时|
-|五顺序 seed 分 dataset/shape 标定容量，排最空箱|CSV缺各箱物体数；后来找到1800个原始JSON|新增历史placements恢复与校验；可导入150条reference，计算平均U*/n*和三档容量，不必GPU重跑|
-|内部随机，输入顺序不重洗|旧脚本已有部分实现|worker 用 time_ns/host/pid/task 派生独立种子，保存实际值；不 shuffle 输入|
-|180 个调参任务 + 4050 个完整任务均能 HPC 执行|旧脚本不覆盖最新四组 GRASP 和容量网格|新增四阶段 suite、Slurm 数组、CPU 汇总依赖、冻结包、断点恢复、单命令提交|
-|结果可核对且不能混协议|旧实验身份检查存在，但不覆盖新流程|逐任务 bundle/case 身份和源码/输入 SHA256；独立验证物体、边界、碰撞和 N/U/U*；容量另验|
+| CA 四种 PES、三种 selection range；PES 同时评价方向与位置 | 保留 SCH 四种评价和既有 reference CA 参数；不增加 OES 调参 | 原 SCH 边界测试、真实 GPU 构造 |
+| 辐射/重量硬约束后重新排序 bin | `radio_bin_priority.post_placement_score`：放入后 R/Rmax + 放入后 U/Umax，降序；无约束阶段 first fit | 两种 ranked engine 及三个控制器集成测试 |
+| Umax 定义 | `min(1, rho, max_weight/(weight_factor*bin_volume))`；与实际体积/重量容量一致 | 归一化容量测试 |
+| 成功/失败缓存 | 保留 run-scoped、精确 prefix/orientation/policy 缓存；RCL 缓存全部坐标，重复访问仍重新抽样 | 缓存状态隔离与重复抽样测试 |
+| ILS 使用加权概率选择物体 | 保留 size/order/stage 选择器，首次严格改善即接受 | 控制器状态测试 |
+| ILS kick 条件 | 默认 `auto` = ceil(n/2) 次完整物体搜索失败，改善后清零；截止时未搜完的物体不累计失败 | 5物体/9方向、43物体取整测试 |
+| kick 强度 | small/medium/large = 25%/50%/75%，ceil(p*n) 个不同物体，每个更换方向标签 | kick 改变数量测试 |
+| GRASP RCL | 当前物体、当前 bin，10方向各至多16个底/顶极值位置；合并至多160个配对后一次筛选抽样 | 全池筛选、Top-k 截断测试 |
+| 四种 RCL 参数 | 10%、20%、Top10、Top30；Top-k 不足时使用实际候选数 | 参数规模与实际 GPU RCL |
+| RCL 实验 | 只构造一次，LS=0，kick=0；仅以 N-U* 评价质量 | worker 计数检查与全流程测试 |
+| GRASP LS | 从第一个到最后一个物体，逐个方向；首次改善从头搜索；完整无改善遍历才重构 | systematic GRASP 六项测试 |
+| GRASP_ILS | 相同加权 ILS；每轮 9*n 次 LS repacking 调用，改善不重置；kick 不计入 LS 预算 | 有改善、kick、两次重构的预算测试 |
+| GRASP_ILS 预算边界 | 预算耗尽立即重构，不在末尾额外 kick；不把截断物体当完整失败 | 末尾预算测试 |
+| 整体时间 | 最终实验3600秒；ILS调参1800秒；构造、LS、kick及包装器开销共用计时；不预热CA | 时间边界测试与实际报告 |
+| Weight calibration | 五个 sequence seeds 的 U*；0.5/0.75/1.0 U*，下限最大物体重量 | 历史 JSON 重算与 calibration 测试 |
+| Radiation calibration | Strong=rmax，Medium=(rmax+RUB)/2，Weak=RUB；RUB公式保留 | calibration 测试 |
+| 重合 radiation 等级 | n*<=5 时标注重合；保留九个名义 W/R 组合，不静默改变实验规模 | 参数报告 `coincident_radio_levels` |
+| CA sensitivity | 使用已选 PES/range，增加九种 W/R 组合；输出相对 geometry reference 的 N-U* 变化 | 五阶段收集与数据传递测试 |
+| 统一参数选择 | 所有匹配 dataset/shape/seed/W/R cell 的算术平均 N-U*；选择一个 RCL 和一个 kick 强度 | 全局均值选择及缺失候选拒绝测试 |
+| Hybrid 参数继承 | 全局 RCL；ILS最佳强度；ceil(n/2)触发；9n预算，无独立调参 | selection.json 自动传递测试 |
+| 内部随机性 | time_ns+PID+host+task 生成独立 piece/position/kick/global seeds；不 shuffle 已有 sequence | 报告保留内部 seeds 和 order_seed |
+| 一次性提交 | calibration → sensitivity → rcl → tuning → full，GPU阵列后 CPU 完整性 gate，afterok 传递参数 | 提交 dry run、恢复及全流程测试 |
 
-## 论文表述需要明确的边界
+## 计数与时间的准确含义
 
-1. 用户已明确确认 LS 使用 first-improvement：按顺序尝试替代 orientation，出现第一个严格改善即接受、重新选物体；若一直没有改善才尝试完全部替代 orientation。这与预期方法一致，不是代码差异。有限次随机 LS 没有改善不等于穷举邻域后证明局部最优。
-2. “CA+50” 按**一次重新 packing 并评价的邻居**计数，不是选 50 次物体。一次物体选择可能评价多个 orientation。单箱时 LS 早停：N 已为 1，U*=U 在物体总体积和箱容量固定时不变，目标值不能进一步改善。GRASP 仍可继续下一次构造直至整体时间预算或 restart limit，RCL 测试则固定仅一次构造。
-3. 相同 tolerance 用于两级 RCL，并不保证最终抽到的位置在所有 orientation-position 的全局最优 PES 的单层 tolerance 内。非负 PES 时 10% 两级最坏可能为 21%。
-4. 选 tolerance 按 dataset/shape 分别做；文档只说 per dataset，这里将 bin shape 作为同一参数选择分组的一部分。CA PES/reference range 也按 dataset/shape 从历史 12 组结果选择。
-5. 时间上限是软上限：完成已经开始的一次 packing，保存其结果，再停止。文件读取、CUDA context 初始检测、结果独立验证属于任务开销；算法入口内初始化/JIT/CA/LS/kick/重构属于 3600 秒。
-6. 正式调参仍为 geometry-only，full 才启用容量和 radiation bin priority。tolerance 与 iteration 配置在 full 前固定，不在 full 数据上重新调优。
-7. 调参 seed 为 3/7/13，full 为 3/7/13/19/53，部分顺序重叠；这是文档指定的当前方案，不是完全独立的 hold-out 评估。内部搜索使用不同实际种子。若论文需要独立测试顺序，可扩展新实例顺序再创建新协议包。
+`n` 是物体数；`N` 是 bin 数。一次 LS repacking 指改变某一物体方向并对后续 sequence 重装箱的一次完整邻域评估，不是单个物体/bin 的几何查询。缓存命中仍属于这次评估。kick 内部重装箱不计入 9n，但计入运行时间。
 
-## 验证范围
+一个完整失败的物体搜索最多九次替代方向尝试；有改善则提前接受。GRASP_ILS 固定的是 repacking 总数，不是物体选择总数。旧 API 可显式指定预算/触发值供诊断使用，正式 v2 协议只使用上述规则。
 
-已做 CPU 控制流、RCL、缓存、容量公式、冻结输入、依赖图、断点筛选和汇总测试，以及真实 15 数据集全部输入准备与 submit dry-run。本机没有完整 CUDA/numba/scipy 环境，未声称完成 AIRE GPU 的端到端运行；README 给出一个独立 smoke 包流程用于集群验证。旧 HPC 结果、CA 结果和历史冻结包保持原样。
+时间限制是停止启动下一次完整 packing 调用的界限。已经开始的调用会完成并评价，因此墙钟可能超过预算一个调用的耗时；初始 CA 至少完成一次。Slurm walltime 是额外的作业上限。这里没有声称可在任意 CUDA 调用中途精确截断到3600.000秒。
+
+## 与 Word 原文仍有差别的文字
+
+这些差别采用用户最新确认，不需要继续运行旧实验：
+
+- LS 总述应区别顺序扫描 GRASP 和概率选择 ILS/Hybrid。
+- `4.5*n` 改为完整失败时至多 `9*ceil(n/2)`；一般物体搜索是 up to 9 次。
+- Hybrid 外层明确写为 **9n次LS repacking**，而不是 n 次物体选择。
+- 删除 best iteration limit 和 100/125/150、300/100等调参说法。
+- RCL 与 kick strength 暂时都使用全局统一参数，只评价质量。
+- RCL 总量应是3240；n*等于5时三个radiation等级也重合。
+
+## 不自动推断的事项
+
+CA sensitivity 只评价已选 CA 在约束下的表现，不会自动重选12种 CA 参数。旧版冻结 bundle 应继续用自己的 driver；v2 结果放入新 bundle，不能把旧参数实验报告当作新版结果续跑。

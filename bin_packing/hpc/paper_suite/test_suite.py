@@ -31,23 +31,22 @@ class ProtocolTests(unittest.TestCase):
     def test_complete_scale_and_grasp_four_arms(self):
         p=make_plan([str(i) for i in range(15)],['0','1','2'])
         self.assertEqual({s:len(v) for s,v in p['plans'].items()},
-                         dict(calibration=150,rcl=270,tuning=180,full=4050))
-        self.assertEqual(sum(map(len,p['plans'].values())),4650)
-        self.assertEqual(len([c for c in tuning_configs() if c['algorithm']=='improved_GRASP']),4)
+            dict(calibration=150,sensitivity=1350,rcl=3240,tuning=486,full=4050))
+        self.assertEqual(sum(map(len,p['plans'].values())),9276)
+        self.assertEqual({c['algorithm'] for c in tuning_configs()},{'improved_ILS'})
 
     def test_worker_settings_preserve_limits(self):
         p=make_plan(['x'],['x'])
-        selections={'rcl':{'x|cube':{'tolerance':.15}}}
         for c in tuning_configs():
-            case=dict(c,stage='tuning',dataset='x',shape='cube')
-            alg,kw=settings_for(case,p,selections)
-            self.assertEqual(kw['time_limit'],3600)
-            if alg=='improved_ILS':self.assertIsNone(kw['iteration_limit'])
-            elif alg=='improved_GRASP':self.assertEqual(kw['ls_evaluation_limit'],c['total_cap'])
-            else:self.assertEqual(kw['iter_limit_per_iter'],300)
-        _,kw=settings_for(p['plans']['rcl'][0],p,{})
-        self.assertEqual((kw['restart_limit'],kw['ls_evaluation_limit']),(1,50))
-        self.assertTrue(math.isinf(kw['time_limit']))
+            alg,kw=settings_for(dict(c,stage='tuning'),p,{})
+            self.assertEqual(kw['time_limit'],1800)
+            self.assertEqual(kw['kick_trigger_time'],'auto')
+            self.assertIsNone(kw['iteration_limit'])
+        for case in p['plans']['rcl']:
+            _,kw=settings_for(case,p,{})
+            self.assertEqual((kw['restart_limit'],kw['ls_evaluation_limit']),(1,0))
+            self.assertTrue(math.isinf(kw['time_limit']))
+            self.assertEqual(kw['rcl_top_k'],case['top_k'])
         _,kw=settings_for(p['plans']['calibration'][0],p,{})
         self.assertEqual((kw['ALG'],kw['iteration_limit']),('fixed_CA',0))
 
@@ -56,26 +55,27 @@ class ProtocolTests(unittest.TestCase):
                       max_piece_volume=50,max_piece_radio=1500)]*5
         result=calibrate(records)
         self.assertEqual(result['weight_capacity'],dict(strong=50,medium=60.00000000000001,weak=80))
-        self.assertEqual(result['radio_capacity'],dict(strong=2500,medium=3750,weak=5000))
+        self.assertEqual(result['radio_capacity'],dict(strong=1500,medium=2000,weak=2500))
         self.assertEqual(result['reference_count'],5)
 
     def test_tolerance_selects_mean_objective_and_records_ties(self):
-        records=[dict(dataset='x',shape='cube',tolerance=t,objective=v)
-                 for t,v in ((.1,3),(.15,2),(.2,2))]
-        r=select_tolerances(records)['x|cube']
-        self.assertEqual(r['tolerance'],.15)
-        self.assertEqual(r['tied_tolerances'],[.15,.2])
+        records=[dict(c,dataset='x',shape='cube',objective=2 if c['config_id'] in ('TOP10','TOP30') else 3)
+                 for c in RCL_CONFIGS]
+        r=select_tolerances(records)['global_rcl']
+        self.assertEqual(r['top_k'],10)
+        self.assertEqual(r['tied_configs'],['TOP10','TOP30'])
+        with self.assertRaises(ValueError):select_tolerances(records[:-1])
 
-    def test_tuning_uses_rank_not_large_dataset_scale(self):
+    def test_tuning_uses_raw_mean_objective_globally(self):
         records=[]
-        for ds in ('small','large'):
-            for shape in SHAPES:
-                for i,c in enumerate(tuning_configs()):
-                    records.append(dict(c,dataset=ds,shape=shape,objective=(1000 if ds=='large' else 1)+i))
+        for ds,values in (('small',(1,2,3)),('large',(100,80,99))):
+            for c,value in zip(tuning_configs(),values):
+                records.append(dict(c,dataset=ds,shape='cube',objective=value))
         out=select_tuning(records)
-        self.assertEqual(out['improved_GRASP']['config_id'],'G_NI100')
-        self.assertEqual(out['improved_ILS']['config_id'],'I_K100')
-        self.assertEqual(out['improved_GRASP_ILS']['config_id'],'GI_B300_K100')
+        self.assertEqual(out['improved_ILS']['config_id'],'I_S50')
+        self.assertEqual(out['improved_GRASP']['ls_policy'],'systematic')
+        self.assertEqual(out['improved_GRASP_ILS']['kick_level'],'medium')
+        self.assertEqual(out['improved_ILS']['metric'],'mean_N_minus_U_star')
 
     def test_orientation_second_level_and_negative_pes(self):
         class Last:
@@ -89,6 +89,22 @@ class ProtocolTests(unittest.TestCase):
 
 
 class FrozenWorkflowTests(unittest.TestCase):
+    def test_cli_defaults_to_sensitivity_and_submits_no_later_stages(self):
+        from unittest.mock import patch
+        import suite
+        with tempfile.TemporaryDirectory() as name:
+            bundle,m=self.fixture(Path(name))
+            with patch.object(sys,'argv',['suite.py','submit-all','--bundle',str(bundle),'--dry-run']), \
+                 patch.object(suite,'submit',return_value=[]) as submitted:
+                self.assertEqual(suite.main(),0)
+                self.assertEqual(submitted.call_args.args[7],'sensitivity')
+            with contextlib.redirect_stdout(io.StringIO()):
+                jobs=submit(bundle,dry_run=True,through='sensitivity')
+            self.assertEqual(len(jobs),4)
+            names=[arg for job in jobs for arg in job['command'] if arg.startswith('--job-name=')]
+            self.assertEqual(names,['--job-name=ejor_calibration','--job-name=ejor_collect_calibration',
+                                    '--job-name=ejor_sensitivity','--job-name=ejor_collect_sensitivity'])
+
     def test_memory_probe_has_three_hour_long_tasks_and_fixed_parameters(self):
         from unittest.mock import patch
         import memory_probe
@@ -98,18 +114,21 @@ class FrozenWorkflowTests(unittest.TestCase):
                 m=memory_probe.prepare(root/'project',root/'ca.csv',bundle)
             self.assertEqual(set(m['profile']['plans']),{'memory'})
             self.assertEqual(len(m['profile']['plans']['memory']),3)
+            parameter_plan=json.loads((bundle/'parameter_plan.json').read_text())
+            self.assertEqual(set(parameter_plan['profile']['plans']),{'memory'})
             # The real freeze receives 3600, fake fixture time is 30 here.
             m['profile']['time_limit']=3600
             for case in m['profile']['plans']['memory']:
                 algorithm,kw=settings_for(case,m['profile'],{})
                 self.assertEqual(kw['time_limit'],3600)
-                if algorithm=='improved_ILS':self.assertEqual(kw['kick_trigger_time'],100)
+                if algorithm=='improved_ILS':self.assertEqual(kw['kick_trigger_time'],'auto')
                 else:
-                    self.assertEqual(kw['rcl_tolerance'],.15)
+                    self.assertEqual(kw['rcl_tolerance'],.10)
                     if algorithm=='improved_GRASP':
-                        self.assertEqual(kw['no_improvement_limit'],100)
+                        self.assertEqual(kw['ls_policy'],'systematic')
+                        self.assertEqual(kw['iter_limit_per_iter'],1)
                         self.assertIsNone(kw['ls_evaluation_limit'])
-                    else:self.assertEqual((kw['iter_limit_per_iter'],kw['kick_trigger_time']),(300,100))
+                    else:self.assertEqual((kw['iter_limit_per_iter'],kw['kick_trigger_time']),(None,'auto'))
 
     def test_historical_calibration_import_skips_gpu_and_passes_smoke(self):
         with tempfile.TemporaryDirectory() as name:
@@ -137,14 +156,14 @@ class FrozenWorkflowTests(unittest.TestCase):
             self.assertEqual(len(m['profile']['plans']['calibration']),5)
             self.assertTrue(jobs[0]['command'][-1].endswith('run_collect.slurm'))
             self.assertFalse(any('--gres=' in a for a in jobs[0]['command']))
-            for stage in ('rcl','tuning','full'):
+            for stage in ('sensitivity','rcl','tuning','full'):
                 for i,c in enumerate(m['profile']['plans'][stage]):
                     self.success(bundle,m,c,objective=2.4+i/100,best_U_star=.6,
                                  best_U=.5,algorithm_wall_s=1800,total_wall_s=1801)
                 with contextlib.redirect_stdout(io.StringIO()):self.assertEqual(collect(bundle,stage),0)
             self.assertEqual(verify_smoke(bundle)['status'],'PASS')
-            self.assertEqual(len(m['profile']['plans']['rcl']),3)
-            self.assertEqual(len(m['profile']['plans']['tuning']),10)
+            self.assertEqual(len(m['profile']['plans']['rcl']),36)
+            self.assertEqual(len(m['profile']['plans']['tuning']),27)
             self.assertEqual(len(m['profile']['plans']['full']),27)
 
     def success(self,bundle,manifest,case,**fields):
@@ -155,83 +174,61 @@ class FrozenWorkflowTests(unittest.TestCase):
             settings['time_limit']=None
         fields.setdefault('algorithm',algorithm)
         fields.setdefault('search_settings',settings)
-        fields.setdefault('method',dict(radio_priority=case['stage']=='full',warmup='none'))
+        fields.setdefault('method',dict(radio_priority=case['stage'] in ('sensitivity','rcl','tuning','full'),warmup='none'))
         fields.setdefault('counts',dict(construction=1,ls=case['ls_budget'] if case['stage']=='rcl' else 0,kick=0))
         fields.setdefault('best_N',3)
-        if case['stage']=='full':
+        if case['stage'] in ('sensitivity','rcl','tuning','full'):
             limits=selections['calibration'][f"{case['dataset']}|{case['shape']}"]
             fields.setdefault('weight_capacity',limits['weight_capacity'][case['weight_level']])
             fields.setdefault('radio_capacity',limits['radio_capacity'][case['radio_level']])
         save(path,dict(case=case,bundle_id=manifest['bundle_id'],status='success',validation_ok=True,
                        **fields))
 
-    def test_all_four_stages_write_and_consume_selected_parameters(self):
-        """Synthetic results exercise real collection and worker configuration code."""
+    def test_all_five_stages_write_and_consume_selected_parameters(self):
         with tempfile.TemporaryDirectory() as name:
             bundle,m=self.fixture(Path(name))
             plans=m['profile']['plans']
             for c in plans['calibration']:
                 self.success(bundle,m,c,best_U_star=.8,mean_piece_count_without_emptiest=10,
-                    bin_capacity=100,max_piece_volume=30,max_piece_radio=1000)
+                             bin_capacity=100,max_piece_volume=30,max_piece_radio=1000)
             with contextlib.redirect_stdout(io.StringIO()):self.assertEqual(collect(bundle,'calibration'),0)
-            for c in plans['rcl']:
-                winner=.15 if c['shape']=='cube' else .20
-                self.success(bundle,m,c,objective=2.2 if c['tolerance']==winner else 3.2)
-            with contextlib.redirect_stdout(io.StringIO()):self.assertEqual(collect(bundle,'rcl'),0)
-            selected=json.loads((bundle/'results/rcl/selection.json').read_text())
-            self.assertEqual(selected['x|cube']['tolerance'],.15)
-            self.assertEqual(selected['x|cylinder']['tolerance'],.20)
-            winners={'improved_GRASP':'G_B125','improved_ILS':'I_K150',
-                     'improved_GRASP_ILS':'GI_B300_K125'}
-            for c in plans['tuning']:
-                selection=read_selections(bundle,c)
-                algorithm,kw=settings_for(c,m['profile'],selection)
-                if algorithm!='improved_ILS':
-                    self.assertEqual(kw['rcl_tolerance'],.15 if c['shape']=='cube' else .20)
-                self.success(bundle,m,c,objective=2.1 if c['config_id']==winners[algorithm] else 3.1)
-            with contextlib.redirect_stdout(io.StringIO()):self.assertEqual(collect(bundle,'tuning'),0)
-            for c in plans['full']:
-                selection=read_selections(bundle,c)
-                algorithm,kw=settings_for(c,m['profile'],selection)
-                self.assertEqual(selection['tuning'][algorithm]['config_id'],winners[algorithm])
-                self.assertEqual(selection['calibration'][f"x|{c['shape']}"]['weight_capacity']['strong'],40)
-                if algorithm=='improved_GRASP':self.assertEqual(kw['ls_evaluation_limit'],125)
-                elif algorithm=='improved_ILS':self.assertEqual(kw['kick_trigger_time'],150)
-                else:
-                    self.assertEqual(kw['iter_limit_per_iter'],300)
-                    self.assertEqual(kw['kick_trigger_time'],125)
-                if algorithm!='improved_ILS':
-                    self.assertEqual(kw['rcl_tolerance'],.15 if c['shape']=='cube' else .20)
-                self.success(bundle,m,c,best_N=3,best_U=.5,best_U_star=.6,objective=2.4,
-                             algorithm_wall_s=30,total_wall_s=31)
-            with contextlib.redirect_stdout(io.StringIO()):self.assertEqual(collect(bundle,'full'),0)
-            with (bundle/'results/full/summary.csv').open(encoding='utf-8') as stream:
-                summary=list(csv.DictReader(stream))
-            self.assertEqual(len(summary),54)
-            self.assertTrue(all(float(row['objective_mean'])==2.4 for row in summary))
-            self.assertEqual(json.loads((bundle/'smoke_verification.json').read_text())['status'],'PASS')
-            # A valid-looking result with the wrong runtime tolerance must fail.
+            for stage in ('sensitivity','rcl','tuning','full'):
+                for c in plans[stage]:
+                    algorithm,kw=settings_for(c,m['profile'],read_selections(bundle,c))
+                    if stage=='full':
+                        self.assertEqual(kw['time_limit'],30)
+                        if algorithm=='improved_GRASP':
+                            self.assertIsNone(kw['ls_evaluation_limit'])
+                            self.assertEqual(kw['ls_policy'],'systematic')
+                        if algorithm=='improved_GRASP_ILS':
+                            self.assertIsNone(kw['iter_limit_per_iter'])
+                            self.assertEqual(kw['kick_trigger_time'],'auto')
+                            self.assertEqual(kw['kick_level'],'large')
+                        if algorithm!='improved_ILS':self.assertEqual(kw['rcl_top_k'],30)
+                    winner=c['config_id'] in ('TOP30','I_S75')
+                    self.success(bundle,m,c,objective=2. if winner else 3.,best_N=3,
+                                 best_U=.5,best_U_star=.6,algorithm_wall_s=30,total_wall_s=31)
+                with contextlib.redirect_stdout(io.StringIO()):self.assertEqual(collect(bundle,stage),0)
+            self.assertEqual(verify_smoke(bundle)['status'],'PASS')
             c=next(c for c in plans['full'] if c['algorithm']=='improved_GRASP')
             path=bundle/'results/full'/f"task_{c['task_id']}.json"
-            report=json.loads(path.read_text())
-            report['search_settings']['rcl_tolerance']=.99
+            report=json.loads(path.read_text());report['search_settings']['rcl_top_k']=10
             save(path,report)
-            verified=verify_smoke(bundle)
-            self.assertEqual(verified['status'],'FAIL')
-            self.assertTrue(any('Runtime parameters' in p for p in verified['problems']))
+            self.assertEqual(verify_smoke(bundle)['status'],'FAIL')
 
     def test_incomplete_rcl_does_not_produce_tolerance(self):
         with tempfile.TemporaryDirectory() as name:
             bundle,m=self.fixture(Path(name))
-            for c in m['profile']['plans']['rcl'][:-1]:
-                self.success(bundle,m,c,objective=2.5)
+            # Build prerequisite capacities, then omit one RCL task.
+            for c in m['profile']['plans']['calibration']:
+                self.success(bundle,m,c,best_U_star=.8,mean_piece_count_without_emptiest=10,
+                             bin_capacity=100,max_piece_volume=30,max_piece_radio=1000)
+            with contextlib.redirect_stdout(io.StringIO()):collect(bundle,'calibration')
+            for c in m['profile']['plans']['rcl'][:-1]:self.success(bundle,m,c,objective=2.5)
             with contextlib.redirect_stdout(io.StringIO()):self.assertEqual(collect(bundle,'rcl'),1)
             self.assertFalse((bundle/'results/rcl/selection.json').exists())
-            with self.assertRaises(FileNotFoundError):
-                read_selections(bundle,m['profile']['plans']['tuning'][0])
-            verification=verify_smoke(bundle)
-            self.assertEqual(verification['status'],'FAIL')
-            self.assertTrue(any('Missing/failed result: rcl/' in p for p in verification['problems']))
+            with self.assertRaises(FileNotFoundError):read_selections(bundle,m['profile']['plans']['full'][0])
+            self.assertEqual(verify_smoke(bundle)['status'],'FAIL')
 
     def fixture(self,root):
         project=root/'project'
@@ -261,7 +258,7 @@ class FrozenWorkflowTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as name:
             bundle,m=self.fixture(Path(name))
             c=m['profile']['plans']['rcl'][0]
-            self.assertEqual(c['ls_budget'],3)
+            self.assertEqual(c['ls_budget'],0)
             verify_runtime(bundle,m,c)
             (bundle/'runtime/bin_packing/src/module.py').write_text('x=2\n')
             with self.assertRaisesRegex(ValueError,'Frozen runtime'):verify_runtime(bundle,m,c)
@@ -277,13 +274,13 @@ class FrozenWorkflowTests(unittest.TestCase):
             self.assertFalse((bundle/'results/calibration/selection.json').exists())
             with contextlib.redirect_stdout(io.StringIO()):jobs=submit(bundle,dry_run=True,pending=True)
             arrays=[j['command'] for j in jobs if any('--array=' in a for a in j['command'])]
-            self.assertEqual(len(arrays),4)
+            self.assertEqual(len(arrays),5)
             self.assertIn('--array=0-0%3',arrays[0])
             # Stage 2 only starts after successful calibration finalizer.
             self.assertIn('--dependency=afterok:900001',arrays[1])
             self.assertTrue(any('--gres=gpu:1' in a for a in arrays[0]))
             controls=[j for j in jobs if 'run_collect.slurm' in j['command'][-1]]
-            self.assertEqual(len(controls),4)
+            self.assertEqual(len(controls),5)
             self.assertIn('--dependency=afterany:900000',controls[0]['command'])
 
     def test_collect_complete_stage_produces_calibration(self):
@@ -296,7 +293,7 @@ class FrozenWorkflowTests(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()):self.assertEqual(collect(bundle,'calibration'),0)
             selected=json.loads((bundle/'results/calibration/selection.json').read_text())
             self.assertEqual(selected['x|cube']['weight_capacity']['strong'],40)
-            self.assertEqual(selected['x|cylinder']['radio_capacity']['strong'],2000)
+            self.assertEqual(selected['x|cylinder']['radio_capacity']['strong'],1000)
 
     def test_memory_groups_and_chunked_array_dependencies(self):
         with tempfile.TemporaryDirectory() as name:

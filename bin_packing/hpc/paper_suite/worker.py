@@ -35,36 +35,36 @@ def restore_radio_precision(objects,instance):
 
 def settings_for(case,profile,selections):
     stage=case['stage']
-    if stage=='calibration':
+    if stage in ('calibration','sensitivity'):
         return 'improved_ILS',dict(ALG='fixed_CA',iteration_limit=0,time_limit=None)
     if stage=='rcl':
-        budget=case['ls_budget']
-        return 'improved_GRASP',dict(iter_limit_per_iter=budget,no_improvement_limit=budget,
-            ls_evaluation_limit=budget,restart_limit=1,rcl_tolerance=case['tolerance'],
-            time_limit=float('inf'),alpha=1)
+        return 'improved_GRASP',dict(iter_limit_per_iter=1,
+            ls_evaluation_limit=0,restart_limit=1,rcl_tolerance=case['tolerance']
+                if case['tolerance'] is not None else 0.,rcl_top_k=case['top_k'],
+            time_limit=float('inf'),alpha=1,ls_policy='systematic')
     chosen=case if stage in ('tuning','memory') else selections['tuning'][case['algorithm']]
     algorithm=case['algorithm']
-    kw=dict(time_limit=profile['time_limit'])
+    kw=dict(time_limit=profile['tuning_time_limit'] if stage=='tuning' else profile['time_limit'])
     if algorithm=='improved_ILS':
-        kw.update(ALG='ILS',iteration_limit=None,kick_trigger_time=chosen['kick'],kick_level='medium')
+        kw.update(ALG='ILS',iteration_limit=None,kick_trigger_time='auto',kick_level=chosen['kick_level'])
     else:
-        kw.update(alpha=1,restart_limit=None,
-                  rcl_tolerance=profile['resource_probe']['tolerance'] if stage=='memory' else
-                      selections['rcl'][f"{case['dataset']}|{case['shape']}"]['tolerance'])
+        rcl=(dict(tolerance=profile['resource_probe']['tolerance'],top_k=None) if stage=='memory'
+             else selections['rcl']['global_rcl'])
+        kw.update(alpha=1,restart_limit=None,rcl_tolerance=rcl['tolerance']
+                  if rcl['tolerance'] is not None else 0.,rcl_top_k=rcl['top_k'])
         if algorithm=='improved_GRASP':
-            kw.update(iter_limit_per_iter=chosen['stall'],no_improvement_limit=chosen['stall'],
-                      ls_evaluation_limit=chosen['total_cap'])
+            kw.update(iter_limit_per_iter=1,ls_evaluation_limit=None,ls_policy='systematic')
         else:
-            kw.update(iter_limit_per_iter=chosen['ls_budget'],kick_trigger_time=chosen['kick'],kick_level='medium')
+            kw.update(iter_limit_per_iter=None,kick_trigger_time='auto',kick_level=chosen['kick_level'])
     return algorithm,kw
 
 
 def read_selections(bundle,case):
     selections={}
-    if case['stage'] in ('tuning','full'):
-        selections['rcl']=json.loads((bundle/'results/rcl/selection.json').read_text())
     if case['stage']=='full':
+        selections['rcl']=json.loads((bundle/'results/rcl/selection.json').read_text())
         selections['tuning']=json.loads((bundle/'results/tuning/selection.json').read_text())
+    if case['stage'] in ('sensitivity','rcl','tuning','full'):
         selections['calibration']=json.loads((bundle/'results/calibration/selection.json').read_text())
     return selections
 
@@ -92,6 +92,9 @@ def run(bundle,stage,index):
     bundle=bundle.resolve()
     manifest=json.loads((bundle/'manifest.json').read_text())
     profile=manifest['profile']
+    from protocol import VERSION
+    if profile['protocol'] not in (VERSION,VERSION+'-memory-only'):
+        raise ValueError('Use the frozen driver belonging to this bundle; protocol mismatch')
     case=profile['plans'][stage][index]
     out=bundle/'results'/stage
     out.mkdir(parents=True,exist_ok=True)
@@ -136,7 +139,8 @@ def run(bundle,stage,index):
         capacity=math.prod(size) if shape=='cube' else math.pi*(size[0]/2)**2*size[2]
         radio_limit=sum(o['radio'] for o in objects)+1.
         max_weight=capacity
-        if stage=='full':
+        constrained=stage in ('sensitivity','rcl','tuning','full')
+        if constrained:
             calibrated=selections['calibration'][f"{case['dataset']}|{shape}"]
             max_weight=calibrated['weight_capacity'][case['weight_level']]
             radio_limit=calibrated['radio_capacity'][case['radio_level']]
@@ -144,8 +148,9 @@ def run(bundle,stage,index):
         labels=['x_0']+[f'{axis}_{degree}' for degree in (90,180,270) for axis in ('x','y','z')]
         counts=Counter()
         cache_counts=Counter()
-        rcl_counts={'position':Counter(),'orientation':Counter()}
+        rcl_counts={'pooled':Counter()}
         history=[]
+        ls_end_events=[]
         best=[float('inf')]
         clock=[time.perf_counter()]
         event_path=out/f'task_{index}_events.jsonl'
@@ -157,10 +162,8 @@ def run(bundle,stage,index):
         with event_path.open('x',encoding='utf-8',buffering=1) as event_file:
             def cache_event(**event):
                 cache_counts[event['event']]+=1
-                if event['event']=='ORIENTATION_RCL':
-                    rcl_counts['orientation'][event['active_rcl_size']]+=1
             def rcl_event(event):
-                rcl_counts['position'][event['active_rcl_size']]+=1
+                rcl_counts['pooled'][event['active_rcl_size']]+=1
             def observe(kind,packed):
                 counts[kind]+=1
                 n,u,us=algorithms.get_final_performance(objects,size,shape,packed[0])
@@ -184,10 +187,15 @@ def run(bundle,stage,index):
                 SCH_nesting_strategy=cfg['pes'],orien_evaluation=cfg['pes'],
                 container_size=size,container_shape=shape,flag_NFV_POOL=False,visualisation=False,
                 _TRACE=False,piece_seed=seeds['piece'],position_seed=seeds['position'],
-                radio_priority=stage=='full',cache_first_fit=True,max_weight=max_weight,weight_factor=1.,
+                radio_priority=constrained,cache_first_fit=True,max_weight=max_weight,weight_factor=1.,
                 packing_observer=observe,cache_observer=cache_event)
             if algorithm=='improved_GRASP_ILS':common['kick_seed']=seeds['kick']
             if algorithm!='improved_ILS':common['rcl_observer']=rcl_event
+            if algorithm=='improved_GRASP':
+                def ls_end(event):
+                    ls_end_events.append(dict(event))
+                    event_file.write(json.dumps(dict(event,kind='ls_end',time_s=time.perf_counter()-clock[0]))+'\n')
+                common['ls_observer']=ls_end
             cuda.synchronize()
             clock[0]=time.perf_counter()
             result=getattr(algorithms,algorithm)(**common,**search)
@@ -197,26 +205,30 @@ def run(bundle,stage,index):
         for group in result[6]:
             if sum(p['radio'] for p in group)>radio_limit+1e-8 or sum(p['volume'] for p in group)>max_weight+1e-8:
                 raise ValueError('Returned layout violates calibrated weight/radio limit')
-        if stage=='rcl' and (counts['construction']!=1 or
-                not (counts['ls']==case['ls_budget'] or (result[0]==1 and counts['ls']<case['ls_budget']))):
-            raise ValueError('CA+50 work budget violated')
+        if stage in ('rcl','sensitivity','calibration') and (
+                counts['construction']!=1 or counts['ls'] or counts['kick']):
+            raise ValueError('CA-only work count violated')
         if abs(result[0]-result[2]-best[0])>1e-8:
             raise ValueError('Returned solution differs from observed best')
         volumes=validation['bin_volumes']
         emptiest=min(range(len(volumes)),key=lambda b:volumes[b])
         nstar=(len(objects)-len(result[9][emptiest]))/(len(volumes)-1) if len(volumes)>1 else len(objects)
         report.update(status='success',validation_ok=True,algorithm=algorithm,search_settings=search,
-            method=dict(cfg,radio_priority=stage=='full',cache='run_scoped',rcl='two_level_shared_tolerance',
+            method=dict(cfg,radio_priority=constrained,cache='run_scoped',rcl='pooled_orientation_position',
                         warmup='none'),best_N=result[0],best_U=result[1],best_U_star=result[2],
             objective=result[0]-result[2],origin_N=result[3],origin_U_star=result[5],
             origin_objective=result[3]-result[5],algorithm_wall_s=algorithm_s,
             reported_algorithm_wall_s=result[-1],counts=dict(counts),cache_counts=dict(cache_counts),
-            rcl_histograms={k:dict(v) for k,v in rcl_counts.items()},history=history,
+            rcl_histograms={k:dict(v) for k,v in rcl_counts.items()},history=history,ls_end_events=ls_end_events,
             validation=validation,mean_piece_count_without_emptiest=nstar,bin_capacity=capacity,
             max_piece_volume=max(p['volume'] for p in objects),max_piece_radio=max(p['radio'] for p in objects),
             weight_capacity=max_weight,radio_capacity=radio_limit,piece_count=len(objects),
-            hostname=socket.gethostname(),python=sys.version)
-        if stage=='rcl':report['tolerance']=case['tolerance']
+            hostname=socket.gethostname(),python=sys.version,
+            resolved_limits=dict(piece_count=len(objects),kick_failed_piece_threshold=math.ceil(len(objects)/2)
+                if algorithm in ('improved_ILS','improved_GRASP_ILS') and stage not in ('calibration','sensitivity') else None,
+                ls_repacks_per_restart=9*len(objects) if algorithm=='improved_GRASP_ILS' else None,
+                kick_in_ls_budget=False,deadline_policy='finish in-flight call; start no new call after expiry'))
+        if stage=='rcl':report.update(tolerance=case['tolerance'],top_k=case['top_k'])
     except Exception:
         report['error']=traceback.format_exc()
     finally:
