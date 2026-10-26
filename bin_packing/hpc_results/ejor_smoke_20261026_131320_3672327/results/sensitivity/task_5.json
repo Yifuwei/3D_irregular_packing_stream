@@ -1,0 +1,30 @@
+{
+  "case": {
+    "task_id": 5,
+    "stage": "sensitivity",
+    "protocol": "ejor-pooled-rcl-piece-stall-v2",
+    "dataset": "shapesnew",
+    "shape": "cube",
+    "seed": 3,
+    "algorithm": "improved_ILS",
+    "config_id": "CA_SENSITIVITY",
+    "weight_level": "medium",
+    "radio_level": "weak",
+    "instance": "shapesnew_seq3_cube_999999_1.txt",
+    "piece_count": 43
+  },
+  "bundle_id": "77a0b7bd-cb7c-4ab3-9c7f-25371583742c",
+  "status": "failed",
+  "validation_ok": false,
+  "seed_time_ns": 1793020824056758129,
+  "internal_seeds": {
+    "piece": 3721845100,
+    "position": 3062097227,
+    "kick": 2227926968,
+    "global": 1937634663
+  },
+  "order_seed": 3,
+  "error": "Traceback (most recent call last):\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327/driver/worker.py\", line 201, in run\n    result=getattr(algorithms,algorithm)(**common,**search)\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327/runtime/bin_packing/src/radio_bin_priority.py\", line 132, in run\n    result=controller(*bound.args, **bound.kwargs)\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327/runtime/bin_packing/src/new_ILS_southampton.py\", line 871, in improved_ILS\n    layout, topos_layout, radio_layout, pieces_order = packing_3D_voxel_lookback(\n                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~^\n        copy.deepcopy(original_object_info_total), nfv_pool, ifv_pool,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n        random_CA_threshold=5 if ALG == \"random_CA\" else None,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        search_observer=ca_search_observer, unified_pes=ALG == \"ILS\", position_rng=position_rng, **common)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327/runtime/bin_packing/src/radio_bin_priority.py\", line 98, in construct\n    return observe('construction',engine.construct(orientations))\n                                  ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327/runtime/bin_packing/src/improved_GRASP_weight_radio.py\", line 186, in construct\n    choices = [self.query(state, i, o, b, mode) for o in allowed]\n               ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327/runtime/bin_packing/src/improved_GRASP_weight_radio.py\", line 119, in query\n    found = self.search(trial, state, b, mode, i)\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327/runtime/bin_packing/src/radio_bin_priority.py\", line 58, in geometry\n    result = search(info,state,b,mode,i)\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327/runtime/bin_packing/src/improved_GRASP_weight_radio.py\", line 272, in search\n    return score_position_pes(info['array'], state['occupancy'][b],\n                              state['layout'][b], position, strategy, size, True)\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327/runtime/bin_packing/src/SCH_iter_ls.py\", line 317, in score_position_pes\n    return nesting_evaluation(ongoing, fixed, current_layout,\n                              [position] if positions is None else positions,\n                              modes[strategy], bin_size, encourage_dbl,\n                              rcl_tolerance=rcl_tolerance,position_rng=position_rng,\n                              rcl_observer=rcl_observer)\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327/runtime/bin_packing/src/SCH_iter_ls.py\", line 245, in nesting_evaluation\n    np.add(partial_solution_in_the_bin, translated_test, out=bin_test)\n    ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nnumpy._core._exceptions._UFuncOutputCastingError: Cannot cast ufunc 'add' output from dtype('int64') to dtype('uint8') with casting rule 'same_kind'\n",
+  "host_max_rss_kib": 302320,
+  "total_wall_s": 1.4986335299909115
+}

@@ -1,0 +1,49 @@
+[
+  {
+    "job_id": "9083726",
+    "command": [
+      "sbatch",
+      "--parsable",
+      "--cpus-per-task=1",
+      "--mem=2G",
+      "--time=00:30:00",
+      "--job-name=ejor_collect_calibration",
+      "--output=/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327/logs/collect_calibration_%j.out",
+      "--export=ALL,EJOR_BUNDLE=/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327,EJOR_STAGE=calibration",
+      "/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327/driver/run_collect.slurm"
+    ]
+  },
+  {
+    "job_id": "9083727",
+    "command": [
+      "sbatch",
+      "--parsable",
+      "--partition=gpu",
+      "--gres=gpu:1",
+      "--cpus-per-task=4",
+      "--mem=16G",
+      "--time=01:00:00",
+      "--array=0-17%1",
+      "--job-name=ejor_sensitivity",
+      "--output=/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327/logs/sensitivity_%A_%a.out",
+      "--export=ALL,EJOR_BUNDLE=/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327,EJOR_STAGE=sensitivity,EJOR_TASK_MAP=/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327/submission_history/sensitivity_cbf9ca20-b873-4323-9929-96914dd986ba.json",
+      "--dependency=afterok:9083726",
+      "/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327/driver/run_array.slurm"
+    ]
+  },
+  {
+    "job_id": "9083728",
+    "command": [
+      "sbatch",
+      "--parsable",
+      "--cpus-per-task=1",
+      "--mem=2G",
+      "--time=00:30:00",
+      "--job-name=ejor_collect_sensitivity",
+      "--output=/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327/logs/collect_sensitivity_%j.out",
+      "--export=ALL,EJOR_BUNDLE=/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327,EJOR_STAGE=sensitivity",
+      "--dependency=afterany:9083727,afterok:9083726",
+      "/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_smoke_20261026_131320_3672327/driver/run_collect.slurm"
+    ]
+  }
+]

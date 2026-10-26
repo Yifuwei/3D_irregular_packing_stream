@@ -1,0 +1,103 @@
+{
+  "best_N": 9,
+  "best_U": 0.2449001736111111,
+  "best_U_star": 0.2529296875,
+  "objective": 8.7470703125,
+  "mean_piece_count_without_emptiest": 4.875,
+  "bin_capacity": 4096,
+  "max_piece_volume": 448.0,
+  "max_piece_radio": 1045.8071064906019,
+  "piece_count": 43,
+  "bin_volumes": [
+    920.0,
+    1108.0,
+    1108.0,
+    944.0,
+    740.0,
+    1008.0,
+    1108.0,
+    1168.0,
+    924.0
+  ],
+  "bin_piece_counts": [
+    5,
+    4,
+    4,
+    7,
+    4,
+    7,
+    4,
+    4,
+    4
+  ],
+  "emptiest_bin": 4,
+  "case": {
+    "task_id": 1,
+    "stage": "calibration",
+    "protocol": "ejor-pooled-rcl-piece-stall-v2",
+    "dataset": "shapesnew",
+    "shape": "cube",
+    "seed": 7,
+    "algorithm": "improved_ILS",
+    "config_id": "CA_REFERENCE",
+    "instance": "shapesnew_seq7_cube_999999_1.txt",
+    "piece_count": 43
+  },
+  "source_file": "/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/CA_jsons_results/all_instances_geometry/shapesnew_seq7_cube__minimum_aabb_edges_len__bottom_top__instance_size__rng42.json",
+  "source_sha256": "522768f05c5bd054ef93161bbc42cd16be1777b17e7d67e3ff54798a78e63eb3",
+  "historical_git_commit": "88c351cadb932422130c6cbdb6b75d8c3977bc13",
+  "historical_config": {
+    "instance_id": "shapesnew_seq7_cube",
+    "alg": "fixed_CA",
+    "range": "bottom_top",
+    "pes": "minimum_aabb_edges_len",
+    "oes": "minimum_aabb_edges_len",
+    "rng_seed": 42,
+    "time_limit": 3600,
+    "iteration_limit": 1000,
+    "grasp_iterations": 100,
+    "alpha": 1,
+    "kick_trigger": 120,
+    "kick_level": "medium",
+    "trace": false,
+    "constraint_mode": "geometry_only",
+    "bin_size_source": "instance"
+  },
+  "algorithm_wall_s": 2.182121753692627,
+  "bundle_id": "77a0b7bd-cb7c-4ab3-9c7f-25371583742c",
+  "status": "success",
+  "validation_ok": true,
+  "calibration_source": "historical_CA",
+  "source_reference": "inputs/ca_references/task_1.json",
+  "algorithm": "historical_fixed_CA",
+  "search_settings": {
+    "instance_id": "shapesnew_seq7_cube",
+    "alg": "fixed_CA",
+    "range": "bottom_top",
+    "pes": "minimum_aabb_edges_len",
+    "oes": "minimum_aabb_edges_len",
+    "rng_seed": 42,
+    "time_limit": 3600,
+    "iteration_limit": 1000,
+    "grasp_iterations": 100,
+    "alpha": 1,
+    "kick_trigger": 120,
+    "kick_level": "medium",
+    "trace": false,
+    "constraint_mode": "geometry_only",
+    "bin_size_source": "instance"
+  },
+  "method": {
+    "radio_priority": false,
+    "warmup": "historical_not_recorded"
+  },
+  "counts": {
+    "construction": 1,
+    "ls": 0,
+    "kick": 0
+  },
+  "validation": {
+    "ok": true,
+    "scope": "historical geometry validation; counts and N/U/U* independently recovered"
+  }
+}
