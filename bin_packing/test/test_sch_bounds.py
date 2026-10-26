@@ -48,6 +48,17 @@ class BoundsTests(unittest.TestCase):
         return SCH["nesting_evaluation"](
             self.piece, self.fixed, [], positions, nesting, (6, 6, 6), False)
 
+    def test_integer_piece_and_uint8_bin_have_compatible_sum_buffer(self):
+        for dtype in (np.int32,np.int64):
+            with self.subTest(dtype=dtype):
+                ongoing=self.piece.astype(dtype)
+                original=ongoing.copy()
+                result=SCH['nesting_evaluation'](
+                    ongoing,self.fixed,[],[(1,0,0)],1,(6,6,6),False)
+                self.assertEqual(result,(8,(1,0,0)))
+                self.assertTrue(np.array_equal(ongoing,original))
+                self.assertFalse(np.any(self.fixed))
+
     def test_prescribed_position_uses_same_pes_for_every_strategy(self):
         for mode, strategy in enumerate(('minimum_aabb_volume',
                                         'minimum_aabb_edges_len',

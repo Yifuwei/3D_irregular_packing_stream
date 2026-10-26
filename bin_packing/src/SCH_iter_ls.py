@@ -214,7 +214,9 @@ def nesting_evaluation(ongoing, partial_solution_in_the_bin, current_layout, pac
 
     _L, _W, _H = ongoing.shape
     translated_test = np.zeros((_L, _W, _H), dtype=ongoing.dtype)
-    bin_test = np.empty((_L, _W, _H), dtype=partial_solution_in_the_bin.dtype)
+    # Linux-loaded pieces may be int64 while the bin occupancy is uint8.
+    # Promote the sum buffer rather than casting the addition back to uint8.
+    bin_test = np.empty((_L, _W, _H), dtype=np.result_type(ongoing.dtype, partial_solution_in_the_bin.dtype))
     occupied = np.argwhere(ongoing != 0)
     if occupied.size == 0:
         return False
@@ -298,6 +300,10 @@ def nesting_evaluation(ongoing, partial_solution_in_the_bin, current_layout, pac
 
     # sorted_positions = [pos for pos, value in sorted(value_list_pairs,key=lambda x:x[1])]
 
+    if rcl_tolerance == 'candidates':
+        # Return every scored position; the caller pools all orientations
+        # before applying one RCL. No random draw takes place here.
+        return [(float(score), tuple(position)) for position, score in value_list_pairs]
     if rcl_tolerance is not None:
         return select_pes_rcl(value_list_pairs, rcl_tolerance, rng=position_rng, observer=rcl_observer)
     return False if best_position is None else (best_value, tuple(best_position))
