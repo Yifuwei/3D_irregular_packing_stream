@@ -9,8 +9,13 @@ summary="${CA_SUMMARY:-$project/hpc_results/CA param test result/summary_by_data
 if [[ ! -f "$summary" && -z "${CA_SUMMARY:-}" ]]; then
     summary="$repo/CA param test result/summary_by_dataset.csv"
 fi
-reference_args=()
-if [[ -n "${CA_JSON_DIR:-}" ]]; then reference_args=(--ca-json-dir "$CA_JSON_DIR"); fi
+reference_dir="${CA_JSON_DIR:-$project/hpc_results/CA_jsons_results}"
+if [[ ! -d "$reference_dir" ]]; then
+    printf 'Existing CA results not found: %s\nSet CA_JSON_DIR to the existing CA JSON directory. No GPU calibration was submitted.\n' "$reference_dir" >&2
+    exit 1
+fi
+reference_args=(--ca-json-dir "$reference_dir")
+printf 'Reusing existing CA references: %s\n' "$reference_dir"
 read -r -a smoke_shapes <<< "${SMOKE_SHAPES:-cube cylinder}"
 dataset="${SMOKE_DATASET:-shapesnew}"
 python "$script_dir/suite.py" prepare --project "$project" --ca-summary "$summary" \
