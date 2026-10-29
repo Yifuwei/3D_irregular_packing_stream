@@ -1,0 +1,108 @@
+{
+  "best_N": 3,
+  "best_U": 0.33805938883489905,
+  "best_U_star": 0.35554821293596806,
+  "objective": 2.644451787064032,
+  "mean_piece_count_without_emptiest": 17.5,
+  "bin_capacity": 1157625,
+  "max_piece_volume": 55296.0,
+  "max_piece_radio": 1076.7901032211214,
+  "piece_count": 45,
+  "bin_volumes": [
+    420163.0,
+    350855.0,
+    403020.0
+  ],
+  "bin_piece_counts": [
+    25,
+    10,
+    10
+  ],
+  "emptiest_bin": 1,
+  "case": {
+    "task_id": 21,
+    "stage": "calibration",
+    "protocol": "ejor-three-seed-repacking-v3",
+    "dataset": "Merged3_normal",
+    "shape": "cube",
+    "seed": 7,
+    "algorithm": "improved_ILS",
+    "config_id": "CA_REFERENCE",
+    "instance": "Merged3_normal_seq7_cube_999999_1.txt",
+    "piece_count": 45
+  },
+  "source_file": "/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/CA_jsons_results/all_instances_geometry/Merged3_normal_seq7_cube__maximal_residual_box__bottom__instance_size__rng42.json",
+  "source_sha256": "4f64f4432d4e6b24a08368b1d087dd0719bf99fc4b9adf882a2373e4103c7349",
+  "historical_git_commit": "88c351cadb932422130c6cbdb6b75d8c3977bc13",
+  "historical_config": {
+    "instance_id": "Merged3_normal_seq7_cube",
+    "alg": "fixed_CA",
+    "range": "bottom",
+    "pes": "maximal_residual_box",
+    "oes": "maximal_residual_box",
+    "rng_seed": 42,
+    "time_limit": 3600,
+    "iteration_limit": 1000,
+    "grasp_iterations": 100,
+    "alpha": 1,
+    "kick_trigger": 120,
+    "kick_level": "medium",
+    "trace": false,
+    "constraint_mode": "geometry_only",
+    "bin_size_source": "instance"
+  },
+  "algorithm_wall_s": 64.68451237678528,
+  "bundle_id": "f91d9bc8-e2a1-40e8-aa90-a2a78ea07b6e",
+  "status": "success",
+  "validation_ok": true,
+  "calibration_source": "historical_CA",
+  "source_reference": "inputs/reused/reference_21.json",
+  "algorithm": "historical_fixed_CA",
+  "search_settings": {
+    "instance_id": "Merged3_normal_seq7_cube",
+    "alg": "fixed_CA",
+    "range": "bottom",
+    "pes": "maximal_residual_box",
+    "oes": "maximal_residual_box",
+    "rng_seed": 42,
+    "time_limit": 3600,
+    "iteration_limit": 1000,
+    "grasp_iterations": 100,
+    "alpha": 1,
+    "kick_trigger": 120,
+    "kick_level": "medium",
+    "trace": false,
+    "constraint_mode": "geometry_only",
+    "bin_size_source": "instance"
+  },
+  "method": {
+    "radio_priority": false,
+    "warmup": "historical_not_recorded"
+  },
+  "counts": {
+    "construction": 1,
+    "ls": 0,
+    "kick": 0
+  },
+  "validation": {
+    "ok": true,
+    "scope": "historical geometry validation; counts and N/U/U* independently recovered"
+  },
+  "reused_from": {
+    "bundle_id": "96e0f44e-4d86-408a-9004-fbe5bddb7dec",
+    "case": {
+      "task_id": 21,
+      "stage": "calibration",
+      "protocol": "ejor-pooled-rcl-piece-stall-v2",
+      "dataset": "Merged3_normal",
+      "shape": "cube",
+      "seed": 7,
+      "algorithm": "improved_ILS",
+      "config_id": "CA_REFERENCE",
+      "instance": "Merged3_normal_seq7_cube_999999_1.txt",
+      "piece_count": 45
+    },
+    "source_report": "inputs/reused/calibration/task_21.json",
+    "source_sha256": "dfc068d6970f3f9a6d5ce5885bcf7a575d48926b1dbd41716f4ff58401486ddc"
+  }
+}

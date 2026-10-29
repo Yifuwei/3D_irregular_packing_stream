@@ -1,0 +1,108 @@
+{
+  "best_N": 3,
+  "best_U": 0.23624650753158405,
+  "best_U_star": 0.25915918822886297,
+  "objective": 2.740840811771137,
+  "mean_piece_count_without_emptiest": 11.5,
+  "bin_capacity": 175616,
+  "max_piece_volume": 7105.0,
+  "max_piece_radio": 1095.7474383412632,
+  "piece_count": 32,
+  "bin_volumes": [
+    44972.0,
+    46053.0,
+    33441.0
+  ],
+  "bin_piece_counts": [
+    13,
+    10,
+    9
+  ],
+  "emptiest_bin": 2,
+  "case": {
+    "task_id": 63,
+    "stage": "calibration",
+    "protocol": "ejor-three-seed-repacking-v3",
+    "dataset": "chess",
+    "shape": "cube",
+    "seed": 19,
+    "algorithm": "improved_ILS",
+    "config_id": "CA_REFERENCE",
+    "instance": "chess_seq19_cube_999999_1.txt",
+    "piece_count": 32
+  },
+  "source_file": "/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/CA_jsons_results/all_instances_geometry/chess_seq19_cube__maximal_residual_box__bottom__instance_size__rng42.json",
+  "source_sha256": "37c70d102ee3c5032be7ccc6400280269ea7b91502292f9a6dddd990465f7521",
+  "historical_git_commit": "88c351cadb932422130c6cbdb6b75d8c3977bc13",
+  "historical_config": {
+    "instance_id": "chess_seq19_cube",
+    "alg": "fixed_CA",
+    "range": "bottom",
+    "pes": "maximal_residual_box",
+    "oes": "maximal_residual_box",
+    "rng_seed": 42,
+    "time_limit": 3600,
+    "iteration_limit": 1000,
+    "grasp_iterations": 100,
+    "alpha": 1,
+    "kick_trigger": 120,
+    "kick_level": "medium",
+    "trace": false,
+    "constraint_mode": "geometry_only",
+    "bin_size_source": "instance"
+  },
+  "algorithm_wall_s": 6.15034294128418,
+  "bundle_id": "f91d9bc8-e2a1-40e8-aa90-a2a78ea07b6e",
+  "status": "success",
+  "validation_ok": true,
+  "calibration_source": "historical_CA",
+  "source_reference": "inputs/reused/reference_63.json",
+  "algorithm": "historical_fixed_CA",
+  "search_settings": {
+    "instance_id": "chess_seq19_cube",
+    "alg": "fixed_CA",
+    "range": "bottom",
+    "pes": "maximal_residual_box",
+    "oes": "maximal_residual_box",
+    "rng_seed": 42,
+    "time_limit": 3600,
+    "iteration_limit": 1000,
+    "grasp_iterations": 100,
+    "alpha": 1,
+    "kick_trigger": 120,
+    "kick_level": "medium",
+    "trace": false,
+    "constraint_mode": "geometry_only",
+    "bin_size_source": "instance"
+  },
+  "method": {
+    "radio_priority": false,
+    "warmup": "historical_not_recorded"
+  },
+  "counts": {
+    "construction": 1,
+    "ls": 0,
+    "kick": 0
+  },
+  "validation": {
+    "ok": true,
+    "scope": "historical geometry validation; counts and N/U/U* independently recovered"
+  },
+  "reused_from": {
+    "bundle_id": "96e0f44e-4d86-408a-9004-fbe5bddb7dec",
+    "case": {
+      "task_id": 63,
+      "stage": "calibration",
+      "protocol": "ejor-pooled-rcl-piece-stall-v2",
+      "dataset": "chess",
+      "shape": "cube",
+      "seed": 19,
+      "algorithm": "improved_ILS",
+      "config_id": "CA_REFERENCE",
+      "instance": "chess_seq19_cube_999999_1.txt",
+      "piece_count": 32
+    },
+    "source_report": "inputs/reused/calibration/task_63.json",
+    "source_sha256": "c4cb4dfb51a33660e1e95c9344a3d8b4700c833b20d48704558c4f3003b94e8a"
+  }
+}
