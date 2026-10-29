@@ -13,7 +13,7 @@ import uuid
 from collections import defaultdict
 
 from protocol import make_plan, choose_ca_parameters, calibrate, select_tolerances, select_tuning, STAGES, VERSION, SEQUENCE_SEEDS, REFERENCE_SEEDS
-from worker import run, valid_saved
+from worker import run, valid_saved, packing_settings
 
 
 
@@ -32,14 +32,18 @@ def freeze(project,summary,output,datasets=None,tuning=None,time_limit=3600,smok
     with summary.open(encoding='utf-8-sig',newline='') as stream:
         rows=list(csv.DictReader(stream))
     datasets=datasets or sorted({r['dataset'] for r in rows})
-    tuning=tuning or [d for d in ('shapesnew','Merged4_normal','st04_Example5_normal') if d in datasets]
-    if not tuning:tuning=datasets[:1]
+    tuning=tuning or list(datasets)
     profile=make_plan(datasets,tuning,time_limit=time_limit,smoke=smoke,shapes=shapes,
                       **(dict(seeds=(3,),reference_seeds=REFERENCE_SEEDS if (ca_json_dir or reuse_bundle) else (3,),
                               full_seeds=(3,)) if smoke else {}))
-    ca=choose_ca_parameters(rows,datasets)
-    ca={key:value for key,value in ca.items() if key.split('|')[-1] in shapes}
-    # RCL experiment always uses top/bottom extremal layers; PES follows CA tuning.
+    geometry_ca=choose_ca_parameters(rows,datasets)
+    geometry_ca={key:value for key,value in geometry_ca.items() if key.split('|')[-1] in shapes}
+    ca=dict(geometry_ca)
+    if reuse_bundle is not None:
+        prior=json.loads((reuse_bundle/'manifest.json').read_text())
+        ca={key:dict(prior['ca_parameters'][key]) for key in geometry_ca}
+    # Historical CA settings remain fixed for calibration and sensitivity reuse.
+    # RCL/tuning/full resolve their separate per-shape parameters in the worker.
     for config in ca.values():
         config['reference_selection_range']=config['selection_range']
     if output.exists():raise ValueError('Use a new output directory: '+str(output))
@@ -82,8 +86,9 @@ def freeze(project,summary,output,datasets=None,tuning=None,time_limit=3600,smok
                     if not (output/dest).exists():copy(data,dest)
                     paths.append(dest)
                 geometry[name]=sorted(set(paths))
-        save(output/'parameter_plan.json',dict(protocol=VERSION,profile=profile,ca_parameters=ca,
-            conventions=dict(kick_trigger='ceil(n/2) consecutive rejected LS repacking calls; reset on improvement',
+        save(output/'parameter_plan.json',dict(protocol=VERSION,profile=profile,ca_parameters=ca,geometry_ca_parameters=geometry_ca,
+            conventions=dict(metaheuristic_packing_scope='fixed per bin shape; historical CA calibration/sensitivity unchanged',
+                kick_trigger='ceil(n/2) consecutive rejected LS repacking calls; reset on improvement',
                 kick_size='ceil(fraction*n) changed orientation labels',
                 hybrid_budget='n LS repacking calls per construction; never reset on improvement',
                 kick_charged_to_ls_budget=False,kick_charged_to_wall_time=True,
@@ -102,7 +107,7 @@ def freeze(project,summary,output,datasets=None,tuning=None,time_limit=3600,smok
                 copy(Path(record['source_file']),f"inputs/ca_references/task_{record['case']['task_id']}.json")
         hashes={p.relative_to(output).as_posix():hashlib.sha256(p.read_bytes()).hexdigest()
                 for p in output.rglob('*') if p.is_file()}
-        manifest=dict(bundle_id=str(uuid.uuid4()),profile=profile,ca_parameters=ca,
+        manifest=dict(bundle_id=str(uuid.uuid4()),profile=profile,ca_parameters=ca,geometry_ca_parameters=geometry_ca,
                       instance_geometry=geometry,files_sha256=hashes)
         if recovered:
             manifest['calibration_source']=dict(kind='historical_CA',indexed_results=indexed_count,
@@ -143,6 +148,11 @@ def collect(bundle,stage):
         path=bundle/'results'/stage/f"task_{case['task_id']}.json"
         if valid_saved(path,case,manifest['bundle_id']):
             report=json.loads(path.read_text())
+            if stage!='calibration':
+                expected_packing=packing_settings(case,manifest)
+                if any(report.get('method',{}).get(k)!=expected_packing[k] for k in ('pes','selection_range')):
+                    incomplete.append(case['task_id'])
+                    continue
             records.append(dict(report,**case))
         else:incomplete.append(case['task_id'])
     root=bundle/'results'/stage
@@ -154,8 +164,14 @@ def collect(bundle,stage):
         writer.writeheader();writer.writerows(records)
     save(root/'completion.json',dict(expected=len(cases),success=len(records),incomplete=incomplete))
     if incomplete:
+        for stale in ('selection.json','summary.csv'):
+            (root/stale).unlink(missing_ok=True)
         print(f'{stage}: {len(records)}/{len(cases)} successful; selection withheld; missing/failed {incomplete[:20]}')
         return 1
+    if stage in ('rcl','tuning'):
+        expected=set(manifest['profile']['datasets'])
+        if {r['dataset'] for r in records}!=expected:
+            raise ValueError('Global parameter selection requires every planned dataset')
     if stage=='calibration':
         groups=defaultdict(list)
         for r in records:groups[f"{r['dataset']}|{r['shape']}"].append(r)
@@ -175,7 +191,7 @@ def collect(bundle,stage):
                 row[field+'_mean']=statistics.mean(samples)
                 row[field+'_std']=statistics.stdev(samples) if len(samples)>1 else 0.
             if stage=='sensitivity':
-                baseline=manifest['ca_parameters'][f'{key[0]}|{key[1]}']['reference_mean_objective']
+                baseline=manifest.get('geometry_ca_parameters',manifest['ca_parameters'])[f'{key[0]}|{key[1]}']['reference_mean_objective']
                 row['geometry_reference_objective_mean']=baseline
                 row['objective_change_from_geometry']=row['objective_mean']-baseline
             selection.append(row)

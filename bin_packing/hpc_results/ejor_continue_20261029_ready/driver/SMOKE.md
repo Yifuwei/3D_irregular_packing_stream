@@ -1,3 +1,5 @@
+> Historical/default instructions below are superseded by WORK_PLAN.md for parameter selection. Final tuning now covers all 15 datasets, and sensitivity uses the shared per-shape PES/range.
+
 > Smoke calibration update: run_smoke.sh now reuses hpc_results/CA_jsons_results automatically (or CA_JSON_DIR). If missing, it stops before submission; it no longer starts GPU calibration by default.
 
 > Current submission default (2026-10-26): stop after calibration and CA sensitivity. RCL/tuning/full are not submitted. Use --through full only when intentionally resuming the later experiments. run_smoke.sh also stops at sensitivity by default; inspect results/sensitivity/completion.json. Full-workflow smoke verification requires an explicitly completed full workflow.

@@ -1,72 +1,65 @@
-# 当前 Work Plan — 2026-10-29
+# Current work plan — 2026-10-29
 
-本计划以本次对话最终确认和已验证的续跑包为准。N表示物体数；一次LS iteration指一次候选方向的完整repacking评估，不是一次piece selection，也不是一次piece/bin几何查询。
+## Parameter-selection rule
 
-## 当前状态
+Any best parameter is selected from aggregate performance across all 15 datasets, never separately per dataset or from a representative subset. Cube/cylinder may use different shared settings. Smoke/resource probes are diagnostics, not parameter-selection evidence. Missing entire datasets blocks selection and full-experiment handoff.
 
-- CA参数测试已完成：四种PES × 三种selection range；按dataset/shape使用已选定参数。保留历史数据，不重跑。
-- 容量校准已完成：保留sequence seeds 3、7、13、19、53的150份参考结果，固定各dataset/shape的weight/radiation容量。后续不重新校准。
-- CA sensitivity已完成：原结果1350条全部成功，其中3、7、13的810条已导入续跑包，不重跑GPU。
-- 正式续跑包：`bin_packing/hpc_results/ejor_continue_20261029_ready`。只使用这个包，忽略第一次准备时留下的未完成目录。
-- 本地已完成24项HPC流程测试、真实结果导入、冻结文件哈希检查和全流程提交dry run。没有由本次本地操作提交HPC作业；未查询HPC实时队列。
-
-## 后续实验顺序
-
-| 顺序 | 阶段 | 实验规模 | 任务数 | 单次算法预算 | 产出/进入下一阶段条件 |
-|---|---|---|---:|---|---|
-| 已完成 | Calibration | 15 datasets × 2 shapes × 5 reference seeds | 150 | 复用已有结果 | 原固定容量，已收集验证 |
-| 已完成 | CA sensitivity | 15 × 2 × 3 seeds × 9 W/R组合 | 810 | 复用已有结果 | 已筛选3、7、13并收集验证 |
-| 1 | RCL比较 | 15 × 2 × 3 seeds × 4规则 × 9 W/R组合 | 3240 | 每次只运行一次随机CA；无LS、无kick | 从10%、20%、Top10、Top30中选全局最佳RCL |
-| 2 | ILS kick强度调参 | 3 selected datasets × 2 × 3 seeds × 3强度 × 9 W/R组合 | 486 | 整体1800秒 | 从25%、50%、75%中选全局最佳kick强度 |
-| 3 | Full comparison | 15 × 2 × 3 seeds × 9 W/R组合 × 3算法 | 2430 | 整体3600秒 | 三算法最终结果、均值/标准差与对比 |
-
-待运行共6156个任务；7116为含已复用150+810条记录的整个计划条目数。RCL/tuning/full的sequence seeds均只有3、7、13。
-
-调参数据集：shapesnew（小）、Merged4_normal（中）、st04_Example5_normal（大）。两种bin shape为cube/cylinder。W/R分别有strong/medium/weak，共9个组合。容量重合时仍保留名义组合并标注。
-
-参数选择使用匹配cells的原始N−U*算术平均值，越小越好。RCL采用一个全局最佳规则；ILS选一个全局最佳kick强度；GRASP×ILS继承两者，不另做独立迭代预算调参。每阶段完整性检查通过后才运行下一阶段。
-
-## 当前算法规则
-
-| 算法 | Piece selection | LS停止/kick/重构规则 |
+| Bin shape | Shared PES | Selection range |
 |---|---|---|
-| ILS | size + 动态order评分；从本轮未访问物体中选最高分，早期偏向靠前、停滞后偏向靠后 | 连续ceil(N/2)次LS repacking无改善触发kick；改善或kick重置停滞计数与访问集合；总搜索继续到时间预算 |
-| GRASP | 固定输入顺序，不使用动态评分 | 每个物体尝试替代方向，first improvement后从第一个物体重启；完整一轮无改善达到该邻域local optimum后重新构造 |
-| GRASP×ILS | 与ILS相同的动态评分和轮内无重复选择 | 每次构造最多N次LS repacking，改善不重置此预算；连续ceil(N/2)次无改善触发kick；N次预算耗尽直接重构，末尾不额外kick |
+| Cube | maximal_residual_box | bottom |
+| Cylinder | minimum_aabb_edges_len | bottom_top |
 
-每个物体最多尝试9个替代方向，找到改善提前接受。repacking的预算或kick阈值可在一个物体的方向未全部尝试完时到达；不再把N/2或N乘以9。Kick不占hybrid的N次LS预算，但消耗整体时间。单箱达到目标下界可以提前结束LS。截止或显式预算截断不宣称完成局部最优搜索。
+These explicit user-confirmed configurations apply to CA sensitivity, RCL tests, ILS tuning and all three full-test algorithms. Direction and placement use the same PES. The randomized RCL candidate pool still uses its prescribed top/bottom extremal-position mechanism.
 
-构造、LS、kick及包装器开销共用算法时间预算。已开始的packing调用允许完成，之后不再启动新调用，故可能超出软预算一次调用时间。Slurm作业walltime默认12小时，是额外的作业上限。
+The original five-seed capacity calibration is fixed and remains unchanged. Historical per-dataset CA choices in ca_parameters describe calibration provenance only; they must not be used to choose new algorithm parameters. geometry_ca_parameters records the geometric baseline under the shared settings for sensitivity comparison.
 
-## HPC资源
+## Status and experiment scale
 
-| 任务 | 每任务主机RAM | CPU | GPU |
-|---|---:|---:|---:|
-| chess、shapesnew | 16G | 4核 | 1张 |
-| 其余datasets | 32G | 4核 | 1张 |
-| 阶段完整性检查/收集 | 2G | 1核 | 无 |
+| Stage | Dataset coverage | Tasks | Current action / budget |
+|---|---|---:|---|
+| Capacity calibration | 15 datasets × 2 shapes × 5 reference seeds | 150 | Preserve all original references and capacities; no rerun |
+| CA sensitivity | 15 × 2 × 3 experiment seeds × 9 W/R pairs | 810 | Keep 324 matching reports; archive 486 wrong-configuration reports and rerun those cases |
+| RCL selection | 15 × 2 × 3 seeds × 4 RCL choices × 9 W/R pairs | 3240 | One randomized construction per run; 10%, 20%, Top10, Top30; select one global RCL across all 15 datasets |
+| ILS kick-strength selection | 15 × 2 × 3 seeds × 3 strengths × 9 W/R pairs | 2430 | 1800s/run; compare 25/50/75%; select one global strength across all 15 datasets |
+| Full heuristic comparison | 15 × 2 × 3 seeds × 9 W/R pairs × 3 algorithms | 2430 | 3600s/run; ILS, GRASP, GRASP×ILS; inherit global RCL/kick settings |
 
-默认最多同时运行6个GPU任务。主机RAM不等于GPU显存。16G和32G任务分组提交，阶段间通过Slurm依赖自动串接。
+Reference seeds: 3,7,13,19,53. Experiment seeds: 3,7,13. All-dataset kick tuning replaces the old 3-representative-dataset design: 486 becomes 2430 tuning tasks. Total plan entries: 9060. After retaining 150 calibration and 324 sensitivity cases, 8586 new experiment tasks remain before any compatible later-stage results are considered.
 
-## HPC执行命令
+Best means smallest arithmetic mean N−U* across matched cells. Equal experiment design gives each dataset equal weight. Selection records include dataset names/count, scope and metric. Full rejects selected parameters whose dataset population differs from the full plan.
 
-将整个`ejor_continue_20261029_ready`目录上传至HPC仓库的`bin_packing/hpc_results/`下。进入HPC仓库根目录，激活现有packing环境后执行：
+## Algorithm rules and resources
+
+- ILS and hybrid select the highest dynamic size/order score among unvisited pieces. Improvement or kick resets the sweep and failure counter.
+- One LS iteration is one completed candidate-orientation repacking call. Default kick threshold is ceil(piece_count/2) rejected LS repacking calls.
+- ILS continues until its overall time budget. Hybrid uses piece_count LS repacking calls per construction; improvement does not reset this budget. Kicks are outside the LS count but inside wall time. No extra kick at the last LS budget boundary.
+- GRASP uses fixed input order. First improvement restarts the scan. A complete failed scan of all pieces/orientations triggers reconstruction. Time/budget interruption does not certify local optimum.
+- Default concurrency: 6. Each GPU task: 1 GPU, 4 CPU cores; chess/shapesnew use 16G RAM, other datasets 32G. CPU collectors use 1 core/2G. Default Slurm job walltime is 12h, separate from algorithm budgets.
+
+## Sensitivity rerun on HPC
+
+The existing package is updated in place: bin_packing/hpc_results/ejor_continue_20261029_ready. Original source bundle CA_sensitivity_check is preserved. There is no automatic remote cancellation or synchronization.
+
+1. Stop only the active jobs targeting this package. If cancelled tasks leave locks, verify no jobs remain and use the suite unlock command.
+2. Synchronize the updated existing package to HPC, including driver, manifest.json and parameter_plan.json. Additive uploads may leave old result files; the preparation script detects and archives those incompatible reports.
+3. From the HPC repository root with the packing environment active:
 
 ```bash
 BUNDLE=bin_packing/hpc_results/ejor_continue_20261029_ready
 
-# 查看提交图，不占GPU、不提交作业
-bash "$BUNDLE/driver/submit_all.sh" "$BUNDLE" --through full --dry-run
+# Prepare/check the sensitivity-only submission (does not submit GPU jobs)
+bash "$BUNDLE/driver/run_ca_sensitivity_rerun.sh" "$BUNDLE" --dry-run
 
-# 正式提交；只会为RCL、tuning、full创建新的GPU任务
-bash "$BUNDLE/driver/submit_all.sh" "$BUNDLE" --through full
+# Submit only the missing/wrong-configuration sensitivity cases
+bash "$BUNDLE/driver/run_ca_sensitivity_rerun.sh" "$BUNDLE"
 
-# 中断后恢复：先确认没有同一包的活动作业，再只补缺失/失败任务
-bash "$BUNDLE/driver/submit_all.sh" "$BUNDLE" --through full --pending
+# After sensitivity reaches 810/810 success, inspect completion.json
+cat "$BUNDLE/results/sensitivity/completion.json"
+
+# Preview then submit subsequent all-15-dataset experiments
+bash "$BUNDLE/driver/submit_all.sh" "$BUNDLE" --through full --max-parallel 6 --dry-run
+bash "$BUNDLE/driver/submit_all.sh" "$BUNDLE" --through full --max-parallel 6
 ```
 
-必须显式写`--through full`；不写时默认终点是sensitivity，不会启动后续实验。已有calibration/sensitivity仍运行CPU完整性gate，不重复运行GPU。
+The rerun wrapper defaults to --through sensitivity. It preserves valid matching results and archives incompatible reports and stale aggregate files; it is safe to repeat after confirming no active jobs. Later stages are enabled explicitly by --through full and wait for successful collectors. RCL/tuning/full reports from old parameter/case definitions do not count as new-config results. Do not manually relabel old incompatible reports.
 
-可选资源覆盖：在提交命令后加`--max-parallel 6 --small-memory 32 --large-memory 32`可把全部算法任务主机RAM设为32G。当前计划仍保持16G/32G默认值，未自动提高。
-
-结果保存于`$BUNDLE/results/rcl`、`$BUNDLE/results/tuning`和`$BUNDLE/results/full`，运行日志在`$BUNDLE/logs`。每阶段保存completion.json、runs.csv和selection.json；full另有summary.csv。不要手工改动已冻结的driver、runtime或inputs文件，以免哈希校验失败。
+Outputs: results/sensitivity, results/rcl, results/tuning, results/full; logs under logs/. sensitivity_rerun_plan.json states preserved/pending counts. Configuration/report backups are retained inside the package.

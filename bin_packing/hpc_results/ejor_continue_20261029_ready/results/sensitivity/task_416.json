@@ -10,6 +10,9 @@
     "config_id": "CA_SENSITIVITY",
     "weight_level": "medium",
     "radio_level": "strong",
+    "pes": "minimum_aabb_edges_len",
+    "selection_range": "bottom_top",
+    "parameter_scope": "global_by_shape",
     "instance": "engine_seq13_cylinder_999999_1.txt",
     "piece_count": 97
   },
@@ -1128,5 +1131,23 @@
     },
     "source_report": "inputs/reused/sensitivity/task_416.json",
     "source_sha256": "bb754c088fe000b7edaba3555be118c41d96e23acfdd2c55fb67361713c65140"
+  },
+  "parameter_revalidation": {
+    "previous_case": {
+      "task_id": 416,
+      "stage": "sensitivity",
+      "protocol": "ejor-three-seed-repacking-v3",
+      "dataset": "engine",
+      "shape": "cylinder",
+      "seed": 13,
+      "algorithm": "improved_ILS",
+      "config_id": "CA_SENSITIVITY",
+      "weight_level": "medium",
+      "radio_level": "strong",
+      "instance": "engine_seq13_cylinder_999999_1.txt",
+      "piece_count": 97
+    },
+    "scope": "global_by_shape",
+    "note": "Actual recorded PES/range and fixed capacities verified; no rerun"
   }
 }

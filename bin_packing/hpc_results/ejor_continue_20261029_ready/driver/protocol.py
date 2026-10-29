@@ -8,6 +8,10 @@ SEQUENCE_SEEDS=(3,7,13)
 REFERENCE_SEEDS=(3,7,13,19,53)
 LEVELS=('strong','medium','weak')
 SHAPES=('cube','cylinder')
+SHAPE_PARAMETERS={
+    'cube':dict(pes='maximal_residual_box',selection_range='bottom'),
+    'cylinder':dict(pes='minimum_aabb_edges_len',selection_range='bottom_top'),
+}
 STAGES=('calibration','sensitivity','rcl','tuning','full')
 TOLERANCES=(.10,.20)
 RCL_CONFIGS=(dict(config_id='RCL10',tolerance=.10,top_k=None),
@@ -35,8 +39,15 @@ def make_plan(datasets,tuning_datasets,seeds=SEQUENCE_SEEDS,reference_seeds=REFE
             raise ValueError('Seeds must be nonempty and distinct')
         if not set(values)<=set(allowed):
             raise ValueError('Experiment seeds must be 3, 7, 13; reference seeds may additionally use 19, 53')
+    if not smoke and set(tuning_datasets)!=set(datasets):
+        raise ValueError('Formal tuning must aggregate every dataset; no representative-dataset subset')
     plans={stage:[] for stage in STAGES}
     def add(stage,**kw):
+        if stage in ('sensitivity','rcl','tuning','full'):
+            kw.update(SHAPE_PARAMETERS[kw['shape']])
+            kw['parameter_scope']='global_by_shape'
+        if stage in ('rcl','tuning','full'):
+            kw['selection_dataset_count']=len(datasets)
         plans[stage].append(dict(task_id=len(plans[stage]),stage=stage,protocol=VERSION,**kw))
     for dataset in datasets:
         for shape in shapes:
@@ -60,26 +71,33 @@ def make_plan(datasets,tuning_datasets,seeds=SEQUENCE_SEEDS,reference_seeds=REFE
                             for config in tuning_configs():
                                 add('tuning',dataset=dataset,shape=shape,seed=seed,**config,**constraints)
     return dict(protocol=VERSION,datasets=list(datasets),tuning_datasets=list(tuning_datasets),
+                metaheuristic_parameters={shape:dict(SHAPE_PARAMETERS[shape]) for shape in shapes},
                 seeds=list(seeds),reference_seeds=list(reference_seeds),full_seeds=list(full_seeds),
                 time_limit=time_limit,tuning_time_limit=min(time_limit,30.) if smoke else 1800.,
                 smoke=smoke,shapes=list(shapes),plans=plans,
                 selection_metric='mean_N_minus_U_star',selection_scope='global',
+                selection_datasets=list(datasets),selection_dataset_count=len(datasets),
                 duplicate_capacity_policy='keep nominal level combinations; annotate equal capacities')
 
 
 def choose_ca_parameters(rows,datasets):
-    """Historical geometry-only CA: choose PES/range per dataset and shape."""
+    """Apply the user-confirmed global-by-shape CA configuration to all datasets.
+
+    Per-dataset rows supply the matching baseline, never a per-dataset winner.
+    Historical capacity calibration metadata is retained separately on reuse.
+    """
     selected={}
     for dataset in datasets:
         for shape in SHAPES:
             group=[r for r in rows if r['dataset']==dataset and r['bin_shape']==shape
-                   and r.get('complete','').lower()=='true'
-                   and r.get('constraint_mode')=='geometry_only']
+                   and r.get('complete','').lower()=='true' and r.get('constraint_mode')=='geometry_only']
             if len(group)!=12 or len({(r['nesting_strategy'],r['selection_range']) for r in group})!=12:
                 raise ValueError(f'Expected 12 complete geometry-only CA groups: {dataset}/{shape}')
-            row=min(group,key=lambda r:(float(r['best_N_mean'])-float(r['best_U_star_mean']),
-                                       float(r['algorithm_time_s_mean']),r['nesting_strategy'],r['selection_range']))
-            selected[f'{dataset}|{shape}']=dict(pes=row['nesting_strategy'],selection_range=row['selection_range'],
+            chosen=SHAPE_PARAMETERS[shape]
+            row=next((r for r in group if r['nesting_strategy']==chosen['pes'] and
+                      r['selection_range']==chosen['selection_range']),None)
+            if row is None:raise ValueError('Missing global-by-shape CA baseline: '+dataset+'/'+shape)
+            selected[f'{dataset}|{shape}']=dict(chosen,parameter_scope='bin_shape_global',
                 reference_mean_objective=float(row['best_N_mean'])-float(row['best_U_star_mean']))
     return selected
 
@@ -123,7 +141,9 @@ def _global_selection(records,configs):
     name=ties[0]
     return dict(next(c for c in configs if c['config_id']==name),scope='global',
                 metric='mean_N_minus_U_star',mean_objective=means[name],
-                mean_objectives=means,tied_configs=ties,matched_cells=len(groups))
+                mean_objectives=means,tied_configs=ties,matched_cells=len(groups),
+                datasets=sorted({r['dataset'] for r in records if r.get('dataset') is not None}),
+                dataset_count=len({r['dataset'] for r in records if r.get('dataset') is not None}))
 
 
 def select_tolerances(records):

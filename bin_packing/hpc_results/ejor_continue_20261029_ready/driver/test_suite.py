@@ -11,7 +11,7 @@ import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'src'))
 from protocol import *
-from worker import settings_for,valid_saved,verify_runtime,read_selections,restore_radio_precision
+from worker import settings_for,valid_saved,verify_runtime,read_selections,restore_radio_precision,packing_settings
 from suite import freeze,collect,submit,save,memory_for
 from orientation_rcl import choose_orientation
 from smoke import verify_smoke
@@ -29,10 +29,10 @@ class ProtocolTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'order/identity'):restore_radio_precision(objects,instance)
 
     def test_complete_scale_and_grasp_four_arms(self):
-        p=make_plan([str(i) for i in range(15)],['0','1','2'])
+        p=make_plan([str(i) for i in range(15)],[str(i) for i in range(15)])
         self.assertEqual({s:len(v) for s,v in p['plans'].items()},
-            dict(calibration=150,sensitivity=810,rcl=3240,tuning=486,full=2430))
-        self.assertEqual(sum(map(len,p['plans'].values())),7116)
+            dict(calibration=150,sensitivity=810,rcl=3240,tuning=2430,full=2430))
+        self.assertEqual(sum(map(len,p['plans'].values())),9060)
         self.assertEqual({c['algorithm'] for c in tuning_configs()},{'improved_ILS'})
 
     def test_all_formal_stages_only_use_three_sequence_seeds(self):
@@ -43,6 +43,43 @@ class ProtocolTests(unittest.TestCase):
         for field in ('seeds','reference_seeds','full_seeds'):
             with self.subTest(field=field),self.assertRaises(ValueError):
                 make_plan(['x'],['x'],**{field:(3,17)})
+
+    def test_pes_and_range_are_fixed_per_shape_for_all_heuristics(self):
+        profile=make_plan(['small','large'],['small','large'])
+        historical={f'{dataset}|{shape}':dict(pes='historical_PES',selection_range='all')
+                    for dataset in profile['datasets'] for shape in SHAPES}
+        manifest=dict(profile=profile,ca_parameters=historical)
+        expected={'cube':dict(pes='maximal_residual_box',selection_range='bottom'),
+                  'cylinder':dict(pes='minimum_aabb_edges_len',selection_range='bottom_top')}
+        for stage,cases in profile['plans'].items():
+            for case in cases:
+                cfg=packing_settings(case,manifest)
+                if stage=='calibration':
+                    self.assertEqual(cfg,historical[f"{case['dataset']}|{case['shape']}"])
+                else:
+                    self.assertEqual({k:cfg[k] for k in ('pes','selection_range')},expected[case['shape']])
+                    self.assertEqual(cfg['parameter_scope'],'bin_shape')
+                    self.assertEqual({k:case[k] for k in ('pes','selection_range')},expected[case['shape']])
+
+    def test_formal_tuning_rejects_representative_subset(self):
+        with self.assertRaisesRegex(ValueError,'every dataset'):
+            make_plan([str(i) for i in range(15)],['0','1','2'])
+        p=make_plan([str(i) for i in range(15)],[str(i) for i in range(15)])
+        self.assertEqual({c['dataset'] for c in p['plans']['tuning']},set(p['datasets']))
+        self.assertTrue(all(c['selection_dataset_count']==15 for c in p['plans']['full']))
+
+    def test_ca_does_not_choose_different_winners_for_datasets(self):
+        rows=[]
+        for ds in ('small','large'):
+            for shape in SHAPES:
+                for pes in ('maximal_residual_box','minimum_aabb_edges_len','minimum_aabb_volume','overlap_distance'):
+                    for ran in ('all','bottom','bottom_top'):
+                        rows.append(dict(dataset=ds,bin_shape=shape,nesting_strategy=pes,selection_range=ran,
+                            constraint_mode='geometry_only',complete='true',best_N_mean=0 if pes=='overlap_distance' else 9,
+                            best_U_star_mean=.5,algorithm_time_s_mean=1))
+        result=choose_ca_parameters(rows,['small','large'])
+        for key,cfg in result.items():
+            self.assertEqual({k:cfg[k] for k in ('pes','selection_range')},SHAPE_PARAMETERS[key.split('|')[1]])
 
     def test_worker_settings_preserve_limits(self):
         p=make_plan(['x'],['x'])
@@ -86,6 +123,18 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(out['improved_GRASP_ILS']['kick_level'],'medium')
         self.assertEqual(out['improved_GRASP_ILS']['ls_budget'],'n')
         self.assertEqual(out['improved_ILS']['metric'],'mean_N_minus_U_star')
+
+    def test_global_choice_aggregates_all_fifteen_datasets(self):
+        records=[]
+        for i in range(15):
+            for config in tuning_configs():
+                value=(0 if config['kick_level']=='small' else 10) if i==0 else (0 if config['kick_level']=='large' else 10)
+                records.append(dict(config,dataset=str(i),shape='cube',objective=value))
+        selected=select_tuning(records)
+        self.assertEqual(selected['improved_ILS']['kick_level'],'large')
+        self.assertEqual(selected['improved_ILS']['dataset_count'],15)
+        self.assertEqual(len(selected['improved_ILS']['datasets']),15)
+        self.assertEqual(selected['improved_GRASP_ILS']['kick_level'],'large')
 
     def test_orientation_second_level_and_negative_pes(self):
         class Last:
@@ -154,7 +203,7 @@ class FrozenWorkflowTests(unittest.TestCase):
                     capacity=64 if shape=='cube' else math.pi*4*4
                     save(history/f'{shape}_{seed}.json',dict(status='success',validation=dict(ok=True),
                         config=dict(instance_id=f'x_seq{seed}_{shape}',alg='fixed_CA',constraint_mode='geometry_only',
-                                    pes='0',oes='0',range='all'),
+                                    pes=SHAPE_PARAMETERS[shape]['pes'],oes=SHAPE_PARAMETERS[shape]['pes'],range=SHAPE_PARAMETERS[shape]['selection_range']),
                         container_shape=shape,container_size=[4,4,4],algorithm_time_s=1,
                         placements=[dict(bin=0,piece_type=0)],
                         metrics=dict(best_N=1,best_U=1/capacity,best_U_star=1/capacity)))
@@ -259,6 +308,40 @@ class FrozenWorkflowTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'capacity mismatch'):
                 import_completed(bundle,source)
 
+    def test_selective_sensitivity_rerun_retains_only_matching_settings(self):
+        from rerun_ca_sensitivity import prepare
+        with tempfile.TemporaryDirectory() as name:
+            bundle,m=self.fixture(Path(name))
+            for c in m['profile']['plans']['calibration']:
+                self.success(bundle,m,c,best_U_star=.8,mean_piece_count_without_emptiest=10,
+                             bin_capacity=100,max_piece_volume=30,max_piece_radio=1000)
+            with contextlib.redirect_stdout(io.StringIO()):collect(bundle,'calibration')
+            capacity_before=(bundle/'results/calibration/selection.json').read_bytes()
+            for c in m['profile']['plans']['sensitivity']:
+                self.success(bundle,m,c,objective=2.4,best_U_star=.6,best_U=.5,
+                             algorithm_wall_s=1,total_wall_s=2)
+                if c['shape']=='cube':
+                    p=bundle/'results/sensitivity'/f"task_{c['task_id']}.json"
+                    r=json.loads(p.read_text());r['method']['pes']='overlap_distance';save(p,r)
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(collect(bundle,'sensitivity'),1)
+                prepared=prepare(bundle)
+                jobs=submit(bundle,dry_run=True,through='sensitivity')
+            self.assertEqual(prepared['kept']['sensitivity'],9)
+            self.assertEqual(prepared['sensitivity_pending'],9)
+            self.assertEqual(prepared['archived']['sensitivity'],9)
+            self.assertEqual((bundle/'results/calibration/selection.json').read_bytes(),capacity_before)
+            completion=json.loads((bundle/'results/sensitivity/completion.json').read_text())
+            self.assertEqual((completion['expected'],completion['success']),(18,9))
+            self.assertFalse((bundle/'results/sensitivity/selection.json').exists())
+            arrays=[j for j in jobs if any(a.startswith('--array=') for a in j['command'])]
+            self.assertEqual(len(arrays),1)
+            self.assertIn('--array=0-8%6',arrays[0]['command'])
+            self.assertIn('--job-name=ejor_sensitivity',arrays[0]['command'])
+            with contextlib.redirect_stdout(io.StringIO()):again=prepare(bundle)
+            self.assertEqual(again['kept']['sensitivity'],9)
+            self.assertEqual(again['archived']['sensitivity'],0)
+
     def success(self,bundle,manifest,case,**fields):
         path=bundle/'results'/case['stage']/f"task_{case['task_id']}.json"
         selections=read_selections(bundle,case)
@@ -267,7 +350,7 @@ class FrozenWorkflowTests(unittest.TestCase):
             settings['time_limit']=None
         fields.setdefault('algorithm',algorithm)
         fields.setdefault('search_settings',settings)
-        fields.setdefault('method',dict(radio_priority=case['stage'] in ('sensitivity','rcl','tuning','full'),warmup='none'))
+        fields.setdefault('method',dict(packing_settings(case,manifest),radio_priority=case['stage'] in ('sensitivity','rcl','tuning','full'),warmup='none'))
         fields.setdefault('counts',dict(construction=1,ls=case['ls_budget'] if case['stage']=='rcl' else 0,kick=0))
         fields.setdefault('best_N',3)
         if case['stage'] in ('sensitivity','rcl','tuning','full'):
@@ -339,9 +422,9 @@ class FrozenWorkflowTests(unittest.TestCase):
         with summary.open('w',newline='') as stream:
             w=csv.DictWriter(stream,fieldnames=fields);w.writeheader()
             for shape in SHAPES:
-                for n in range(4):
+                for n,pes in enumerate(('maximal_residual_box','minimum_aabb_edges_len','minimum_aabb_volume','overlap_distance')):
                     for rg in ('all','bottom','bottom_top'):
-                        w.writerow(dict(zip(fields,['x',shape,str(n),rg,'geometry_only','TRUE',2,.5,n+1])))
+                        w.writerow(dict(zip(fields,['x',shape,pes,rg,'geometry_only','TRUE',2,.5,n+1])))
         bundle=root/'bundle'
         with contextlib.redirect_stdout(io.StringIO()):
             manifest=freeze(project,summary,bundle,['x'],['x'],30,True)

@@ -1,0 +1,253 @@
+{
+  "case": {
+    "task_id": 789,
+    "stage": "sensitivity",
+    "protocol": "ejor-three-seed-repacking-v3",
+    "dataset": "st05_e2",
+    "shape": "cylinder",
+    "seed": 3,
+    "algorithm": "improved_ILS",
+    "config_id": "CA_SENSITIVITY",
+    "weight_level": "strong",
+    "radio_level": "weak",
+    "instance": "st05_e2_seq3_cylinder_999999_1.txt",
+    "piece_count": 12
+  },
+  "bundle_id": "f91d9bc8-e2a1-40e8-aa90-a2a78ea07b6e",
+  "status": "success",
+  "validation_ok": true,
+  "seed_time_ns": 1793082476631918060,
+  "internal_seeds": {
+    "piece": 438437124,
+    "position": 3898871443,
+    "kick": 2921018823,
+    "global": 3192630707
+  },
+  "order_seed": 3,
+  "algorithm": "improved_ILS",
+  "search_settings": {
+    "ALG": "fixed_CA",
+    "iteration_limit": 0,
+    "time_limit": null
+  },
+  "method": {
+    "pes": "minimum_aabb_edges_len",
+    "selection_range": "bottom_top",
+    "reference_mean_objective": 1.093792505,
+    "reference_selection_range": "bottom_top",
+    "radio_priority": true,
+    "cache": "run_scoped",
+    "rcl": "pooled_orientation_position",
+    "warmup": "none"
+  },
+  "best_N": 3,
+  "best_U": 0.10586047544364806,
+  "best_U_star": 0.1458587380870367,
+  "objective": 2.854141261912963,
+  "origin_N": 3,
+  "origin_U_star": 0.1458587380870367,
+  "origin_objective": 2.854141261912963,
+  "algorithm_wall_s": 89.65467643295415,
+  "reported_algorithm_wall_s": 89.65459678298794,
+  "counts": {
+    "construction": 1
+  },
+  "cache_counts": {
+    "BIN_RANK": 12,
+    "SEARCH": 120,
+    "SEARCH_SUCCEEDED": 120,
+    "HARD_CONSTRAINT_REJECT": 8,
+    "RUN_END": 1
+  },
+  "rcl_histograms": {
+    "pooled": {}
+  },
+  "history": [
+    {
+      "kind": "construction",
+      "time_s": 89.65156333497725,
+      "N": 3,
+      "U": 0.10586047544364806,
+      "U_star": 0.1458587380870367,
+      "objective": 2.854141261912963,
+      "ls_evaluations": 0,
+      "kicks": 0,
+      "constructions": 1,
+      "new_best": true
+    }
+  ],
+  "ls_end_events": [],
+  "validation": {
+    "ok": true,
+    "scope": "piece identity, geometry, occupancy and N/U/U*; accessibility enforced by engine, not independently revalidated",
+    "bin_volumes": [
+      605720,
+      601260,
+      107012
+    ],
+    "bin_filling_rates": [
+      0.1463977113690034,
+      0.14531976480506997,
+      0.02586395015687082
+    ],
+    "placements": [
+      {
+        "bin": 0,
+        "piece_index": 0,
+        "orientation": "y_90",
+        "translation": [
+          4,
+          22,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 1,
+        "orientation": "x_0",
+        "translation": [
+          61,
+          4,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 2,
+        "orientation": "x_0",
+        "translation": [
+          2,
+          69,
+          68
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 3,
+        "orientation": "x_180",
+        "translation": [
+          91,
+          6,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 4,
+        "orientation": "z_270",
+        "translation": [
+          14,
+          23,
+          103
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 5,
+        "orientation": "x_90",
+        "translation": [
+          8,
+          0,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 6,
+        "orientation": "z_270",
+        "translation": [
+          73,
+          21,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 7,
+        "orientation": "z_270",
+        "translation": [
+          73,
+          58,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 8,
+        "orientation": "y_90",
+        "translation": [
+          4,
+          22,
+          57
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 9,
+        "orientation": "z_270",
+        "translation": [
+          51,
+          8,
+          85
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 10,
+        "orientation": "y_90",
+        "translation": [
+          28,
+          95,
+          20
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 11,
+        "orientation": "x_180",
+        "translation": [
+          1,
+          18,
+          0
+        ]
+      }
+    ]
+  },
+  "mean_piece_count_without_emptiest": 5.5,
+  "bin_capacity": 4137496.374333679,
+  "max_piece_volume": 144000,
+  "max_piece_radio": 965.1022917367762,
+  "weight_capacity": 633466.2,
+  "radio_capacity": 2411.632561920667,
+  "piece_count": 12,
+  "hostname": "gpu013.aire.lee.alces.network",
+  "python": "3.13.2 | packaged by conda-forge | (main, Feb 17 2025, 14:10:22) [GCC 13.3.0]",
+  "resolved_limits": {
+    "piece_count": 12,
+    "kick_failed_piece_threshold": null,
+    "ls_repacks_per_restart": null,
+    "kick_in_ls_budget": false,
+    "deadline_policy": "finish in-flight call; start no new call after expiry"
+  },
+  "host_max_rss_kib": 4780704,
+  "total_wall_s": 92.02101301006041,
+  "reused_from": {
+    "bundle_id": "96e0f44e-4d86-408a-9004-fbe5bddb7dec",
+    "case": {
+      "task_id": 1315,
+      "stage": "sensitivity",
+      "protocol": "ejor-pooled-rcl-piece-stall-v2",
+      "dataset": "st05_e2",
+      "shape": "cylinder",
+      "seed": 3,
+      "algorithm": "improved_ILS",
+      "config_id": "CA_SENSITIVITY",
+      "weight_level": "strong",
+      "radio_level": "weak",
+      "instance": "st05_e2_seq3_cylinder_999999_1.txt",
+      "piece_count": 12
+    },
+    "source_report": "inputs/reused/sensitivity/task_789.json",
+    "source_sha256": "3ab9614a9944ae3eadacff2bbac29cd36133351910315c689f6c79e2007b6eca"
+  }
+}

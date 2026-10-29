@@ -59,11 +59,26 @@ def settings_for(case,profile,selections):
     return algorithm,kw
 
 
+def packing_settings(case,manifest):
+    """Fixed per-shape heuristic parameters; retain historical CA baselines."""
+    if case['stage'] in ('sensitivity','rcl','tuning','full','memory'):
+        from protocol import SHAPE_PARAMETERS
+        selected=manifest['profile'].get('metaheuristic_parameters',SHAPE_PARAMETERS)[case['shape']]
+        return dict(pes=case.get('pes',selected['pes']),
+                    selection_range=case.get('selection_range',selected['selection_range']),
+                    parameter_scope='bin_shape')
+    return dict(manifest['ca_parameters'][f"{case['dataset']}|{case['shape']}"])
+
+
 def read_selections(bundle,case):
     selections={}
     if case['stage']=='full':
         selections['rcl']=json.loads((bundle/'results/rcl/selection.json').read_text())
         selections['tuning']=json.loads((bundle/'results/tuning/selection.json').read_text())
+        expected=set(json.loads((bundle/'manifest.json').read_text())['profile']['datasets'])
+        for chosen in (selections['rcl']['global_rcl'],selections['tuning']['improved_ILS']):
+            if set(chosen.get('datasets',[]))!=expected:
+                raise ValueError('Full experiment requires parameters selected across every planned dataset')
     if case['stage'] in ('sensitivity','rcl','tuning','full'):
         selections['calibration']=json.loads((bundle/'results/calibration/selection.json').read_text())
     return selections
@@ -133,7 +148,7 @@ def run(bundle,stage,index):
         shape,size,_,_,objects=loader.load_instance(Path(case['instance']).stem)
         restore_radio_precision(objects,project/'instances'/case['instance'])
         if not objects:raise ValueError('Empty instance')
-        cfg=manifest['ca_parameters'][f"{case['dataset']}|{shape}"]
+        cfg=packing_settings(case,manifest)
         selections=read_selections(bundle,case)
         algorithm,search=settings_for(case,profile,selections)
         capacity=math.prod(size) if shape=='cube' else math.pi*(size[0]/2)**2*size[2]

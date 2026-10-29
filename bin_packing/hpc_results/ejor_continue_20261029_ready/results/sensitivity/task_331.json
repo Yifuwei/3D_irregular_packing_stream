@@ -10,6 +10,9 @@
     "config_id": "CA_SENSITIVITY",
     "weight_level": "strong",
     "radio_level": "weak",
+    "pes": "maximal_residual_box",
+    "selection_range": "bottom",
+    "parameter_scope": "global_by_shape",
     "instance": "chess_seq7_cube_999999_1.txt",
     "piece_count": 32
   },
@@ -457,5 +460,23 @@
     },
     "source_report": "inputs/reused/sensitivity/task_331.json",
     "source_sha256": "81752a76ddcd6ad2f706a5d33aa57402b8dc574082c162200a08e0a608e6ab85"
+  },
+  "parameter_revalidation": {
+    "previous_case": {
+      "task_id": 331,
+      "stage": "sensitivity",
+      "protocol": "ejor-three-seed-repacking-v3",
+      "dataset": "chess",
+      "shape": "cube",
+      "seed": 7,
+      "algorithm": "improved_ILS",
+      "config_id": "CA_SENSITIVITY",
+      "weight_level": "strong",
+      "radio_level": "weak",
+      "instance": "chess_seq7_cube_999999_1.txt",
+      "piece_count": 32
+    },
+    "scope": "global_by_shape",
+    "note": "Actual recorded PES/range and fixed capacities verified; no rerun"
   }
 }

@@ -7,7 +7,7 @@ import shutil
 from collections import defaultdict
 
 from protocol import calibrate
-from worker import valid_saved, settings_for
+from worker import valid_saved, settings_for, packing_settings
 
 
 def _identity(case):
@@ -78,6 +78,9 @@ def import_completed(bundle,source):
                 algorithm,settings=settings_for(case,manifest['profile'],{})
                 if report['algorithm']!=algorithm or report['search_settings']!=settings:
                     raise ValueError('Sensitivity CA settings changed')
+                expected=packing_settings(case,manifest)
+                if any(report.get('method',{}).get(k)!=expected[k] for k in ('pes','selection_range')):
+                    continue
             else:groups[key].append(report)
             pending.append((stage,case,path,report))
     for key,records in groups.items():
