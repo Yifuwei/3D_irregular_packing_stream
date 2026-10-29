@@ -60,7 +60,7 @@ bash run_all.sh
 bash run_all.sh --dry-run
 ```
 
-默认正式并发3；shapesnew/chess任务16G，其余32G；每任务1GPU、4CPU。普通任务Slurm walltime默认12小时；内存实验6小时。CPU gate为1CPU、2G、30分钟。
+默认正式并发6；shapesnew/chess任务16G，其余32G；每任务1GPU、4CPU。普通任务Slurm walltime默认12小时；内存实验6小时。CPU gate为1CPU、2G、30分钟。
 
 小smoke默认任务数：calibration2、sensitivity18、rcl72、tuning54、full54，共200；如果指定CA_JSON_DIR恢复历史reference，calibration会是10个已恢复reference（保留原五-seed容量）。仅cube时各阶段为1、9、36、27、27，共100。
 

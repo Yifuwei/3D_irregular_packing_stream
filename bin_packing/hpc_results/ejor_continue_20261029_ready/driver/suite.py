@@ -196,7 +196,7 @@ def memory_for(case,small=16,large=32):
     return small if case['dataset'].lower() in ('chess','shapesnew') else large
 
 
-def submit(bundle,max_parallel=3,small_memory=16,large_memory=32,walltime='12:00:00',
+def submit(bundle,max_parallel=6,small_memory=16,large_memory=32,walltime='12:00:00',
            dry_run=False,pending=False,through='full',partition='gpu',control_partition=None):
     if max_parallel<1 or min(small_memory,large_memory)<1:raise ValueError('Resources must be positive')
     bundle=bundle.resolve()
@@ -280,7 +280,7 @@ def main():
             p.add_argument('--index',type=int,required=True)
             p.add_argument('--task-map',type=Path)
         if name=='submit-all':
-            p.add_argument('--max-parallel',type=int,default=3)
+            p.add_argument('--max-parallel',type=int,default=6)
             p.add_argument('--small-memory',type=int,default=16);p.add_argument('--large-memory',type=int,default=32)
             p.add_argument('--walltime',default='12:00:00');p.add_argument('--dry-run',action='store_true')
             p.add_argument('--pending',action='store_true');p.add_argument('--through',choices=STAGES,default='sensitivity')

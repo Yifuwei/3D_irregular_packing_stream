@@ -23,5 +23,5 @@ elif [[ -d "$reference_dir" || -n "${CA_JSON_DIR:-}" ]]; then
 fi
 python "$script_dir/suite.py" prepare --project "$project" --ca-summary "$summary" \
     --output "$bundle" "${reference_args[@]}"
-python "$bundle/driver/suite.py" submit-all --bundle "$bundle" --max-parallel "${MAX_PARALLEL:-3}" --through sensitivity "$@"
+python "$bundle/driver/suite.py" submit-all --bundle "$bundle" --max-parallel "${MAX_PARALLEL:-6}" --through sensitivity "$@"
 printf 'Frozen experiment and results: %s\n' "$bundle"

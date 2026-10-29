@@ -368,7 +368,7 @@ class FrozenWorkflowTests(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()):jobs=submit(bundle,dry_run=True,pending=True)
             arrays=[j['command'] for j in jobs if any('--array=' in a for a in j['command'])]
             self.assertEqual(len(arrays),5)
-            self.assertIn('--array=0-0%3',arrays[0])
+            self.assertIn('--array=0-0%6',arrays[0])
             # Stage 2 only starts after successful calibration finalizer.
             self.assertIn('--dependency=afterok:900001',arrays[1])
             self.assertTrue(any('--gres=gpu:1' in a for a in arrays[0]))
@@ -398,7 +398,7 @@ class FrozenWorkflowTests(unittest.TestCase):
             self.assertEqual(len(jobs),5) # 1 small + 3 large chunks + CPU gate
             self.assertIn('--mem=16G',jobs[0]['command'])
             self.assertIn('--mem=32G',jobs[1]['command'])
-            self.assertIn('--array=0-899%3',jobs[1]['command'])
+            self.assertIn('--array=0-899%6',jobs[1]['command'])
             self.assertIn('--dependency=afterany:900000',jobs[1]['command'])
             self.assertIn('--dependency=afterany:900000:900001:900002:900003',jobs[-1]['command'])
 

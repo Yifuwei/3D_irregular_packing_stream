@@ -46,7 +46,7 @@
 | 其余datasets | 32G | 4核 | 1张 |
 | 阶段完整性检查/收集 | 2G | 1核 | 无 |
 
-默认最多同时运行3个GPU任务。主机RAM不等于GPU显存。16G和32G任务分组提交，阶段间通过Slurm依赖自动串接。
+默认最多同时运行6个GPU任务。主机RAM不等于GPU显存。16G和32G任务分组提交，阶段间通过Slurm依赖自动串接。
 
 ## HPC执行命令
 
@@ -67,6 +67,6 @@ bash "$BUNDLE/driver/submit_all.sh" "$BUNDLE" --through full --pending
 
 必须显式写`--through full`；不写时默认终点是sensitivity，不会启动后续实验。已有calibration/sensitivity仍运行CPU完整性gate，不重复运行GPU。
 
-可选资源覆盖：在提交命令后加`--max-parallel 3 --small-memory 32 --large-memory 32`可把全部算法任务主机RAM设为32G。当前计划仍保持16G/32G默认值，未自动提高。
+可选资源覆盖：在提交命令后加`--max-parallel 6 --small-memory 32 --large-memory 32`可把全部算法任务主机RAM设为32G。当前计划仍保持16G/32G默认值，未自动提高。
 
 结果保存于`$BUNDLE/results/rcl`、`$BUNDLE/results/tuning`和`$BUNDLE/results/full`，运行日志在`$BUNDLE/logs`。每阶段保存completion.json、runs.csv和selection.json；full另有summary.csv。不要手工改动已冻结的driver、runtime或inputs文件，以免哈希校验失败。
