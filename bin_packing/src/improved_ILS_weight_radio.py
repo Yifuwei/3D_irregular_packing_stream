@@ -117,7 +117,8 @@ class RankedRepacker:
                     self.emit(event='HARD_CONSTRAINT_REJECT', piece=i, bin=b+1)
                     continue
                 score = post_placement_score(volumes[b],piece['volume'],self.volume,
-                                              sum(radio[b]),piece['radio'],self.max_radio)
+                                              sum(radio[b]),piece['radio'],self.max_radio,
+                                              min(1.,self.rho,self.max_weight/(self.factor*self.volume)))
                 eligible.append((b,score))
                 details.append(dict(bin=b+1,filling_rate=(volumes[b]+piece['volume'])/self.volume,
                     filling_rate_before=volumes[b]/self.volume,

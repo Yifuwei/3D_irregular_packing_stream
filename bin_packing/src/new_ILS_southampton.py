@@ -175,25 +175,12 @@ def bin_lower_bound(object_total, bin_size, container_shape):
 
     return piece_volume_lower_bound, aabb_volume_lower_bound
 
-def improve_pieces_selection_ls(object_info_total, iter_time, LS_stage_var, num_used_bin, seed=None, deterministic=False, exclude_last_bin=True, rng=None):
-    # • Give additional selection weight to the earlier pieces when LS is at its early stage, and vice versa. 
-    # The selection_age (the average number of iteration that the piece is selected in the LS) 
-    # can gradually increase along the piece order from first to last.  
-    # • Early and late LS stages are defined as “kick_trigger_iter – current_no_improve_iter “, smaller the number, later the LS stage. 
-    # • Or deterministically, the LS can be simply searched from the first to the last.
-    # LS_stage_var - range 0 to 1 - smaller the value, later the LS stage
-    # don't need to select the pieces in the last bin, as they will never improve the packing performance.
+def improve_pieces_selection_ls(object_info_total, iter_time, LS_stage_var, num_used_bin, seed=None, deterministic=False, exclude_last_bin=True, rng=None, visited=None):
+    """Choose the highest dynamic score among unvisited pieces.
 
-    # object_info_total = []
-
-    # for each_object_info in _object_info_total:
-    #     # get rid of pieces in the last bin
-    #     if each_object_info["bin_position"] == num_used_bin - 1:
-    #         pass
-    #     else:
-    #         object_info_total.append(each_object_info)
-
-
+    Caller-owned visited tracks a sweep; exhaustion starts another sweep.
+    Ties use input order. visited=None retains historical stochastic behavior.
+    """
     n = len(object_info_total)
     
     selectable_mask = np.array([
@@ -204,13 +191,14 @@ def improve_pieces_selection_ls(object_info_total, iter_time, LS_stage_var, num_
     if not np.any(selectable_mask):
         raise ValueError("No selectable pieces outside the last bin")
 
-    if rng is None:
-        rng = np.random.default_rng(seed) if seed is not None else np.random
-
-    # if deterministic:
-    #     # if the deterministic is True, the LS will select the pieces from the first to the last
-    #     selected_index = iter_time % n # for avoiding out of range
-    #     return selected_index
+    if visited is not None:
+        remaining = selectable_mask.copy()
+        for index in visited:
+            remaining[index] = False
+        if not np.any(remaining):
+            visited.clear()
+        else:
+            selectable_mask = remaining
 
     if deterministic:
         # Search selectable pieces from first to last
@@ -218,6 +206,8 @@ def improve_pieces_selection_ls(object_info_total, iter_time, LS_stage_var, num_
         selected_index = selectable_indices[
             iter_time % len(selectable_indices)
         ]
+        if visited is not None:
+            visited.add(int(selected_index))
         return selected_index
 
     weight_values = np.array([get_aabb_length(obj_info["array"]) for obj_info in object_info_total])
@@ -252,17 +242,17 @@ def improve_pieces_selection_ls(object_info_total, iter_time, LS_stage_var, num_
 
     overall_weight =  size_weight + order_weight 
 
-    overall_weight[~selectable_mask] = 0.0
-    total_weight = np.sum(overall_weight)
-    if total_weight <= 0:
-        overall_weight = selectable_mask.astype(float)
-        total_weight = np.sum(overall_weight)
-    probs = overall_weight / total_weight
+    if visited is None:
+        overall_weight[~selectable_mask] = 0.0
+        if np.sum(overall_weight) <= 0:
+            overall_weight = selectable_mask.astype(float)
+        legacy_rng = rng if rng is not None else (np.random.default_rng(seed) if seed is not None else np.random)
+        return int(legacy_rng.choice(n, p=overall_weight / np.sum(overall_weight)))
 
-    selected_index = rng.choice(len(object_info_total), p=probs)
-    # print(probs)
-    # print(value/np.sum(value))
-    # exit(-1)
+    overall_weight[~selectable_mask] = -np.inf
+    selected_index = int(np.argmax(overall_weight))
+    if visited is not None:
+        visited.add(selected_index)
     return selected_index
 
 
@@ -819,10 +809,13 @@ def find_element_index(nested_list, target, path=None):
 def improved_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientations, ils_orientations,
                  orientations_list, packing_alg, selection_type, selection_range, accessible_check,
                  SCH_nesting_strategy, orien_evaluation, ALG, container_size, container_shape,
-                 iteration_limit=None, time_limit=None, kick_trigger_time=None,
-                 kick_level=None, flag_NFV_POOL=False, visualisation=False, _TRACE=False, ca_search_observer=None, piece_seed=101, position_seed=202):
+                 iteration_limit=None, time_limit=None, kick_trigger_time="auto",
+                 kick_level='medium', flag_NFV_POOL=False, visualisation=False, _TRACE=False, ca_search_observer=None, piece_seed=101, position_seed=202):
     
-    """Run randomized descent and kicks with independent accepted/best states.
+    """Run dynamic-preference descent and kicks with independent best states.
+
+    Auto kicks follow ceil(n/2) consecutive rejected LS repacking calls.
+    Improvements and kicks reset the failure counter; total search continues.
 
     iteration_limit counts evaluated neighbors and kick solutions, excluding
     construction. None disables a limit. Wall time includes construction.
@@ -833,6 +826,7 @@ def improved_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientat
     global TRACE
     TRACE = _TRACE
     # Initialize once per run, independently from the instance-order RNG.
+    visited_pieces = set()
     piece_rng = np.random.default_rng(piece_seed)
     position_rng = np.random.default_rng(position_seed)
 
@@ -846,6 +840,8 @@ def improved_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientat
     if time_limit is not None and (not math.isfinite(time_limit) or time_limit < 0):
         raise ValueError("time_limit must be finite and nonnegative or None")
     if ALG == "ILS":
+        if kick_trigger_time == "auto":
+            kick_trigger_time = math.ceil(len(object_info_total)/2)
         if kick_trigger_time is not None and (not isinstance(kick_trigger_time, (int, np.integer)) or kick_trigger_time <= 0):
             raise ValueError("kick_trigger_time must be a positive integer or None")
         if kick_trigger_time is not None and kick_level not in ("small", "medium", "large"):
@@ -912,6 +908,7 @@ def improved_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientat
 
     n_iter = 0
     no_change_time = iter_piece_selection = 0
+    visited_pieces.clear()
 
     def budget_exhausted():
         return ((iteration_limit is not None and n_iter >= iteration_limit) or
@@ -956,6 +953,7 @@ def improved_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientat
                 local_best_list.append(perform_this_iter)
                 local_change_iter_list.append(n_iter)
                 no_change_time = iter_piece_selection = 0
+                visited_pieces.clear()
 
             if globally_better:
                 global_best_iteration = n_iter
@@ -981,7 +979,7 @@ def improved_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho, orientat
         selected_index = improve_pieces_selection_ls(
             selection_info, iter_piece_selection, LS_stage_var,
             num_used_bin, seed=None, deterministic=False,
-            exclude_last_bin=exclude_last_bin, rng=piece_rng)
+            exclude_last_bin=exclude_last_bin, rng=piece_rng, visited=visited_pieces)
         iter_piece_selection += 1
         other_orientations = [value for value in orientations_list
                               if value != local_best_orientations_list_no_bin[selected_index]]
@@ -1549,24 +1547,30 @@ def improved_GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
                    orientations, ils_orientations, orientations_list,
                    packing_alg, selection_type, selection_range, accessible_check,
                    SCH_nesting_strategy, orien_evaluation,
-                   container_size, container_shape, iter_limit_per_iter,
-                   time_limit, alpha, flag_NFV_POOL, visualisation, _TRACE,
+                   container_size, container_shape, iter_limit_per_iter=1,
+                   time_limit=3600, alpha=1, flag_NFV_POOL=False, visualisation=False, _TRACE=False,
                    random_CA_threshold=5, restart_limit=None,
                    no_improvement_limit=None, rcl_tolerance=0.10, piece_seed=101, position_seed=202, rcl_observer=None,
-                   ls_evaluation_limit=None):
-    """Random construction followed by stagnation-limited descent.
+                   ls_evaluation_limit=None, ls_policy='systematic', ls_observer=None):
+    """Random construction followed by first-improvement local descent.
 
-    Compatible with GRASP's arguments and eleven-value return tuple. Each
-    accepted move becomes the next repacking baseline. Piece selection matches
-    improved_ILS: weighted sampling with replacement from the accepted layout,
-    excluding the last bin until the first accepted layout change. Each restart
-    resets that exclusion. Consecutive rejected candidates trigger a restart;
-    iter_limit_per_iter is the consecutive-failure threshold, NOT a total
-    evaluation budget. no_improvement_limit, when provided, overrides it.
-    Every strict improvement resets the failure counter. Total evaluations
-    may exceed that threshold. ls_evaluation_limit optionally provides a
-    separate total cap for fixed-work experiments; None disables that cap.
-    alpha is retained for compatibility; this selector does not use it.
+    Default systematic policy scans original sequence indices 0..n-1,
+    including pieces in the last bin, and all alternative orientation labels.
+    Accept the first strict improvement and restart scanning from index 0.
+    A complete scan without improvement certifies a local optimum only for
+    this deterministic orientation-plus-repacking neighborhood. A time or
+    explicit evaluation cap may interrupt a scan; that is not such a proof.
+    The old iter_limit_per_iter/no_improvement_limit arguments do not stop
+    systematic descent. ls_observer optionally reports why each LS ended.
+
+    ls_policy='legacy_stochastic' explicitly retains the old behavior below
+    for already-defined fixed-work and historical parameter experiments.
+
+    The eleven-value return tuple and old threshold arguments are retained
+    for API compatibility. Only ls_policy='legacy_stochastic' uses the old
+    weighted piece selection and consecutive-neighbor failure threshold.
+    The default systematic search ignores those old thresholds.
+    ls_evaluation_limit=0 performs one construction without local search.
 
     The wall-clock budget includes copying/evaluation. Calls to the packing
     engine cannot be interrupted, so one call may overrun it; its completed
@@ -1578,21 +1582,21 @@ def improved_GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
     origin-distance term as improved_ILS. Descent also uses improved_repack
     with bounding-box candidates, matching improved_ILS's repacking path.
 
-    Construction samples each orientation's bottom/top position RCL with
-    score <= best + rcl_tolerance * abs(best), then compares the sampled
-    positions across orientations by PES. Default tolerance is 0.10; None
-    restores the legacy top-k orientation sampling. Empty-bin placement
-    retains its prescribed starting position and compares orientations by PES.
-    Descent remains greedy and uses the requested selection_range.
+    The production shared packing wrapper pools all bottom/top extremal
+    orientation-position pairs in the current bin, then draws once from
+    one relative-tolerance or fixed-top-k RCL. Descent remains greedy.
     """
     global TRACE
     TRACE = _TRACE
     # Initialize once per run, independently from the instance-order RNG.
+    visited_pieces = set()
     piece_rng = np.random.default_rng(piece_seed)
     position_rng = np.random.default_rng(position_seed)
 
     if not object_info_total or not orientations_list:
         raise ValueError("Objects and orientations must be nonempty")
+    if ls_policy not in ('systematic','legacy_stochastic'):
+        raise ValueError('Unknown GRASP LS policy')
     if iter_limit_per_iter <= 0 or time_limit <= 0 or random_CA_threshold <= 0:
         raise ValueError("Search budgets and RCL size must be positive")
     if restart_limit is not None and restart_limit <= 0:
@@ -1606,8 +1610,8 @@ def improved_GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
         raise ValueError("no_improvement_limit must be an integer")
     if ls_evaluation_limit is not None and (
             not isinstance(ls_evaluation_limit, (int, np.integer))
-            or isinstance(ls_evaluation_limit, bool) or ls_evaluation_limit <= 0):
-        raise ValueError("ls_evaluation_limit must be a positive integer or None")
+            or isinstance(ls_evaluation_limit, bool) or ls_evaluation_limit < 0):
+        raise ValueError("ls_evaluation_limit must be a nonnegative integer or None")
     if rcl_tolerance is not None and (not np.isfinite(rcl_tolerance) or rcl_tolerance < 0):
         raise ValueError("RCL tolerance must be finite and nonnegative or None")
 
@@ -1662,27 +1666,38 @@ def improved_GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
         trace(f"improved_GRASP restart {restart}: {current['score']}")
         attempts = 0
         no_change_time = iter_piece_selection = 0
+        visited_pieces.clear()
         exclude_last_bin = True
+        next_piece = 0
         while ((ls_evaluation_limit is None or attempts < ls_evaluation_limit) and not exhausted()
-               and no_change_time < no_improvement_limit
+               and (next_piece < len(object_info_total) if ls_policy=='systematic'
+                    else no_change_time < no_improvement_limit)
                and len(current['bin_real_layout']) > 1):
-            selection_info = [None] * len(object_info_total)
-            for bin_layout, indices in zip(current['bin_real_layout'], current['pieces_order']):
-                for info, index in zip(bin_layout, indices):
-                    selection_info[index] = info
-            LS_stage_var = (no_improvement_limit - no_change_time) / no_improvement_limit
-            selected = improve_pieces_selection_ls(
-                selection_info, iter_piece_selection, LS_stage_var,
-                len(current['bin_real_layout']), seed=None, deterministic=False,
-                exclude_last_bin=exclude_last_bin, rng=piece_rng)
-            iter_piece_selection += 1
+            if ls_policy=='systematic':
+                selected=next_piece
+            else:
+                selection_info = [None] * len(object_info_total)
+                for bin_layout, indices in zip(current['bin_real_layout'], current['pieces_order']):
+                    for info, index in zip(bin_layout, indices):
+                        selection_info[index] = info
+                LS_stage_var = (no_improvement_limit - no_change_time) / no_improvement_limit
+                selected = improve_pieces_selection_ls(
+                    selection_info, iter_piece_selection, LS_stage_var,
+                    len(current['bin_real_layout']), seed=None, deterministic=False,
+                    exclude_last_bin=exclude_last_bin, rng=piece_rng)
+                iter_piece_selection += 1
             neighbors = [o for o in orientation_choices
                          if o != current['orientations'][selected]]
             if not neighbors:
+                if ls_policy=='systematic':
+                    next_piece+=1
+                    continue
                 break
+            improved=False
+            evaluated=0
             for orientation in neighbors:
                 if ((ls_evaluation_limit is not None and attempts >= ls_evaluation_limit) or exhausted()
-                        or no_change_time >= no_improvement_limit):
+                        or (ls_policy=='legacy_stochastic' and no_change_time >= no_improvement_limit)):
                     break
                 candidate = snapshot(improved_repack(
                     copy.deepcopy(object_info_total), (selected, orientation),
@@ -1691,6 +1706,7 @@ def improved_GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
                     container_size, container_shape, rho, max_radio,
                     packing_alg, orien_evaluation, SCH_nesting_strategy, **ls_common))
                 attempts += 1
+                evaluated += 1
                 if candidate['score'] < best['score']:
                     best = candidate
                 if candidate['score'] < current['score']:
@@ -1703,8 +1719,27 @@ def improved_GRASP(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
                         exclude_last_bin = same_layout
                     current = candidate
                     no_change_time = iter_piece_selection = 0
+                    visited_pieces.clear()
+                    next_piece=0
+                    improved=True
                     break
                 no_change_time += 1
+            if ls_policy=='systematic' and not improved and evaluated==len(neighbors):
+                next_piece+=1
+        if len(current['bin_real_layout'])==1:
+            stop_reason='single_bin_bound'
+        elif ls_policy=='systematic' and next_piece>=len(object_info_total):
+            stop_reason='local_optimum'
+        elif exhausted():
+            stop_reason='time_limit'
+        elif ls_evaluation_limit is not None and attempts>=ls_evaluation_limit:
+            stop_reason='evaluation_limit'
+        else:
+            stop_reason='legacy_stall_or_empty_neighborhood'
+        if ls_observer is not None:
+            ls_observer(dict(restart=restart,ls_policy=ls_policy,stop_reason=stop_reason,
+                local_optimum=stop_reason in ('local_optimum','single_bin_bound'),
+                ls_evaluations=attempts,objective=current['score']))
         # With no orientation moves, additional constructions still diversify
         # placement; restart_limit optionally bounds the number of constructions.
 
@@ -1721,9 +1756,9 @@ def improved_GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
                        orientations, ils_orientations, orientations_list,
                        packing_alg, selection_type, selection_range, accessible_check,
                        SCH_nesting_strategy, orien_evaluation,
-                       container_size, container_shape, iter_limit_per_iter,
-                       kick_trigger_time, kick_level, time_limit, alpha,
-                       flag_NFV_POOL, visualisation, _TRACE,
+                       container_size, container_shape, iter_limit_per_iter=None,
+                       kick_trigger_time='auto', kick_level='medium', time_limit=3600, alpha=1,
+                       flag_NFV_POOL=False, visualisation=False, _TRACE=False,
                        random_CA_threshold=5, restart_limit=None,
                        rcl_tolerance=0.10, piece_seed=101, position_seed=202,
                        kick_seed=None, rcl_observer=None):
@@ -1731,17 +1766,18 @@ def improved_GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
 
     Each restart constructs a fresh random RCL/PES solution. Descent uses
     improved_repack and the improved layout-weighted piece selector. After
-    kick_trigger_time consecutive rejected neighbors, perturb the restart's
+    kick_trigger_time consecutive rejected LS repacking calls, perturb the restart's
     best orientations and unconditionally accept the kick as the current
     solution. Every selected kick orientation actually changes. The restart
     best and run best survive worsening kicks.
 
     iter_limit_per_iter limits LS neighbor evaluations; construction does
     not consume it. Each kick counts as one additional search iteration.
-    A kick may follow the last LS evaluation when its stall threshold is
-    reached, before starting a new construction. Thus 300/150 permits two
-    kicks and 302 total iterations if all 300 LS neighbors are rejected.
-    There is
+    None for iter_limit_per_iter resolves to n LS repacking calls per
+    restart. Improvements do not reset that budget. 'auto' for the kick
+    trigger resolves to ceil(n/2) rejected LS repacking calls, reset on
+    improvement. Kicks do not consume the LS budget. At the budget boundary
+    reconstruct immediately rather than starting a kick. There is
     no stall-based restart; stalls trigger kicks. None disables kicks.
     time_limit covers all wall time; finish and evaluate an in-flight call,
     then start no further packing call after expiry. Always construct once.
@@ -1753,6 +1789,10 @@ def improved_GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
     TRACE = _TRACE
     if not object_info_total or not orientations_list:
         raise ValueError("Objects and orientations must be nonempty")
+    if iter_limit_per_iter is None:
+        iter_limit_per_iter = len(object_info_total)
+    if kick_trigger_time == "auto":
+        kick_trigger_time = math.ceil(len(object_info_total)/2)
     for name, value in (("iter_limit_per_iter", iter_limit_per_iter),
                         ("restart_limit", restart_limit),
                         ("kick_trigger_time", kick_trigger_time)):
@@ -1772,6 +1812,7 @@ def improved_GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
         if kick_level not in fractions or len(choices) < 2:
             raise ValueError("Kicks require small/medium/large and two distinct orientations")
 
+    visited_pieces = set()
     piece_rng = np.random.default_rng(piece_seed)
     position_rng = np.random.default_rng(position_seed)
     kick_rng = np.random if kick_seed is None else np.random.default_rng(kick_seed)
@@ -1829,6 +1870,7 @@ def improved_GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
         if best is None or current['score'] < best['score']:
             best = current
         attempts = ls_attempts = no_change_time = iter_piece_selection = 0
+        visited_pieces.clear()
         exclude_last_bin = True
         trace(f"improved_GRASP_ILS restart {restart}: {current['score']}")
         while (ls_attempts < iter_limit_per_iter and not exhausted()
@@ -1842,7 +1884,7 @@ def improved_GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
             selected = improve_pieces_selection_ls(
                 selection_info, iter_piece_selection, stage,
                 len(current['bin_real_layout']), seed=None, deterministic=False,
-                exclude_last_bin=exclude_last_bin, rng=piece_rng)
+                exclude_last_bin=exclude_last_bin, rng=piece_rng, visited=visited_pieces)
             iter_piece_selection += 1
             neighbors = [o for o in choices if o != current['orientations'][selected]]
             if not neighbors:
@@ -1872,11 +1914,13 @@ def improved_GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
                         exclude_last_bin = same_layout
                     current = candidate
                     no_change_time = iter_piece_selection = 0
+                    visited_pieces.clear()
                     break
                 no_change_time += 1
                 if candidate['metrics'][0] == 1 or exhausted():
                     break
-                if kick_trigger_time is not None and no_change_time >= kick_trigger_time:
+                if (kick_trigger_time is not None and no_change_time >= kick_trigger_time
+                        and ls_attempts < iter_limit_per_iter and not exhausted()):
                     # The restart best plays the standalone ILS best-state role.
                     perturbed = list(restart_best['orientations'])
                     count = int(np.ceil(len(object_info_total) * fractions[kick_level]))
@@ -1895,9 +1939,10 @@ def improved_GRASP_ILS(object_info_total, nfv_pool, ifv_pool, max_radio, rho,
                     if current['score'] < best['score']:
                         best = current
                     no_change_time = iter_piece_selection = 0
+                    visited_pieces.clear()
                     exclude_last_bin = False
                     trace(f"Restart {restart}, iteration {attempts}, kick after LS evaluation {ls_attempts}: {current['score']}")
-                    # Rebuild selection and alternatives from the accepted kick.
+                    # Rebuild selection from the accepted kick.
                     break
 
     if visualisation:

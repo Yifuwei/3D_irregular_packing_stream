@@ -20,7 +20,8 @@ class GlobalRankedPacking:
 
     def __init__(self, objects, size, volume, max_radio, rho, max_weight,
                  weight_factor, search, rotate, translate, policy_keys, event=None,
-                 bin_priority='radio', orientation_selector=None, random_state_key=None):
+                 bin_priority='radio', orientation_selector=None, random_state_key=None,
+                 pooled_selector=None):
         if not all(np.isfinite(v) and v > 0 for v in
                    (volume, max_radio, rho, max_weight, weight_factor)):
             raise ValueError('Capacities, rho and weight factor must be positive and finite')
@@ -35,6 +36,7 @@ class GlobalRankedPacking:
         self.bin_priority=bin_priority
         self.orientation_selector=orientation_selector
         self.random_state_key=random_state_key
+        self.pooled_selector=pooled_selector
         self.event = event or (lambda **e: None)
         self.cache, self.stats = {}, Counter()
         for i, p in enumerate(self.objects):
@@ -69,7 +71,8 @@ class GlobalRankedPacking:
                 self.emit('HARD_CONSTRAINT_REJECT', piece=i, bin=b)
                 continue
             score = post_placement_score(vol,piece['volume'],self.volume,
-                                         radio,piece['radio'],self.max_radio)
+                                         radio,piece['radio'],self.max_radio,
+                                         min(1.,self.rho,self.max_weight/(self.factor*self.volume)))
             ranks.append((b, score))
             details.append(dict(bin=b,filling_rate_before=vol/self.volume,
                 filling_rate_after=(vol+piece['volume'])/self.volume,
@@ -78,7 +81,7 @@ class GlobalRankedPacking:
                 radio_left_after=self.max_radio-radio-piece['radio'],score=score))
         ranks.sort(key=(lambda x: (-x[1], x[0])) if self.bin_priority=='radio' else (lambda x:x[0]))
         self.emit('BIN_RANK', piece=i, ranked=ranks,
-                  metric='post_placement_fill_times_radio_left',
+                  metric='used_radio_plus_used_utilization',
                   details=sorted(details,key=lambda d:(-d['score'],d['bin'])))
         return [b for b, _ in ranks]
 
@@ -183,6 +186,23 @@ class GlobalRankedPacking:
             bins.append(self.add_bin(state))
             for b in bins:
                 allowed = [piece_orientations[i]] if piece_orientations is not None else orientations
+                if mode=='CA' and self.pooled_selector is not None:
+                    pool=[]
+                    for orientation in allowed:
+                        pool.extend(self.position_candidates(state,i,orientation,b))
+                    if pool:
+                        _,(orientation,position)=self.pooled_selector(pool)
+                        axis,degree=orientation.split('_')
+                        array=self.rotate(self.objects[i]['array'],int(degree),axis)
+                        points=np.argwhere(array!=0)+np.asarray(position)
+                        if not len(points) or np.any(points<0) or np.any(points>=self.size):
+                            raise ValueError('RCL placement outside bin')
+                        info=dict(self.objects[i],orientation=orientation,translation=position,
+                                  array=self.translate(array,position))
+                        self.place(state,i,b,info)
+                        placed=True
+                        break
+                    continue
                 choices = [self.query(state, i, o, b, mode) for o in allowed]
                 choices = [x for x in choices if x is not None]
                 if choices:
@@ -199,6 +219,30 @@ class GlobalRankedPacking:
                 for values in state.values():
                     values.pop()
         return self.finish(state)
+
+    def position_candidates(self,state,i,orientation,b):
+        """Cache scored coordinates, never 160 bin-sized voxel arrays."""
+        if not self.eligible(sum(p['volume'] for p in state['layout'][b]),
+                             sum(state['radio'][b]),self.objects[i]):
+            return []
+        key=(i,orientation,b,self.prefix_key(state['layout'][b],state['order'][b]),
+             self.policy_keys['CA'], 'all_positions')
+        if key not in self.cache:
+            axis,degree=orientation.split('_')
+            trial=dict(self.objects[i],orientation=orientation,
+                       array=self.rotate(self.objects[i]['array'],int(degree),axis))
+            self.emit('SEARCH',piece=i,bin=b,mode='CA')
+            found=self.search(trial,state,b,'CA',i)
+            # A tuple result is supported for deterministic/custom geometry adapters.
+            values=[found] if isinstance(found,tuple) else found if isinstance(found,list) else []
+            unique={tuple(int(x) for x in pos):float(score) for score,pos in values
+                    if np.isfinite(score)}
+            self.cache[key]=[(score,pos) for pos,score in unique.items()]
+            self.emit('SEARCH_SUCCEEDED' if unique else 'SEARCH_FAILED',piece=i,bin=b,mode='CA')
+        else:
+            self.emit('RESTORE_CACHED_CANDIDATES' if self.cache[key] else 'SKIP_CACHED_FAILURE',
+                      piece=i,bin=b,mode='CA')
+        return [(score,(orientation,pos)) for score,pos in self.cache[key]]
 
     def repack(self, reference, selected, orientations):
         state = self.empty_state(len(reference['layout']))

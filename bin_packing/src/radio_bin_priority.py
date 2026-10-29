@@ -9,12 +9,12 @@ import json
 
 
 def post_placement_score(current_volume, piece_volume, bin_volume,
-                         current_radio, piece_radio, max_radio):
+                         current_radio, piece_radio, max_radio, max_utilization=1.):
     """Larger scores are visited first, after hard-capacity filtering."""
-    if bin_volume <= 0 or max_radio <= 0:
+    if bin_volume <= 0 or max_radio <= 0 or max_utilization <= 0:
         raise ValueError('Bin volume and radio capacity must be positive')
-    return ((current_volume + piece_volume) / bin_volume
-            * (max_radio - current_radio - piece_radio) / max_radio)
+    return ((current_volume + piece_volume) / (bin_volume * max_utilization)
+            + (current_radio + piece_radio) / max_radio)
 
 
 def with_radio_bin_priority(function):
@@ -29,7 +29,8 @@ def with_radio_bin_priority(function):
 
     @functools.wraps(function)
     def run(*args, radio_priority=True, max_weight=None, weight_factor=1.,
-            cache_observer=None, cache_first_fit=True, packing_observer=None, **kwargs):
+            cache_observer=None, cache_first_fit=True, packing_observer=None,
+            rcl_top_k=None, **kwargs):
         if not radio_priority and not cache_first_fit:
             return function(*args, **kwargs)
         wrapper_started=time.perf_counter()
@@ -54,7 +55,9 @@ def with_radio_bin_priority(function):
         def geometry(info, state, b, mode, i):
             search = _geometry_search(p['nfv_pool'],p['ifv_pool'],size,shape,
                 p['SCH_nesting_strategy'],p['selection_type'],p['selection_range'],
-                p['accessible_check'],p['flag_NFV_POOL'],ctx['tolerance'],ctx['rng'],ctx['observer'])
+                p['accessible_check'],p['flag_NFV_POOL'],
+                'candidates' if mode=='CA' and ctx['tolerance'] is not None else None,
+                ctx['rng'],ctx['observer'])
             result = search(info,state,b,mode,i)
             if mode == 'CA' and ctx['search_observer']:
                 from improved_ILS_weight_radio import geometry_search_config
@@ -67,8 +70,11 @@ def with_radio_bin_priority(function):
         if radio == 0 and all(o['radio']==0 for o in p['object_info_total']):
             radio = 1.  # Equivalent unconstrained remaining ratio for all-zero radiation.
         def orientation_selector(choices):
-            return choose_orientation(choices,ctx['tolerance'],ctx['rng'],
-                                      lambda event:engine.emit('ORIENTATION_RCL',**event))
+            def record(event):
+                event=dict(event,level='pooled')
+                engine.emit('POOLED_RCL',**event)
+                if ctx['observer']:ctx['observer'](event)
+            return choose_orientation(choices,ctx['tolerance'],ctx['rng'],record,top_k=rcl_top_k)
         def random_state_key():
             if ctx['tolerance'] is None:
                 return 'deterministic'
@@ -77,7 +83,8 @@ def with_radio_bin_priority(function):
             max_weight,weight_factor,geometry,rotate_voxel,translate_voxel,
             {'CA':base+('CA',), 'LS':base+('LS','bounding_box',None)},cache_observer,
             bin_priority='radio' if radio_priority else 'first_fit',
-            orientation_selector=orientation_selector,random_state_key=random_state_key)
+            orientation_selector=orientation_selector,random_state_key=random_state_key,
+            pooled_selector=orientation_selector)
 
         def packed(state):
             return state['layout'],state['occupancy'],state['radio'],state['order']
@@ -91,8 +98,10 @@ def with_radio_bin_priority(function):
         def construct(*a, **kw):
             ctx.update(observer=kw.get('rcl_observer'),search_observer=kw.get('search_observer'),
                        rng=kw.get('position_rng',ctx['rng']),
-                       tolerance=kw.get('rcl_tolerance') if kw.get('random_CA') else None)
-            engine.policy_keys['CA']=base+('CA',p['selection_type'],ctx['tolerance'])
+                       tolerance=(0. if rcl_top_k is not None else kw.get('rcl_tolerance'))
+                           if kw.get('random_CA') else None)
+            engine.policy_keys['CA']=base+('CA',p['selection_type'],'pooled_extrema')
+            engine.pooled_selector=orientation_selector if ctx['tolerance'] is not None else None
             orientations=list(dict.fromkeys('x_0' if d==0 else f'{axis}_{d}'
                               for d in a[3][0] for axis in a[3][1]))
             return observe('construction',engine.construct(orientations))
@@ -130,13 +139,13 @@ def with_radio_bin_priority(function):
         if limit is not None and math.isfinite(limit):
             bound.arguments['time_limit']=max(float(np.nextafter(0.,1.)),limit-(time.perf_counter()-wrapper_started))
         result=controller(*bound.args, **bound.kwargs)
-        engine.emit('RUN_END',algorithm=function.__name__,metric='post_placement_fill_times_radio_left',
+        engine.emit('RUN_END',algorithm=function.__name__,metric='used_radio_plus_used_utilization',
                     cache_entries=len(engine.cache))
         return (*result[:-1],time.perf_counter()-wrapper_started)
 
     extra=[inspect.Parameter(name,inspect.Parameter.KEYWORD_ONLY,default=value)
            for name,value in [('radio_priority',True),('max_weight',None),
                               ('weight_factor',1.),('cache_observer',None),
-                              ('cache_first_fit',True),('packing_observer',None)]]
+                              ('cache_first_fit',True),('packing_observer',None),('rcl_top_k',None)]]
     run.__signature__=original_signature.replace(parameters=[*original_signature.parameters.values(),*extra])
     return run
