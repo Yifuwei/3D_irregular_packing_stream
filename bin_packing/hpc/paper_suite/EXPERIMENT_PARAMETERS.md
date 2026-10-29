@@ -1,22 +1,21 @@
-# EJOR experiment suite
+# EJOR experiment suite: one-shot submission
 
-The current authoritative plan is [WORK_PLAN.md](WORK_PLAN.md). CA/PES and RCL aggregate all 15 datasets; kick strength aggregates the original three representatives together. No independent per-dataset winners.
+See [WORK_PLAN.md](WORK_PLAN.md) for the current protocol and execution plan.
 
-- Shared CA/PES: cube=maximal_residual_box/bottom; cylinder=minimum_aabb_edges_len/bottom_top.
-- Keep original five-seed capacities. Experiments use only sequence seeds 3,7,13.
-- CA sensitivity: 810 total; 324 compatible results retained, 486 require rerun with the shared settings.
-- RCL: 3240 tasks. ILS strength tuning: 486 tasks across shapesnew, Merged4_normal, st04_Example5_normal. Full: 2430 tasks.
-- Default maximum GPU concurrency 6; 1 GPU/4 CPU per task, 16G for chess/shapesnew, otherwise 32G.
-- Complete stages gate later stages. Selected parameter files record and validate the dataset population.
+- Cube: maximal_residual_box / bottom. Cylinder: minimum_aabb_edges_len / bottom_top.
+- CA/PES and RCL are shared choices across all 15 datasets. Kick strength uses the confirmed three representative datasets together, with one shared winner inherited by hybrid.
+- Preserve the original five-seed capacities. Actual experiment sequence seeds: 3,7,13.
+- Keep 324 matching sensitivity reports; rerun 486 mismatches. RCL has 3240 tasks, kick tuning 486, full 2430.
+- One-shot DAG: calibration -> {sensitivity, RCL, kick tuning}; {RCL, kick tuning} -> full. Sensitivity does not gate the other branches.
+- Entire graph maximum: 6 GPU tasks. Initially sensitivity/RCL/tuning use 2 each; completed branches release slots to the others automatically. Per task: 1 GPU, 4 CPU; RAM 16G for chess/shapesnew, otherwise 32G.
+- Source and frozen scripts default to --through full. Explicit --through sensitivity remains available.
 
-Use the existing ready package and its frozen driver. Stop its old jobs before synchronizing updates.
+After stopping the package's old jobs and pulling the updated source, from the HPC repository root:
 
 ```bash
 BUNDLE=bin_packing/hpc_results/ejor_continue_20261029_ready
-bash "$BUNDLE/driver/run_ca_sensitivity_rerun.sh" "$BUNDLE" --dry-run
-bash "$BUNDLE/driver/run_ca_sensitivity_rerun.sh" "$BUNDLE"
-# After sensitivity succeeds:
-bash "$BUNDLE/driver/submit_all.sh" "$BUNDLE" --through full --max-parallel 6
+bash bin_packing/hpc/paper_suite/run_ca_sensitivity_rerun.sh "$BUNDLE" --dry-run
+bash bin_packing/hpc/paper_suite/run_ca_sensitivity_rerun.sh "$BUNDLE"
 ```
 
-For a fresh package, run_all.sh prepares a current runtime, retains original calibration references and only reuses sensitivity reports whose actual PES/range and capacities match. Pending sensitivity cases must complete before downstream stages can pass their collectors. Existing source results are not overwritten.
+This updates the existing package and submits all remaining independent branches and their collectors. No need to wait for sensitivity before submitting later experiments. Full waits for successful RCL/tuning selection. No overlapping duplicate submission to the same package is allowed. See submission_history/concurrency.json for current allocations.

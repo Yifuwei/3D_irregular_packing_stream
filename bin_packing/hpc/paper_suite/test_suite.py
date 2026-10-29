@@ -165,7 +165,7 @@ class ProtocolTests(unittest.TestCase):
 
 
 class FrozenWorkflowTests(unittest.TestCase):
-    def test_cli_defaults_to_sensitivity_and_submits_no_later_stages(self):
+    def test_cli_defaults_to_full_and_explicit_sensitivity_remains_supported(self):
         from unittest.mock import patch
         import suite
         with tempfile.TemporaryDirectory() as name:
@@ -173,7 +173,7 @@ class FrozenWorkflowTests(unittest.TestCase):
             with patch.object(sys,'argv',['suite.py','submit-all','--bundle',str(bundle),'--dry-run']), \
                  patch.object(suite,'submit',return_value=[]) as submitted:
                 self.assertEqual(suite.main(),0)
-                self.assertEqual(submitted.call_args.args[7],'sensitivity')
+                self.assertEqual(submitted.call_args.args[7],'full')
             with contextlib.redirect_stdout(io.StringIO()):
                 jobs=submit(bundle,dry_run=True,through='sensitivity')
             self.assertEqual(len(jobs),4)

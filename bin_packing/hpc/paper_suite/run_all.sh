@@ -1,5 +1,5 @@
 #!/bin/bash
-# Prepare a fresh bundle; stop after the CA sensitivity check by default.
+# Prepare a fresh bundle; submit all independent branches by default.
 set -euo pipefail
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 project="$(cd -- "$script_dir/../.." && pwd)"
@@ -23,5 +23,5 @@ elif [[ -d "$reference_dir" || -n "${CA_JSON_DIR:-}" ]]; then
 fi
 python "$script_dir/suite.py" prepare --project "$project" --ca-summary "$summary" \
     --output "$bundle" "${reference_args[@]}"
-python "$bundle/driver/suite.py" submit-all --bundle "$bundle" --max-parallel "${MAX_PARALLEL:-6}" --through sensitivity "$@"
+python "$bundle/driver/suite.py" submit-all --bundle "$bundle" --max-parallel "${MAX_PARALLEL:-6}" --through full "$@"
 printf 'Frozen experiment and results: %s\n' "$bundle"

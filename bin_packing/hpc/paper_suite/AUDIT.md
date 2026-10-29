@@ -11,3 +11,5 @@
 - Incomplete stages and mismatched PES/range block selection; stale selection.json/summary.csv are removed rather than reused.
 
 Current experiment counts: calibration 150; sensitivity 810; RCL 3240; tuning 486; full 2430. Sensitivity rerun keeps 324 valid reports and archives 486 incompatible reports. Algorithms and repacking budgets remain as documented in WORK_PLAN.md.
+
+One-shot graph update: sensitivity, RCL and tuning depend only on calibration; full depends on RCL and tuning. All branches share a six-GPU cap with collector-driven ArrayTaskThrottle updates; completed GPU branches release slots even if their diagnostic collector reports incomplete results. Independent-graph edges, all completion orders, failure isolation, manual-collection safety, low-concurrency fallback and Slurm throttle commands are covered by tests.

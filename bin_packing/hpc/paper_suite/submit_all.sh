@@ -3,4 +3,4 @@
 set -euo pipefail
 bundle="$1"
 shift
-python "$bundle/driver/suite.py" submit-all --bundle "$bundle" --through sensitivity "$@"
+python "$bundle/driver/suite.py" submit-all --bundle "$bundle" --through full "$@"

@@ -167,6 +167,8 @@ def collect(bundle,stage):
         for stale in ('selection.json','summary.csv'):
             (root/stale).unlink(missing_ok=True)
         print(f'{stage}: {len(records)}/{len(cases)} successful; selection withheld; missing/failed {incomplete[:20]}')
+        from submission_graph import rebalance
+        rebalance(bundle,stage,success=False)
         return 1
     if stage in ('rcl','tuning'):
         expected=set(manifest['profile']['tuning_datasets'] if stage=='tuning' else manifest['profile']['datasets'])
@@ -199,6 +201,8 @@ def collect(bundle,stage):
             writer=csv.DictWriter(stream,fieldnames=list(selection[0]));writer.writeheader();writer.writerows(selection)
     save(root/'selection.json',selection)
     print(f'{stage}: {len(records)}/{len(cases)} successful; selection saved')
+    from submission_graph import rebalance
+    rebalance(bundle,stage,success=True)
     if stage=='full' and manifest['profile'].get('smoke'):
         from smoke import verify_smoke
         verification=verify_smoke(bundle)
@@ -240,39 +244,54 @@ def submit(bundle,max_parallel=6,small_memory=16,large_memory=32,walltime='12:00
         submissions.append(dict(job_id=job,command=command))
         if not dry_run:save(history_path,submissions)
         return job
-    previous=None
-    for stage in STAGES[:STAGES.index(through)+1]:
+    from submission_graph import PARENTS,initial_state,allocations
+    stages=STAGES[:STAGES.index(through)+1]
+    grouped={}
+    for stage in stages:
         groups=defaultdict(list)
         for case in manifest['profile']['plans'][stage]:
             path=bundle/'results'/stage/f"task_{case['task_id']}.json"
-            if pending and valid_saved(path,case,manifest['bundle_id']):continue
-            if path.exists() and not pending and valid_saved(path,case,manifest['bundle_id']):continue
-            groups[memory_for(case,small_memory,large_memory)].append(case['task_id'])
-        # Serial memory groups keep the global GPU concurrency <= max_parallel.
-        gpu_jobs=[]
-        last_group=None
+            done=valid_saved(path,case,manifest['bundle_id'])
+            if done and stage!='calibration':
+                report=json.loads(path.read_text());cfg=packing_settings(case,manifest)
+                done=all(report.get('method',{}).get(k)==cfg[k] for k in ('pes','selection_range'))
+            if not done:groups[memory_for(case,small_memory,large_memory)].append(case['task_id'])
+        grouped[stage]=groups
+    state=initial_state(stages,{s:sum(map(len,grouped[s].values())) for s in stages},max_parallel)
+    state['quotas']=allocations(state)
+    collectors={};resource_tail=None
+    for stage in stages:
+        parent_jobs=[collectors[p] for p in PARENTS[stage] if p in collectors]
+        gpu_jobs=[];last_group=None
         env=f'ALL,EJOR_BUNDLE={bundle},EJOR_STAGE={stage}'
-        for memory,indices in sorted(groups.items()):
+        for memory,indices in sorted(grouped[stage].items()):
             for offset in range(0,len(indices),900):
                 chunk=indices[offset:offset+900]
                 task_map=bundle/'submission_history'/f'{stage}_{uuid.uuid4()}.json'
                 if not dry_run:save(task_map,chunk)
                 dependencies=[]
-                if previous:dependencies.append('afterok:'+previous)
-                if last_group:dependencies.append('afterany:'+last_group)
+                if parent_jobs:dependencies.append('afterok:'+':'.join(parent_jobs))
+                previous_array=last_group or (resource_tail if state['serial_resources'] else None)
+                if previous_array:dependencies.append('afterany:'+previous_array)
                 args=[f'--partition={partition}','--gres=gpu:1','--cpus-per-task=4',f'--mem={memory}G',
-                      '--time='+walltime,'--array=0-'+str(len(chunk)-1)+'%'+str(max_parallel),
+                      '--time='+walltime,'--array=0-'+str(len(chunk)-1)+'%'+str(state['quotas'][stage]),
                       '--job-name=ejor_'+stage,'--output='+str(bundle/'logs'/f'{stage}_%A_%a.out'),
                       '--export='+env+',EJOR_TASK_MAP='+str(task_map)]
                 if dependencies:args.append('--dependency='+','.join(dependencies))
                 last_group=sbatch(args+[str(bundle/'driver/run_array.slurm')]);gpu_jobs.append(last_group)
+        if gpu_jobs:resource_tail=gpu_jobs[-1]
+        state['arrays'][stage]=gpu_jobs
         dependencies=['afterany:'+':'.join(gpu_jobs)] if gpu_jobs else []
-        if previous:dependencies.append('afterok:'+previous)
+        if parent_jobs:dependencies.append('afterok:'+':'.join(parent_jobs))
         args=['--cpus-per-task=1','--mem=2G','--time=00:30:00','--job-name=ejor_collect_'+stage,
               '--output='+str(bundle/'logs'/f'collect_{stage}_%j.out'),'--export='+env]
         if control_partition:args.append('--partition='+control_partition)
         if dependencies:args.append('--dependency='+','.join(dependencies))
-        previous=sbatch(args+[str(bundle/'driver/run_collect.slurm')])
+        collectors[stage]=sbatch(args+[str(bundle/'driver/run_collect.slurm')])
+    if not dry_run:
+        save(bundle/'submission_history/concurrency.json',state)
+        from submission_graph import rebalance
+        rebalance(bundle)
     return submissions
 
 
@@ -299,7 +318,7 @@ def main():
             p.add_argument('--max-parallel',type=int,default=6)
             p.add_argument('--small-memory',type=int,default=16);p.add_argument('--large-memory',type=int,default=32)
             p.add_argument('--walltime',default='12:00:00');p.add_argument('--dry-run',action='store_true')
-            p.add_argument('--pending',action='store_true');p.add_argument('--through',choices=STAGES,default='sensitivity')
+            p.add_argument('--pending',action='store_true');p.add_argument('--through',choices=STAGES,default='full')
             p.add_argument('--partition',default='gpu');p.add_argument('--control-partition')
     args=parser.parse_args()
     if args.command=='prepare':
