@@ -141030,8 +141030,8 @@
         }
       ]
     },
-    "submission_policy": "independent sensitivity/RCL/tuning; full waits for RCL and tuning",
-    "global_gpu_limit_default": 6,
+    "submission_policy": "sensitivity independent; RCL -> tuning -> full",
+    "per_branch_gpu_limit_default": 6,
     "selection_metric": "mean_N_minus_U_star",
     "selection_scope": "global",
     "selection_datasets": [
@@ -141269,16 +141269,16 @@
         "calibration"
       ],
       "tuning": [
-        "calibration"
+        "rcl"
       ],
       "full": [
-        "calibration",
-        "rcl",
         "tuning"
       ]
     },
-    "global_gpu_limit": 6,
+    "per_flow_gpu_limit": 6,
+    "combined_gpu_peak": 12,
+    "default_flow": "all",
     "default_through": "full",
-    "dynamic_slot_release": true
+    "dynamic_slot_release": false
   }
 }

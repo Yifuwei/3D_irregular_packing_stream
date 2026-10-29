@@ -35,41 +35,45 @@ Best means smallest arithmetic mean N−U* across matched cells. Equal experimen
 - GRASP uses fixed input order. First improvement restarts the scan. A complete failed scan of all pieces/orientations triggers reconstruction. Time/budget interruption does not certify local optimum.
 - Default concurrency: 6. Each GPU task: 1 GPU, 4 CPU cores; chess/shapesnew use 16G RAM, other datasets 32G. CPU collectors use 1 core/2G. Default Slurm job walltime is 12h, separate from algorithm budgets.
 
-## One-shot HPC submission
+## Simple submission: two independent flows, six tasks each
 
-Sensitivity, RCL and ILS kick tuning are independent branches after the fixed capacity calibration. Full requires the selected RCL and kick parameters, but does not require sensitivity to succeed.
+There is no dynamic concurrency coordinator or automatic scontrol update.
 
 ```text
-Calibration (already completed)
-  +-- Sensitivity (486 pending; independent)
-  +-- RCL selection -------------------+
-  +-- ILS kick selection --------------+--> Full
+Fixed capacity calibration (already completed)
+  +-- Sensitivity                         [up to 6 GPU tasks]
+  +-- RCL -> ILS kick tuning -> Full       [up to 6 GPU tasks]
 ```
 
-The per-package GPU maximum is 6 for the entire graph, not 6 for each branch. Initially three pending branches each receive 2 slots. Collectors automatically transfer released slots using Slurm ArrayTaskThrottle. At most one memory-group/chunk array within each stage runs at a time. After a branch finishes or fails, remaining eligible stages may use its slots, up to 6 in total. Full gets its allocation before its prerequisite collectors exit successfully. If sensitivity is still active when full starts, they share the six slots; sensitivity success is not a dependency. Low concurrency settings use serial resource lanes rather than allocating more GPUs than requested.
+The two flows may overlap, up to 12 GPU tasks combined. Within the heuristic flow, memory groups/chunks and the three experiment stages run sequentially, so its maximum remains six. Sensitivity success is not a prerequisite of the heuristic flow.
 
-The package remains bin_packing/hpc_results/ejor_continue_20261029_ready. Source CA_sensitivity_check remains unchanged. The user has cancelled the old jobs; preparation also rejects any active jobs still targeting this package or unresolved task locks. Completed compatible reports remain reusable.
+### Prepare/update once, then submit everything with one command
 
-After pushing/pulling the updated paper_suite source, from the HPC repository root in the packing environment:
+After the old jobs have been cancelled and the updated paper_suite source is pulled on HPC, from the repository root:
+
+```bash
+BUNDLE=bin_packing/hpc_results/ejor_continue_20261029_ready
+bash bin_packing/hpc/paper_suite/run_ca_sensitivity_rerun.sh "$BUNDLE" --dry-run
+bash bin_packing/hpc/paper_suite/run_ca_sensitivity_rerun.sh "$BUNDLE"
+```
+
+The wrapper prepares the existing package and defaults to --flow all --through full. It preserves compatible results. No new package is created.
+
+### Or submit the two flows separately, without waiting
 
 ```bash
 BUNDLE=bin_packing/hpc_results/ejor_continue_20261029_ready
 
-# Prepare/update the existing package and preview ALL remaining stages
-bash bin_packing/hpc/paper_suite/run_ca_sensitivity_rerun.sh "$BUNDLE" --dry-run
+# Update the package once while it is idle
+python bin_packing/hpc/paper_suite/rerun_ca_sensitivity.py --bundle "$BUNDLE"
 
-# One command submits sensitivity + RCL + kick tuning + full
-bash bin_packing/hpc/paper_suite/run_ca_sensitivity_rerun.sh "$BUNDLE"
+# Submit sensitivity first, then immediately submit the heuristic chain
+bash "$BUNDLE/driver/submit_all.sh" "$BUNDLE" --flow sensitivity --max-parallel 6
+bash "$BUNDLE/driver/submit_all.sh" "$BUNDLE" --flow heuristics --max-parallel 6
 ```
 
-When using the already-synchronized package's driver directory, the equivalent entry is:
+Do not prepare/update the package again between these two submissions. Different flows can share the package while running; a duplicate submission of the same flow is rejected. Only locks belonging to the requested flow block its submission. Separate flows require the existing calibration reports and fixed-capacity selection to be complete.
 
-```bash
-bash "$BUNDLE/driver/run_ca_sensitivity_rerun.sh" "$BUNDLE"
-```
+Remaining tasks: sensitivity 486, RCL 3240, ILS tuning 486, full 2430. RCL aggregates all 15 datasets; kick strength aggregates the original three representatives together. Fixed PES/range and original capacity calibration are unchanged.
 
-All three wrappers (submit_all.sh, run_all.sh, run_ca_sensitivity_rerun.sh) and the suite submit-all CLI now default to --through full. Explicit --through sensitivity is still available if only the diagnostic rerun is intended. Never submit a second overlapping graph while jobs from the same package are active.
-
-Missing GPU tasks in this prepared graph: sensitivity 486, RCL 3240, tuning 486, full 2430. Check CPU collection logs and each stage's completion.json/selection.json. submission_history/concurrency.json records dynamic slot allocations. No Slurm jobs are submitted by local dry runs.
-
-Outputs: results/sensitivity, results/rcl, results/tuning, results/full; logs under logs/. sensitivity_rerun_plan.json states retained/pending counts. Original fixed capacities and the 324 compatible sensitivity reports remain preserved.
+Suspended/configuring jobs are treated as active. Frozen text hashes ignore only LF/CRLF differences across Windows/Linux, while binary files and substantive code/input changes remain strictly verified. Outputs remain under the existing bundle's results/ and logs/ directories.

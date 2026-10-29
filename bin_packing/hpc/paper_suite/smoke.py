@@ -16,7 +16,10 @@ def verify_smoke(bundle):
     if profile.get('smoke') is not True:problems.append('Not a smoke bundle')
     for name,digest in manifest['files_sha256'].items():
         path=bundle/name
-        if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest()!=digest:
+        try:
+            from bundle_integrity import verified_bytes
+            verified_bytes(bundle,manifest,name)
+        except (OSError,ValueError):
             problems.append('Frozen file missing/changed: '+name)
     for stage,cases in profile['plans'].items():
         records[stage]=[]

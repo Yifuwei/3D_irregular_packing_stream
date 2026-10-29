@@ -92,8 +92,8 @@ def verify_runtime(bundle,manifest,case):
     required.append(f"runtime/bin_packing/instances/{case['instance']}")
     required+=manifest['instance_geometry'][case['instance']]
     for name in set(required):
-        if hashlib.sha256((bundle/name).read_bytes()).hexdigest()!=manifest['files_sha256'][name]:
-            raise ValueError('Frozen runtime/input changed: '+name)
+        from bundle_integrity import verified_bytes
+        verified_bytes(bundle,manifest,name)
 
 
 def valid_saved(path,case,bundle_id):

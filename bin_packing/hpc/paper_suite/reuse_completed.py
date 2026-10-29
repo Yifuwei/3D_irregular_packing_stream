@@ -29,13 +29,8 @@ def _same(a,b):
 
 
 def _verified_bytes(root,manifest,name,text=False):
-    data=_file(root,name).read_bytes()
-    expected=manifest['files_sha256'].get(name)
-    if hashlib.sha256(data).hexdigest()==expected:
-        return data.replace(b'\r\n',b'\n') if text else data
-    if text and hashlib.sha256(data.replace(b'\r\n',b'\n')).hexdigest()==expected:
-        return data.replace(b'\r\n',b'\n')
-    raise ValueError('Frozen input changed: '+name)
+    from bundle_integrity import verified_bytes
+    return verified_bytes(root,manifest,name)
 
 
 def import_completed(bundle,source):
@@ -108,5 +103,7 @@ def import_completed(bundle,source):
         totals[stage]+=1
     manifest['completed_stage_source']=dict(bundle=str(source),bundle_id=old['bundle_id'],counts=totals,
         note='Original five-seed capacities; experimental seeds filtered by new plan; no new CA execution; text LF/CRLF equivalence allowed only after verifying historical normalized hash')
+    from bundle_integrity import canonicalize_manifest
+    canonicalize_manifest(bundle,manifest)
     save(bundle/'manifest.json',manifest)
     return totals

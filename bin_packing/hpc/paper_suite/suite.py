@@ -4,6 +4,7 @@ import csv
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import statistics
@@ -122,6 +123,8 @@ def freeze(project,summary,output,datasets=None,tuning=None,time_limit=3600,smok
                     counts=dict(construction=1,ls=0,kick=0),
                     validation=dict(ok=True,scope='historical geometry validation; counts and N/U/U* independently recovered'))
                 save(output/'results/calibration'/f"task_{case['task_id']}.json",report)
+        from bundle_integrity import canonicalize_manifest
+        canonicalize_manifest(output,manifest)
         save(output/'manifest.json',manifest)
         if reuse_bundle is not None:
             from reuse_completed import import_completed
@@ -167,8 +170,6 @@ def collect(bundle,stage):
         for stale in ('selection.json','summary.csv'):
             (root/stale).unlink(missing_ok=True)
         print(f'{stage}: {len(records)}/{len(cases)} successful; selection withheld; missing/failed {incomplete[:20]}')
-        from submission_graph import rebalance
-        rebalance(bundle,stage,success=False)
         return 1
     if stage in ('rcl','tuning'):
         expected=set(manifest['profile']['tuning_datasets'] if stage=='tuning' else manifest['profile']['datasets'])
@@ -201,8 +202,6 @@ def collect(bundle,stage):
             writer=csv.DictWriter(stream,fieldnames=list(selection[0]));writer.writeheader();writer.writerows(selection)
     save(root/'selection.json',selection)
     print(f'{stage}: {len(records)}/{len(cases)} successful; selection saved')
-    from submission_graph import rebalance
-    rebalance(bundle,stage,success=True)
     if stage=='full' and manifest['profile'].get('smoke'):
         from smoke import verify_smoke
         verification=verify_smoke(bundle)
@@ -217,21 +216,35 @@ def memory_for(case,small=16,large=32):
 
 
 def submit(bundle,max_parallel=6,small_memory=16,large_memory=32,walltime='12:00:00',
-           dry_run=False,pending=False,through='full',partition='gpu',control_partition=None):
+           dry_run=False,pending=False,through='full',partition='gpu',control_partition=None,flow='all'):
     if max_parallel<1 or min(small_memory,large_memory)<1:raise ValueError('Resources must be positive')
     bundle=bundle.resolve()
     if ',' in str(bundle) or '\n' in str(bundle):raise ValueError('Bundle path cannot contain commas/newlines')
     manifest=json.loads((bundle/'manifest.json').read_text())
     if manifest['profile']['protocol']!=VERSION:
         raise ValueError('Use the frozen driver belonging to this bundle; protocol mismatch')
+    if flow not in ('all','sensitivity','heuristics'):raise ValueError('Unknown submission flow')
+    requested=STAGES[:STAGES.index(through)+1]
+    if flow=='sensitivity':requested=tuple(s for s in requested if s in ('calibration','sensitivity'))
+    if flow=='heuristics':requested=tuple(s for s in requested if s!='sensitivity')
+    if flow!='all':
+        # Separate flows share already-calibrated capacities, not a collector job.
+        cases=manifest['profile']['plans']['calibration']
+        if not (bundle/'results/calibration/selection.json').is_file() or not all(
+            valid_saved(bundle/'results/calibration'/f"task_{c['task_id']}.json",c,manifest['bundle_id']) for c in cases):
+            raise ValueError('Complete calibration before submitting separate flows')
+        requested=tuple(s for s in requested if s!='calibration')
+    if not requested:raise ValueError('No stages selected for this flow/through combination')
     if not dry_run:
-        # Prevent overlapping submissions to the same output bundle.
-        jobs=subprocess.check_output(['squeue','-h','-u',os.environ['USER'],'-o','%A'],text=True).split()
-        for job in set(jobs):
+        from submission_graph import active_job_ids
+        names={'ejor_'+s for s in requested}|{'ejor_collect_'+s for s in requested}
+        for job in active_job_ids(os.environ['USER']):
             details=subprocess.check_output(['scontrol','show','job',job],text=True)
+            match=re.search(r'\bJobName=(\S+)',details)
             if 'StdOut='+str(bundle/'logs') in details:
-                raise RuntimeError('An active job already targets this bundle: '+job)
-        locks=list((bundle/'results').glob('*/task_*.lock'))
+                if match is None or match.group(1) in names:
+                    raise RuntimeError('An active job already targets this submission flow: '+job)
+        locks=[p for s in requested for p in (bundle/'results'/s).glob('task_*.lock')]
         if locks:raise RuntimeError('Interrupted task locks remain; verify no active jobs then use unlock: '+str(locks[:3]))
     (bundle/'logs').mkdir(exist_ok=True)
     submissions=[]
@@ -244,8 +257,8 @@ def submit(bundle,max_parallel=6,small_memory=16,large_memory=32,walltime='12:00
         submissions.append(dict(job_id=job,command=command))
         if not dry_run:save(history_path,submissions)
         return job
-    from submission_graph import PARENTS,initial_state,allocations
-    stages=STAGES[:STAGES.index(through)+1]
+    from submission_graph import PARENTS
+    stages=requested
     grouped={}
     for stage in stages:
         groups=defaultdict(list)
@@ -257,9 +270,7 @@ def submit(bundle,max_parallel=6,small_memory=16,large_memory=32,walltime='12:00
                 done=all(report.get('method',{}).get(k)==cfg[k] for k in ('pes','selection_range'))
             if not done:groups[memory_for(case,small_memory,large_memory)].append(case['task_id'])
         grouped[stage]=groups
-    state=initial_state(stages,{s:sum(map(len,grouped[s].values())) for s in stages},max_parallel)
-    state['quotas']=allocations(state)
-    collectors={};resource_tail=None
+    collectors={}
     for stage in stages:
         parent_jobs=[collectors[p] for p in PARENTS[stage] if p in collectors]
         gpu_jobs=[];last_group=None
@@ -271,16 +282,13 @@ def submit(bundle,max_parallel=6,small_memory=16,large_memory=32,walltime='12:00
                 if not dry_run:save(task_map,chunk)
                 dependencies=[]
                 if parent_jobs:dependencies.append('afterok:'+':'.join(parent_jobs))
-                previous_array=last_group or (resource_tail if state['serial_resources'] else None)
-                if previous_array:dependencies.append('afterany:'+previous_array)
+                if last_group:dependencies.append('afterany:'+last_group)
                 args=[f'--partition={partition}','--gres=gpu:1','--cpus-per-task=4',f'--mem={memory}G',
-                      '--time='+walltime,'--array=0-'+str(len(chunk)-1)+'%'+str(state['quotas'][stage]),
+                      '--time='+walltime,'--array=0-'+str(len(chunk)-1)+'%'+str(max_parallel),
                       '--job-name=ejor_'+stage,'--output='+str(bundle/'logs'/f'{stage}_%A_%a.out'),
                       '--export='+env+',EJOR_TASK_MAP='+str(task_map)]
                 if dependencies:args.append('--dependency='+','.join(dependencies))
                 last_group=sbatch(args+[str(bundle/'driver/run_array.slurm')]);gpu_jobs.append(last_group)
-        if gpu_jobs:resource_tail=gpu_jobs[-1]
-        state['arrays'][stage]=gpu_jobs
         dependencies=['afterany:'+':'.join(gpu_jobs)] if gpu_jobs else []
         if parent_jobs:dependencies.append('afterok:'+':'.join(parent_jobs))
         args=['--cpus-per-task=1','--mem=2G','--time=00:30:00','--job-name=ejor_collect_'+stage,
@@ -288,10 +296,6 @@ def submit(bundle,max_parallel=6,small_memory=16,large_memory=32,walltime='12:00
         if control_partition:args.append('--partition='+control_partition)
         if dependencies:args.append('--dependency='+','.join(dependencies))
         collectors[stage]=sbatch(args+[str(bundle/'driver/run_collect.slurm')])
-    if not dry_run:
-        save(bundle/'submission_history/concurrency.json',state)
-        from submission_graph import rebalance
-        rebalance(bundle)
     return submissions
 
 
@@ -320,6 +324,7 @@ def main():
             p.add_argument('--walltime',default='12:00:00');p.add_argument('--dry-run',action='store_true')
             p.add_argument('--pending',action='store_true');p.add_argument('--through',choices=STAGES,default='full')
             p.add_argument('--partition',default='gpu');p.add_argument('--control-partition')
+            p.add_argument('--flow',choices=('all','sensitivity','heuristics'),default='all')
     args=parser.parse_args()
     if args.command=='prepare':
         freeze(args.project,args.ca_summary,args.output,args.datasets,args.tuning_datasets,args.time_limit,args.smoke,
@@ -337,10 +342,11 @@ def main():
         return 0 if verification['status']=='PASS' else 1
     if args.command=='submit-all':
         submit(args.bundle,args.max_parallel,args.small_memory,args.large_memory,args.walltime,
-               args.dry_run,args.pending,args.through,args.partition,args.control_partition)
+               args.dry_run,args.pending,args.through,args.partition,args.control_partition,args.flow)
         return 0
     # An explicit unlock is allowed only after Slurm confirms the bundle is idle.
-    jobs=subprocess.check_output(['squeue','-h','-u',os.environ['USER'],'-o','%A'],text=True).split()
+    from submission_graph import active_job_ids
+    jobs=active_job_ids(os.environ['USER'])
     for job in set(jobs):
         details=subprocess.check_output(['scontrol','show','job',job],text=True)
         if 'StdOut='+str(args.bundle.resolve()/'logs') in details:

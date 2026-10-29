@@ -16,7 +16,8 @@ from suite import collect,save
 
 def ensure_idle(bundle):
     if shutil.which('squeue') and os.environ.get('USER'):
-        jobs=subprocess.check_output(['squeue','-h','-u',os.environ['USER'],'-o','%A'],text=True).split()
+        from submission_graph import active_job_ids
+        jobs=active_job_ids(os.environ['USER'])
         for job in set(jobs):
             details=subprocess.check_output(['scontrol','show','job',job],text=True)
             if 'StdOut='+str(bundle/'logs') in details:
@@ -112,6 +113,8 @@ def prepare(bundle):
             manifest['files_sha256']['driver/'+path.name]=hashlib.sha256(dest.read_bytes()).hexdigest()
     for name in ('WORK_PLAN.md',):
         if (driver/name).exists():shutil.copyfile(driver/name,bundle/name)
+    from bundle_integrity import canonicalize_manifest
+    canonicalize_manifest(bundle,manifest)
     save(bundle/'manifest.json',manifest)
     collect(bundle,'sensitivity')
     report=dict(status='PREPARED',kept=kept,archived=archived,

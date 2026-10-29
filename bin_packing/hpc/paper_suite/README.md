@@ -1,16 +1,15 @@
-# EJOR experiment suite: one-shot submission
+# EJOR experiments: simple independent flows
 
-See [WORK_PLAN.md](WORK_PLAN.md) for the current protocol and execution plan.
+Current plan: [WORK_PLAN.md](WORK_PLAN.md).
 
-- Cube: maximal_residual_box / bottom. Cylinder: minimum_aabb_edges_len / bottom_top.
-- CA/PES and RCL are shared choices across all 15 datasets. Kick strength uses the confirmed three representative datasets together, with one shared winner inherited by hybrid.
-- Preserve the original five-seed capacities. Actual experiment sequence seeds: 3,7,13.
-- Keep 324 matching sensitivity reports; rerun 486 mismatches. RCL has 3240 tasks, kick tuning 486, full 2430.
-- One-shot DAG: calibration -> {sensitivity, RCL, kick tuning}; {RCL, kick tuning} -> full. Sensitivity does not gate the other branches.
-- Entire graph maximum: 6 GPU tasks. Initially sensitivity/RCL/tuning use 2 each; completed branches release slots to the others automatically. Per task: 1 GPU, 4 CPU; RAM 16G for chess/shapesnew, otherwise 32G.
-- Source and frozen scripts default to --through full. Explicit --through sensitivity remains available.
+- Sensitivity is independent of RCL/ILS tuning/full.
+- Heuristic flow is RCL -> ILS tuning -> full.
+- Each flow has a fixed maximum of 6 GPU tasks; combined maximum is 12. No automatic throttle redistribution.
+- Cube: maximal_residual_box/bottom. Cylinder: minimum_aabb_edges_len/bottom_top.
+- Original five-seed capacities are unchanged; actual experiment seeds are 3,7,13.
+- Retain 324 sensitivity reports and rerun 486. RCL: 3240 tasks across 15 datasets. Kick tuning: 486 tasks across the three confirmed representatives. Full: 2430 tasks.
 
-After stopping the package's old jobs and pulling the updated source, from the HPC repository root:
+After pulling the updated source and confirming the old jobs are cancelled, submit everything:
 
 ```bash
 BUNDLE=bin_packing/hpc_results/ejor_continue_20261029_ready
@@ -18,4 +17,12 @@ bash bin_packing/hpc/paper_suite/run_ca_sensitivity_rerun.sh "$BUNDLE" --dry-run
 bash bin_packing/hpc/paper_suite/run_ca_sensitivity_rerun.sh "$BUNDLE"
 ```
 
-This updates the existing package and submits all remaining independent branches and their collectors. No need to wait for sensitivity before submitting later experiments. Full waits for successful RCL/tuning selection. No overlapping duplicate submission to the same package is allowed. See submission_history/concurrency.json for current allocations.
+Alternatively prepare once, then submit the two flows consecutively without waiting:
+
+```bash
+python bin_packing/hpc/paper_suite/rerun_ca_sensitivity.py --bundle "$BUNDLE"
+bash "$BUNDLE/driver/submit_all.sh" "$BUNDLE" --flow sensitivity --max-parallel 6
+bash "$BUNDLE/driver/submit_all.sh" "$BUNDLE" --flow heuristics --max-parallel 6
+```
+
+Do not rerun package preparation while either flow is active. The submission guard allows disjoint flows and rejects duplicates. All existing compatible results remain reusable. See WORK_PLAN.md for details.
