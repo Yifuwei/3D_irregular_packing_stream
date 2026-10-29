@@ -12,8 +12,8 @@ import sys
 import uuid
 from collections import defaultdict
 
-from protocol import make_plan, choose_ca_parameters, calibrate, select_tolerances, select_tuning, STAGES, VERSION
-from worker import run, valid_saved
+from protocol import make_plan, choose_ca_parameters, calibrate, select_tolerances, select_tuning, STAGES, VERSION, SEQUENCE_SEEDS, REFERENCE_SEEDS, kick_tuning_datasets
+from worker import run, valid_saved, packing_settings
 
 
 
@@ -25,19 +25,25 @@ def save(path,value):
 
 
 def freeze(project,summary,output,datasets=None,tuning=None,time_limit=3600,smoke=False,
-           shapes=('cube','cylinder'),ca_json_dir=None):
+           shapes=('cube','cylinder'),ca_json_dir=None,reuse_bundle=None):
     project=project.resolve()
+    if reuse_bundle is not None and ca_json_dir is not None:
+        raise ValueError('Choose either --reuse-bundle or --ca-json-dir')
     with summary.open(encoding='utf-8-sig',newline='') as stream:
         rows=list(csv.DictReader(stream))
     datasets=datasets or sorted({r['dataset'] for r in rows})
-    tuning=tuning or [d for d in ('shapesnew','Merged4_normal','st04_Example5_normal') if d in datasets]
-    if not tuning:tuning=datasets[:1]
+    tuning=tuning or kick_tuning_datasets(datasets)
     profile=make_plan(datasets,tuning,time_limit=time_limit,smoke=smoke,shapes=shapes,
-                      **(dict(seeds=(3,),reference_seeds=(3,7,13,19,53) if ca_json_dir else (3,),
+                      **(dict(seeds=(3,),reference_seeds=REFERENCE_SEEDS if (ca_json_dir or reuse_bundle) else (3,),
                               full_seeds=(3,)) if smoke else {}))
-    ca=choose_ca_parameters(rows,datasets)
-    ca={key:value for key,value in ca.items() if key.split('|')[-1] in shapes}
-    # RCL experiment always uses top/bottom extremal layers; PES follows CA tuning.
+    geometry_ca=choose_ca_parameters(rows,datasets)
+    geometry_ca={key:value for key,value in geometry_ca.items() if key.split('|')[-1] in shapes}
+    ca=dict(geometry_ca)
+    if reuse_bundle is not None:
+        prior=json.loads((reuse_bundle/'manifest.json').read_text())
+        ca={key:dict(prior['ca_parameters'][key]) for key in geometry_ca}
+    # Historical CA settings remain fixed for calibration and sensitivity reuse.
+    # RCL/tuning/full resolve their separate per-shape parameters in the worker.
     for config in ca.values():
         config['reference_selection_range']=config['selection_range']
     if output.exists():raise ValueError('Use a new output directory: '+str(output))
@@ -80,10 +86,11 @@ def freeze(project,summary,output,datasets=None,tuning=None,time_limit=3600,smok
                     if not (output/dest).exists():copy(data,dest)
                     paths.append(dest)
                 geometry[name]=sorted(set(paths))
-        save(output/'parameter_plan.json',dict(protocol=VERSION,profile=profile,ca_parameters=ca,
-            conventions=dict(kick_trigger='ceil(n/2) complete failed piece searches; reset on improvement',
+        save(output/'parameter_plan.json',dict(protocol=VERSION,profile=profile,ca_parameters=ca,geometry_ca_parameters=geometry_ca,
+            conventions=dict(metaheuristic_packing_scope='fixed per bin shape; historical CA calibration/sensitivity unchanged',
+                kick_trigger='ceil(n/2) consecutive rejected LS repacking calls; reset on improvement',
                 kick_size='ceil(fraction*n) changed orientation labels',
-                hybrid_budget='9*n LS repacking calls per construction; never reset on improvement',
+                hybrid_budget='n LS repacking calls per construction; never reset on improvement',
                 kick_charged_to_ls_budget=False,kick_charged_to_wall_time=True,
                 orientation_labels=10,alternative_labels_per_piece=9,
                 rcl_pool='up to 160 orientation-position pairs in current bin; bottom/top extrema',
@@ -100,7 +107,7 @@ def freeze(project,summary,output,datasets=None,tuning=None,time_limit=3600,smok
                 copy(Path(record['source_file']),f"inputs/ca_references/task_{record['case']['task_id']}.json")
         hashes={p.relative_to(output).as_posix():hashlib.sha256(p.read_bytes()).hexdigest()
                 for p in output.rglob('*') if p.is_file()}
-        manifest=dict(bundle_id=str(uuid.uuid4()),profile=profile,ca_parameters=ca,
+        manifest=dict(bundle_id=str(uuid.uuid4()),profile=profile,ca_parameters=ca,geometry_ca_parameters=geometry_ca,
                       instance_geometry=geometry,files_sha256=hashes)
         if recovered:
             manifest['calibration_source']=dict(kind='historical_CA',indexed_results=indexed_count,
@@ -116,6 +123,13 @@ def freeze(project,summary,output,datasets=None,tuning=None,time_limit=3600,smok
                     validation=dict(ok=True,scope='historical geometry validation; counts and N/U/U* independently recovered'))
                 save(output/'results/calibration'/f"task_{case['task_id']}.json",report)
         save(output/'manifest.json',manifest)
+        if reuse_bundle is not None:
+            from reuse_completed import import_completed
+            imported=import_completed(output,reuse_bundle)
+            manifest=json.loads((output/'manifest.json').read_text())
+            collect(output,'calibration')
+            collect(output,'sensitivity')
+            print(json.dumps(dict(reused=imported),indent=2))
         print(json.dumps(dict(bundle=str(output),tasks={s:len(profile['plans'][s]) for s in STAGES}),indent=2))
         return manifest
     except Exception:
@@ -134,6 +148,11 @@ def collect(bundle,stage):
         path=bundle/'results'/stage/f"task_{case['task_id']}.json"
         if valid_saved(path,case,manifest['bundle_id']):
             report=json.loads(path.read_text())
+            if stage!='calibration':
+                expected_packing=packing_settings(case,manifest)
+                if any(report.get('method',{}).get(k)!=expected_packing[k] for k in ('pes','selection_range')):
+                    incomplete.append(case['task_id'])
+                    continue
             records.append(dict(report,**case))
         else:incomplete.append(case['task_id'])
     root=bundle/'results'/stage
@@ -145,8 +164,14 @@ def collect(bundle,stage):
         writer.writeheader();writer.writerows(records)
     save(root/'completion.json',dict(expected=len(cases),success=len(records),incomplete=incomplete))
     if incomplete:
+        for stale in ('selection.json','summary.csv'):
+            (root/stale).unlink(missing_ok=True)
         print(f'{stage}: {len(records)}/{len(cases)} successful; selection withheld; missing/failed {incomplete[:20]}')
         return 1
+    if stage in ('rcl','tuning'):
+        expected=set(manifest['profile']['tuning_datasets'] if stage=='tuning' else manifest['profile']['datasets'])
+        if {r['dataset'] for r in records}!=expected:
+            raise ValueError('Parameter selection requires every dataset in its configured population')
     if stage=='calibration':
         groups=defaultdict(list)
         for r in records:groups[f"{r['dataset']}|{r['shape']}"].append(r)
@@ -166,7 +191,7 @@ def collect(bundle,stage):
                 row[field+'_mean']=statistics.mean(samples)
                 row[field+'_std']=statistics.stdev(samples) if len(samples)>1 else 0.
             if stage=='sensitivity':
-                baseline=manifest['ca_parameters'][f'{key[0]}|{key[1]}']['reference_mean_objective']
+                baseline=manifest.get('geometry_ca_parameters',manifest['ca_parameters'])[f'{key[0]}|{key[1]}']['reference_mean_objective']
                 row['geometry_reference_objective_mean']=baseline
                 row['objective_change_from_geometry']=row['objective_mean']-baseline
             selection.append(row)
@@ -187,7 +212,7 @@ def memory_for(case,small=16,large=32):
     return small if case['dataset'].lower() in ('chess','shapesnew') else large
 
 
-def submit(bundle,max_parallel=3,small_memory=16,large_memory=32,walltime='12:00:00',
+def submit(bundle,max_parallel=6,small_memory=16,large_memory=32,walltime='12:00:00',
            dry_run=False,pending=False,through='full',partition='gpu',control_partition=None):
     if max_parallel<1 or min(small_memory,large_memory)<1:raise ValueError('Resources must be positive')
     bundle=bundle.resolve()
@@ -263,6 +288,7 @@ def main():
     prepare.add_argument('--smoke',action='store_true')
     prepare.add_argument('--shapes',nargs='+',choices=('cube','cylinder'),default=('cube','cylinder'))
     prepare.add_argument('--ca-json-dir',type=Path,help='Reuse validated historical CA placements; no calibration GPU tasks')
+    prepare.add_argument('--reuse-bundle',type=Path,help='Import validated calibration and matching sensitivity results; never rerun completed matching cases')
     for name in ('collect','run','submit-all','unlock','verify-smoke'):
         p=sub.add_parser(name);p.add_argument('--bundle',type=Path,required=True)
         if name in ('collect','run'):p.add_argument('--stage',choices=STAGES+('memory',) if name=='run' else STAGES,required=True)
@@ -270,7 +296,7 @@ def main():
             p.add_argument('--index',type=int,required=True)
             p.add_argument('--task-map',type=Path)
         if name=='submit-all':
-            p.add_argument('--max-parallel',type=int,default=3)
+            p.add_argument('--max-parallel',type=int,default=6)
             p.add_argument('--small-memory',type=int,default=16);p.add_argument('--large-memory',type=int,default=32)
             p.add_argument('--walltime',default='12:00:00');p.add_argument('--dry-run',action='store_true')
             p.add_argument('--pending',action='store_true');p.add_argument('--through',choices=STAGES,default='sensitivity')
@@ -278,7 +304,7 @@ def main():
     args=parser.parse_args()
     if args.command=='prepare':
         freeze(args.project,args.ca_summary,args.output,args.datasets,args.tuning_datasets,args.time_limit,args.smoke,
-               args.shapes,args.ca_json_dir)
+               args.shapes,args.ca_json_dir,args.reuse_bundle)
         return 0
     if args.command=='run':
         index=json.loads(args.task_map.read_text())[args.index] if args.task_map else args.index

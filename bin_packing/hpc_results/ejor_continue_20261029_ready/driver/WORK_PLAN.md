@@ -2,7 +2,7 @@
 
 ## Parameter-selection rule
 
-Any best parameter is selected from aggregate performance across all 15 datasets, never separately per dataset or from a representative subset. Cube/cylinder may use different shared settings. Smoke/resource probes are diagnostics, not parameter-selection evidence. Missing entire datasets blocks selection and full-experiment handoff.
+CA/PES and RCL parameters are selected from aggregate performance across all 15 datasets, never separately per dataset. Explicit exception confirmed by the user: ILS kick strength is selected by aggregating the original three representative datasets together, producing one shared winner. Cube/cylinder may use different shared settings. Smoke/resource probes are diagnostics, not parameter-selection evidence. Missing entire datasets blocks selection and full-experiment handoff.
 
 | Bin shape | Shared PES | Selection range |
 |---|---|---|
@@ -20,12 +20,12 @@ The original five-seed capacity calibration is fixed and remains unchanged. Hist
 | Capacity calibration | 15 datasets × 2 shapes × 5 reference seeds | 150 | Preserve all original references and capacities; no rerun |
 | CA sensitivity | 15 × 2 × 3 experiment seeds × 9 W/R pairs | 810 | Keep 324 matching reports; archive 486 wrong-configuration reports and rerun those cases |
 | RCL selection | 15 × 2 × 3 seeds × 4 RCL choices × 9 W/R pairs | 3240 | One randomized construction per run; 10%, 20%, Top10, Top30; select one global RCL across all 15 datasets |
-| ILS kick-strength selection | 15 × 2 × 3 seeds × 3 strengths × 9 W/R pairs | 2430 | 1800s/run; compare 25/50/75%; select one global strength across all 15 datasets |
+| ILS kick-strength selection | 3 representatives × 2 × 3 seeds × 3 strengths × 9 W/R pairs | 486 | 1800s/run; compare 25/50/75%; select one shared strength across shapesnew, Merged4_normal, st04_Example5_normal |
 | Full heuristic comparison | 15 × 2 × 3 seeds × 9 W/R pairs × 3 algorithms | 2430 | 3600s/run; ILS, GRASP, GRASP×ILS; inherit global RCL/kick settings |
 
-Reference seeds: 3,7,13,19,53. Experiment seeds: 3,7,13. All-dataset kick tuning replaces the old 3-representative-dataset design: 486 becomes 2430 tuning tasks. Total plan entries: 9060. After retaining 150 calibration and 324 sensitivity cases, 8586 new experiment tasks remain before any compatible later-stage results are considered.
+Reference seeds: 3,7,13,19,53. Experiment seeds: 3,7,13. Kick tuning remains on shapesnew, Merged4_normal and st04_Example5_normal: 486 tasks. Total plan entries: 7116. After retaining 150 calibration and 324 sensitivity cases, 6642 new experiment tasks remain before any compatible later-stage results are considered.
 
-Best means smallest arithmetic mean N−U* across matched cells. Equal experiment design gives each dataset equal weight. Selection records include dataset names/count, scope and metric. Full rejects selected parameters whose dataset population differs from the full plan.
+Best means smallest arithmetic mean N−U* across matched cells. Equal experiment design gives each dataset equal weight. Selection records include dataset names/count, scope and metric. Full requires RCL to cover all 15 datasets and kick strength to cover the confirmed three representatives; each must produce a shared aggregate winner.
 
 ## Algorithm rules and resources
 
@@ -55,7 +55,7 @@ bash "$BUNDLE/driver/run_ca_sensitivity_rerun.sh" "$BUNDLE"
 # After sensitivity reaches 810/810 success, inspect completion.json
 cat "$BUNDLE/results/sensitivity/completion.json"
 
-# Preview then submit subsequent all-15-dataset experiments
+# Preview then submit subsequent experiments with all-15 RCL and three-dataset kick tuning
 bash "$BUNDLE/driver/submit_all.sh" "$BUNDLE" --through full --max-parallel 6 --dry-run
 bash "$BUNDLE/driver/submit_all.sh" "$BUNDLE" --through full --max-parallel 6
 ```

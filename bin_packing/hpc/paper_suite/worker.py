@@ -59,11 +59,28 @@ def settings_for(case,profile,selections):
     return algorithm,kw
 
 
+def packing_settings(case,manifest):
+    """Fixed per-shape heuristic parameters; retain historical CA baselines."""
+    if case['stage'] in ('sensitivity','rcl','tuning','full','memory'):
+        from protocol import SHAPE_PARAMETERS
+        selected=manifest['profile'].get('metaheuristic_parameters',SHAPE_PARAMETERS)[case['shape']]
+        return dict(pes=case.get('pes',selected['pes']),
+                    selection_range=case.get('selection_range',selected['selection_range']),
+                    parameter_scope='bin_shape')
+    return dict(manifest['ca_parameters'][f"{case['dataset']}|{case['shape']}"])
+
+
 def read_selections(bundle,case):
     selections={}
     if case['stage']=='full':
         selections['rcl']=json.loads((bundle/'results/rcl/selection.json').read_text())
         selections['tuning']=json.loads((bundle/'results/tuning/selection.json').read_text())
+        profile=json.loads((bundle/'manifest.json').read_text())['profile']
+        populations=((selections['rcl']['global_rcl'],profile['datasets']),
+                     (selections['tuning']['improved_ILS'],profile['tuning_datasets']))
+        for chosen,population in populations:
+            if set(chosen.get('datasets',[]))!=set(population):
+                raise ValueError('Full experiment requires the configured RCL/kick selection population')
     if case['stage'] in ('sensitivity','rcl','tuning','full'):
         selections['calibration']=json.loads((bundle/'results/calibration/selection.json').read_text())
     return selections
@@ -133,7 +150,7 @@ def run(bundle,stage,index):
         shape,size,_,_,objects=loader.load_instance(Path(case['instance']).stem)
         restore_radio_precision(objects,project/'instances'/case['instance'])
         if not objects:raise ValueError('Empty instance')
-        cfg=manifest['ca_parameters'][f"{case['dataset']}|{shape}"]
+        cfg=packing_settings(case,manifest)
         selections=read_selections(bundle,case)
         algorithm,search=settings_for(case,profile,selections)
         capacity=math.prod(size) if shape=='cube' else math.pi*(size[0]/2)**2*size[2]
@@ -224,9 +241,9 @@ def run(bundle,stage,index):
             max_piece_volume=max(p['volume'] for p in objects),max_piece_radio=max(p['radio'] for p in objects),
             weight_capacity=max_weight,radio_capacity=radio_limit,piece_count=len(objects),
             hostname=socket.gethostname(),python=sys.version,
-            resolved_limits=dict(piece_count=len(objects),kick_failed_piece_threshold=math.ceil(len(objects)/2)
+            resolved_limits=dict(piece_count=len(objects),kick_failed_repacking_threshold=math.ceil(len(objects)/2)
                 if algorithm in ('improved_ILS','improved_GRASP_ILS') and stage not in ('calibration','sensitivity') else None,
-                ls_repacks_per_restart=9*len(objects) if algorithm=='improved_GRASP_ILS' else None,
+                ls_repacks_per_restart=len(objects) if algorithm=='improved_GRASP_ILS' else None,
                 kick_in_ls_budget=False,deadline_policy='finish in-flight call; start no new call after expiry'))
         if stage=='rcl':report.update(tolerance=case['tolerance'],top_k=case['top_k'])
     except Exception:

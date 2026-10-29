@@ -75,10 +75,12 @@ def read_selections(bundle,case):
     if case['stage']=='full':
         selections['rcl']=json.loads((bundle/'results/rcl/selection.json').read_text())
         selections['tuning']=json.loads((bundle/'results/tuning/selection.json').read_text())
-        expected=set(json.loads((bundle/'manifest.json').read_text())['profile']['datasets'])
-        for chosen in (selections['rcl']['global_rcl'],selections['tuning']['improved_ILS']):
-            if set(chosen.get('datasets',[]))!=expected:
-                raise ValueError('Full experiment requires parameters selected across every planned dataset')
+        profile=json.loads((bundle/'manifest.json').read_text())['profile']
+        populations=((selections['rcl']['global_rcl'],profile['datasets']),
+                     (selections['tuning']['improved_ILS'],profile['tuning_datasets']))
+        for chosen,population in populations:
+            if set(chosen.get('datasets',[]))!=set(population):
+                raise ValueError('Full experiment requires the configured RCL/kick selection population')
     if case['stage'] in ('sensitivity','rcl','tuning','full'):
         selections['calibration']=json.loads((bundle/'results/calibration/selection.json').read_text())
     return selections

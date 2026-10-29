@@ -4,7 +4,7 @@ import json
 import math
 
 from protocol import calibrate,select_tolerances,select_tuning
-from worker import valid_saved,read_selections,settings_for
+from worker import valid_saved,read_selections,settings_for,packing_settings
 
 
 def verify_smoke(bundle):
@@ -68,6 +68,9 @@ def verify_smoke(bundle):
                 if report.get('search_settings')!=settings or report.get('algorithm')!=algorithm:
                     problems.append('Runtime parameters disagree with selected values: '+name)
                 method=report.get('method',{})
+                expected_packing=packing_settings(case,manifest)
+                if any(method.get(k)!=expected_packing[k] for k in ('pes','selection_range')):
+                    problems.append('Wrong PES/range: '+name)
                 if method.get('radio_priority')!=(stage in ('sensitivity','rcl','tuning','full')) or method.get('warmup')!='none':
                     problems.append('Wrong packing mode/warmup: '+name)
                 actual=report.get('counts',{})

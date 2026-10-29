@@ -29,10 +29,11 @@ class ProtocolTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'order/identity'):restore_radio_precision(objects,instance)
 
     def test_complete_scale_and_grasp_four_arms(self):
-        p=make_plan([str(i) for i in range(15)],[str(i) for i in range(15)])
+        datasets=list(KICK_TUNING_DATASETS)+[str(i) for i in range(12)]
+        p=make_plan(datasets,list(KICK_TUNING_DATASETS))
         self.assertEqual({s:len(v) for s,v in p['plans'].items()},
-            dict(calibration=150,sensitivity=810,rcl=3240,tuning=2430,full=2430))
-        self.assertEqual(sum(map(len,p['plans'].values())),9060)
+            dict(calibration=150,sensitivity=810,rcl=3240,tuning=486,full=2430))
+        self.assertEqual(sum(map(len,p['plans'].values())),7116)
         self.assertEqual({c['algorithm'] for c in tuning_configs()},{'improved_ILS'})
 
     def test_all_formal_stages_only_use_three_sequence_seeds(self):
@@ -61,12 +62,17 @@ class ProtocolTests(unittest.TestCase):
                     self.assertEqual(cfg['parameter_scope'],'bin_shape')
                     self.assertEqual({k:case[k] for k in ('pes','selection_range')},expected[case['shape']])
 
-    def test_formal_tuning_rejects_representative_subset(self):
-        with self.assertRaisesRegex(ValueError,'every dataset'):
-            make_plan([str(i) for i in range(15)],['0','1','2'])
-        p=make_plan([str(i) for i in range(15)],[str(i) for i in range(15)])
-        self.assertEqual({c['dataset'] for c in p['plans']['tuning']},set(p['datasets']))
-        self.assertTrue(all(c['selection_dataset_count']==15 for c in p['plans']['full']))
+    def test_kick_tuning_uses_confirmed_three_as_one_population(self):
+        datasets=list(KICK_TUNING_DATASETS)+[str(i) for i in range(12)]
+        p=make_plan(datasets,list(KICK_TUNING_DATASETS))
+        self.assertEqual(len(p['plans']['tuning']),486)
+        self.assertEqual({c['dataset'] for c in p['plans']['tuning']},set(KICK_TUNING_DATASETS))
+        self.assertTrue(all(c['selection_dataset_count']==3 for c in p['plans']['tuning']))
+        self.assertTrue(all(c['kick_selection_dataset_count']==3 for c in p['plans']['full']))
+        with self.assertRaisesRegex(ValueError,'confirmed three'):
+            make_plan(datasets,datasets)
+        with self.assertRaisesRegex(ValueError,'confirmed three'):
+            make_plan(datasets,[KICK_TUNING_DATASETS[0]])
 
     def test_ca_does_not_choose_different_winners_for_datasets(self):
         rows=[]
@@ -135,6 +141,17 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(selected['improved_ILS']['dataset_count'],15)
         self.assertEqual(len(selected['improved_ILS']['datasets']),15)
         self.assertEqual(selected['improved_GRASP_ILS']['kick_level'],'large')
+
+    def test_kick_choice_is_one_aggregate_winner_across_the_three_representatives(self):
+        records=[]
+        for ds,values in zip(KICK_TUNING_DATASETS,((1,2,3),(100,80,99),(5,4,2))):
+            for config,value in zip(tuning_configs(),values):
+                records.append(dict(config,dataset=ds,shape='cube',objective=value))
+        selected=select_tuning(records)
+        self.assertEqual(selected['improved_ILS']['kick_level'],'medium')
+        self.assertEqual(selected['improved_ILS']['dataset_count'],3)
+        self.assertEqual(set(selected['improved_ILS']['datasets']),set(KICK_TUNING_DATASETS))
+        self.assertEqual(selected['improved_GRASP_ILS']['kick_level'],'medium')
 
     def test_orientation_second_level_and_negative_pes(self):
         class Last:

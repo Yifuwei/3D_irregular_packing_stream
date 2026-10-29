@@ -6,6 +6,12 @@ from collections import defaultdict
 VERSION='ejor-three-seed-repacking-v3'
 SEQUENCE_SEEDS=(3,7,13)
 REFERENCE_SEEDS=(3,7,13,19,53)
+KICK_TUNING_DATASETS=('shapesnew','Merged4_normal','st04_Example5_normal')
+
+def kick_tuning_datasets(datasets):
+    selected=[d for d in KICK_TUNING_DATASETS if d in datasets]
+    return selected or list(datasets)
+
 LEVELS=('strong','medium','weak')
 SHAPES=('cube','cylinder')
 SHAPE_PARAMETERS={
@@ -39,15 +45,17 @@ def make_plan(datasets,tuning_datasets,seeds=SEQUENCE_SEEDS,reference_seeds=REFE
             raise ValueError('Seeds must be nonempty and distinct')
         if not set(values)<=set(allowed):
             raise ValueError('Experiment seeds must be 3, 7, 13; reference seeds may additionally use 19, 53')
-    if not smoke and set(tuning_datasets)!=set(datasets):
-        raise ValueError('Formal tuning must aggregate every dataset; no representative-dataset subset')
+    if not smoke and set(tuning_datasets)!=set(kick_tuning_datasets(datasets)):
+        raise ValueError('Kick tuning must use the confirmed three representative datasets together')
     plans={stage:[] for stage in STAGES}
     def add(stage,**kw):
         if stage in ('sensitivity','rcl','tuning','full'):
             kw.update(SHAPE_PARAMETERS[kw['shape']])
             kw['parameter_scope']='global_by_shape'
         if stage in ('rcl','tuning','full'):
-            kw['selection_dataset_count']=len(datasets)
+            kw['selection_dataset_count']=len(tuning_datasets) if stage=='tuning' else len(datasets)
+        if stage=='full':
+            kw['kick_selection_dataset_count']=len(tuning_datasets)
         plans[stage].append(dict(task_id=len(plans[stage]),stage=stage,protocol=VERSION,**kw))
     for dataset in datasets:
         for shape in shapes:
@@ -77,6 +85,7 @@ def make_plan(datasets,tuning_datasets,seeds=SEQUENCE_SEEDS,reference_seeds=REFE
                 smoke=smoke,shapes=list(shapes),plans=plans,
                 selection_metric='mean_N_minus_U_star',selection_scope='global',
                 selection_datasets=list(datasets),selection_dataset_count=len(datasets),
+                kick_selection_datasets=list(tuning_datasets),kick_selection_dataset_count=len(tuning_datasets),
                 duplicate_capacity_policy='keep nominal level combinations; annotate equal capacities')
 
 

@@ -1,4 +1,4 @@
-> Historical/default instructions below are superseded by WORK_PLAN.md for parameter selection. Final tuning now covers all 15 datasets, and sensitivity uses the shared per-shape PES/range.
+> Historical/default instructions below are superseded by WORK_PLAN.md for parameter selection. RCL covers all 15 datasets; kick tuning uses the confirmed three representatives together, and sensitivity uses the shared per-shape PES/range.
 
 > Smoke calibration update: run_smoke.sh now reuses hpc_results/CA_jsons_results automatically (or CA_JSON_DIR). If missing, it stops before submission; it no longer starts GPU calibration by default.
 

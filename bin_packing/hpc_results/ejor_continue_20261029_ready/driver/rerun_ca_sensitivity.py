@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import uuid
 
-from protocol import make_plan,choose_ca_parameters
+from protocol import make_plan,choose_ca_parameters,kick_tuning_datasets
 from worker import valid_saved,packing_settings
 from suite import collect,save
 
@@ -35,7 +35,7 @@ def prepare(bundle):
     for name in ('manifest.json','parameter_plan.json'):
         shutil.copyfile(bundle/name,backup/name)
     before=old['profile']
-    profile=make_plan(before['datasets'],before['datasets'],seeds=tuple(before['seeds']),
+    profile=make_plan(before['datasets'],kick_tuning_datasets(before['datasets']),seeds=tuple(before['seeds']),
         reference_seeds=tuple(before['reference_seeds']),full_seeds=tuple(before['full_seeds']),
         time_limit=before['time_limit'],smoke=before.get('smoke',False),shapes=tuple(before['shapes']))
     meta={c['instance']:c for cases in before['plans'].values() for c in cases}
@@ -100,7 +100,7 @@ def prepare(bundle):
     # Preserve historical calibration and original fixed capacities without recomputation from new CA choices.
     parameter=json.loads((bundle/'parameter_plan.json').read_text())
     parameter.update(profile=profile,geometry_ca_parameters=geometry)
-    parameter['conventions'].update(parameter_selection='global arithmetic mean across all 15 datasets; never per-dataset winners',
+    parameter['conventions'].update(parameter_selection='RCL aggregates 15 datasets; kick strength aggregates the confirmed three representatives; never per-dataset winners',
         sensitivity_packing='fixed global-by-shape PES/range; original capacity calibration retained')
     save(bundle/'parameter_plan.json',parameter)
     manifest['files_sha256']['parameter_plan.json']=hashlib.sha256((bundle/'parameter_plan.json').read_bytes()).hexdigest()
@@ -117,7 +117,8 @@ def prepare(bundle):
     report=dict(status='PREPARED',kept=kept,archived=archived,
         sensitivity_pending=len(profile['plans']['sensitivity'])-kept['sensitivity'],
         tuning_tasks=len(profile['plans']['tuning']),selection_datasets=profile['datasets'],
-        selection_dataset_count=len(profile['datasets']),parameters=profile['metaheuristic_parameters'],
+        selection_dataset_count=len(profile['datasets']),kick_selection_datasets=profile['tuning_datasets'],
+        kick_selection_dataset_count=len(profile['tuning_datasets']),parameters=profile['metaheuristic_parameters'],
         calibration_preserved=True,configuration_backup=str(backup),submitted=False)
     save(bundle/'sensitivity_rerun_plan.json',report)
     return report

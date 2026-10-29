@@ -1,3 +1,5 @@
+> Historical October 20 record, superseded for new experiments by AUDIT.md and the v3 protocol on 2026-10-29.
+
 # 2026年10月20日方法与实现对应
 
 依据桌面文档 `20261020 EJOR paper update summary.docx`，并以用户随后确认的计数、全局参数选择和不评价多样性为准。没有修改原 Word。

@@ -1,11 +1,11 @@
 # EJOR experiment suite
 
-The current authoritative plan is [WORK_PLAN.md](WORK_PLAN.md). All best parameters are aggregated across all 15 datasets; no per-dataset winners or representative-only final tuning.
+The current authoritative plan is [WORK_PLAN.md](WORK_PLAN.md). CA/PES and RCL aggregate all 15 datasets; kick strength aggregates the original three representatives together. No independent per-dataset winners.
 
 - Shared CA/PES: cube=maximal_residual_box/bottom; cylinder=minimum_aabb_edges_len/bottom_top.
 - Keep original five-seed capacities. Experiments use only sequence seeds 3,7,13.
 - CA sensitivity: 810 total; 324 compatible results retained, 486 require rerun with the shared settings.
-- RCL: 3240 tasks. ILS strength tuning: 2430 tasks covering all 15 datasets. Full: 2430 tasks.
+- RCL: 3240 tasks. ILS strength tuning: 486 tasks across shapesnew, Merged4_normal, st04_Example5_normal. Full: 2430 tasks.
 - Default maximum GPU concurrency 6; 1 GPU/4 CPU per task, 16G for chess/shapesnew, otherwise 32G.
 - Complete stages gate later stages. Selected parameter files record and validate the dataset population.
 

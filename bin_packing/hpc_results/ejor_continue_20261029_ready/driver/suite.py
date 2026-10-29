@@ -12,7 +12,7 @@ import sys
 import uuid
 from collections import defaultdict
 
-from protocol import make_plan, choose_ca_parameters, calibrate, select_tolerances, select_tuning, STAGES, VERSION, SEQUENCE_SEEDS, REFERENCE_SEEDS
+from protocol import make_plan, choose_ca_parameters, calibrate, select_tolerances, select_tuning, STAGES, VERSION, SEQUENCE_SEEDS, REFERENCE_SEEDS, kick_tuning_datasets
 from worker import run, valid_saved, packing_settings
 
 
@@ -32,7 +32,7 @@ def freeze(project,summary,output,datasets=None,tuning=None,time_limit=3600,smok
     with summary.open(encoding='utf-8-sig',newline='') as stream:
         rows=list(csv.DictReader(stream))
     datasets=datasets or sorted({r['dataset'] for r in rows})
-    tuning=tuning or list(datasets)
+    tuning=tuning or kick_tuning_datasets(datasets)
     profile=make_plan(datasets,tuning,time_limit=time_limit,smoke=smoke,shapes=shapes,
                       **(dict(seeds=(3,),reference_seeds=REFERENCE_SEEDS if (ca_json_dir or reuse_bundle) else (3,),
                               full_seeds=(3,)) if smoke else {}))
@@ -169,9 +169,9 @@ def collect(bundle,stage):
         print(f'{stage}: {len(records)}/{len(cases)} successful; selection withheld; missing/failed {incomplete[:20]}')
         return 1
     if stage in ('rcl','tuning'):
-        expected=set(manifest['profile']['datasets'])
+        expected=set(manifest['profile']['tuning_datasets'] if stage=='tuning' else manifest['profile']['datasets'])
         if {r['dataset'] for r in records}!=expected:
-            raise ValueError('Global parameter selection requires every planned dataset')
+            raise ValueError('Parameter selection requires every dataset in its configured population')
     if stage=='calibration':
         groups=defaultdict(list)
         for r in records:groups[f"{r['dataset']}|{r['shape']}"].append(r)
