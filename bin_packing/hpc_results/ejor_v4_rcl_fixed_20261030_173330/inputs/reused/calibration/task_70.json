@@ -1,0 +1,106 @@
+{
+  "best_N": 2,
+  "best_U": 0.23005164298732447,
+  "best_U_star": 0.2601300200248318,
+  "objective": 1.7398699799751682,
+  "mean_piece_count_without_emptiest": 90.0,
+  "bin_capacity": 389017,
+  "max_piece_volume": 25240.0,
+  "max_piece_radio": 1099.0078707617379,
+  "piece_count": 97,
+  "bin_volumes": [
+    101195.0,
+    77793.0
+  ],
+  "bin_piece_counts": [
+    90,
+    7
+  ],
+  "emptiest_bin": 1,
+  "case": {
+    "task_id": 70,
+    "stage": "calibration",
+    "protocol": "ejor-two-level-fixed-pes-v4",
+    "dataset": "engine",
+    "shape": "cube",
+    "seed": 3,
+    "algorithm": "improved_ILS",
+    "config_id": "CA_REFERENCE",
+    "instance": "engine_seq3_cube_999999_1.txt",
+    "piece_count": 97
+  },
+  "source_file": "/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/CA_jsons_results/all_instances_geometry/engine_seq3_cube__minimum_aabb_volume__bottom_top__instance_size__rng42.json",
+  "source_sha256": "b505e783a9e32a7251fc9ce1794d6126a40537109f2b6759a1e04176cdb67392",
+  "historical_git_commit": "88c351cadb932422130c6cbdb6b75d8c3977bc13",
+  "historical_config": {
+    "instance_id": "engine_seq3_cube",
+    "alg": "fixed_CA",
+    "range": "bottom_top",
+    "pes": "minimum_aabb_volume",
+    "oes": "minimum_aabb_volume",
+    "rng_seed": 42,
+    "time_limit": 3600,
+    "iteration_limit": 1000,
+    "grasp_iterations": 100,
+    "alpha": 1,
+    "kick_trigger": 120,
+    "kick_level": "medium",
+    "trace": false,
+    "constraint_mode": "geometry_only",
+    "bin_size_source": "instance"
+  },
+  "algorithm_wall_s": 41.44274401664734,
+  "bundle_id": "0e70cdc1-bba1-4e53-9658-452f711e72d5",
+  "status": "success",
+  "validation_ok": true,
+  "calibration_source": "historical_CA",
+  "source_reference": "inputs/reused/reference_70.json",
+  "algorithm": "historical_fixed_CA",
+  "search_settings": {
+    "instance_id": "engine_seq3_cube",
+    "alg": "fixed_CA",
+    "range": "bottom_top",
+    "pes": "minimum_aabb_volume",
+    "oes": "minimum_aabb_volume",
+    "rng_seed": 42,
+    "time_limit": 3600,
+    "iteration_limit": 1000,
+    "grasp_iterations": 100,
+    "alpha": 1,
+    "kick_trigger": 120,
+    "kick_level": "medium",
+    "trace": false,
+    "constraint_mode": "geometry_only",
+    "bin_size_source": "instance"
+  },
+  "method": {
+    "radio_priority": false,
+    "warmup": "historical_not_recorded"
+  },
+  "counts": {
+    "construction": 1,
+    "ls": 0,
+    "kick": 0
+  },
+  "validation": {
+    "ok": true,
+    "scope": "historical geometry validation; counts and N/U/U* independently recovered"
+  },
+  "reused_from": {
+    "bundle_id": "96e0f44e-4d86-408a-9004-fbe5bddb7dec",
+    "case": {
+      "task_id": 70,
+      "stage": "calibration",
+      "protocol": "ejor-pooled-rcl-piece-stall-v2",
+      "dataset": "engine",
+      "shape": "cube",
+      "seed": 3,
+      "algorithm": "improved_ILS",
+      "config_id": "CA_REFERENCE",
+      "instance": "engine_seq3_cube_999999_1.txt",
+      "piece_count": 97
+    },
+    "source_report": "inputs/reused/calibration/task_70.json",
+    "source_sha256": "88acd82b685c66e4a96fde61579d14471042b78de866aa58f9c023e104422af3"
+  }
+}
