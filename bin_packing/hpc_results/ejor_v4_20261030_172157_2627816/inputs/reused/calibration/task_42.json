@@ -1,0 +1,112 @@
+{
+  "best_N": 5,
+  "best_U": 0.33805938883489905,
+  "best_U_star": 0.3896963610841162,
+  "objective": 4.610303638915884,
+  "mean_piece_count_without_emptiest": 17.5,
+  "bin_capacity": 1157625,
+  "max_piece_volume": 55296.0,
+  "max_piece_radio": 1091.9633398223045,
+  "piece_count": 75,
+  "bin_volumes": [
+    474927.0,
+    458920.0,
+    461428.0,
+    409214.0,
+    152241.0
+  ],
+  "bin_piece_counts": [
+    32,
+    13,
+    13,
+    12,
+    5
+  ],
+  "emptiest_bin": 4,
+  "case": {
+    "task_id": 42,
+    "stage": "calibration",
+    "protocol": "ejor-two-level-fixed-pes-v4",
+    "dataset": "Merged5_normal",
+    "shape": "cube",
+    "seed": 13,
+    "algorithm": "improved_ILS",
+    "config_id": "CA_REFERENCE",
+    "instance": "Merged5_normal_seq13_cube_999999_1.txt",
+    "piece_count": 75
+  },
+  "source_file": "/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/CA_jsons_results/all_instances_geometry/Merged5_normal_seq13_cube__minimum_aabb_edges_len__bottom_top__instance_size__rng42.json",
+  "source_sha256": "1861a2476e069d965c5f3753d3e353a2b611569b8bc4c167d5a2475dc1f42aa1",
+  "historical_git_commit": "88c351cadb932422130c6cbdb6b75d8c3977bc13",
+  "historical_config": {
+    "instance_id": "Merged5_normal_seq13_cube",
+    "alg": "fixed_CA",
+    "range": "bottom_top",
+    "pes": "minimum_aabb_edges_len",
+    "oes": "minimum_aabb_edges_len",
+    "rng_seed": 42,
+    "time_limit": 3600,
+    "iteration_limit": 1000,
+    "grasp_iterations": 100,
+    "alpha": 1,
+    "kick_trigger": 120,
+    "kick_level": "medium",
+    "trace": false,
+    "constraint_mode": "geometry_only",
+    "bin_size_source": "instance"
+  },
+  "algorithm_wall_s": 129.14481163024902,
+  "bundle_id": "0e70cdc1-bba1-4e53-9658-452f711e72d5",
+  "status": "success",
+  "validation_ok": true,
+  "calibration_source": "historical_CA",
+  "source_reference": "inputs/reused/reference_42.json",
+  "algorithm": "historical_fixed_CA",
+  "search_settings": {
+    "instance_id": "Merged5_normal_seq13_cube",
+    "alg": "fixed_CA",
+    "range": "bottom_top",
+    "pes": "minimum_aabb_edges_len",
+    "oes": "minimum_aabb_edges_len",
+    "rng_seed": 42,
+    "time_limit": 3600,
+    "iteration_limit": 1000,
+    "grasp_iterations": 100,
+    "alpha": 1,
+    "kick_trigger": 120,
+    "kick_level": "medium",
+    "trace": false,
+    "constraint_mode": "geometry_only",
+    "bin_size_source": "instance"
+  },
+  "method": {
+    "radio_priority": false,
+    "warmup": "historical_not_recorded"
+  },
+  "counts": {
+    "construction": 1,
+    "ls": 0,
+    "kick": 0
+  },
+  "validation": {
+    "ok": true,
+    "scope": "historical geometry validation; counts and N/U/U* independently recovered"
+  },
+  "reused_from": {
+    "bundle_id": "96e0f44e-4d86-408a-9004-fbe5bddb7dec",
+    "case": {
+      "task_id": 42,
+      "stage": "calibration",
+      "protocol": "ejor-pooled-rcl-piece-stall-v2",
+      "dataset": "Merged5_normal",
+      "shape": "cube",
+      "seed": 13,
+      "algorithm": "improved_ILS",
+      "config_id": "CA_REFERENCE",
+      "instance": "Merged5_normal_seq13_cube_999999_1.txt",
+      "piece_count": 75
+    },
+    "source_report": "inputs/reused/calibration/task_42.json",
+    "source_sha256": "976fc3e5156ccd115fff0ace1f9d22dc500770f51f5476e14bde7586094b5ccb"
+  }
+}

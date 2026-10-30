@@ -1,0 +1,34 @@
+{
+  "case": {
+    "task_id": 632,
+    "stage": "rcl",
+    "protocol": "ejor-two-level-fixed-pes-v4",
+    "dataset": "chess",
+    "shape": "cylinder",
+    "weight_level": "strong",
+    "radio_level": "strong",
+    "seed": 13,
+    "algorithm": "improved_GRASP",
+    "ls_budget": 0,
+    "config_id": "RCL10",
+    "tolerance": 0.1,
+    "top_k": null,
+    "packing_selection": "fixed_global_by_shape",
+    "instance": "chess_seq13_cylinder_999999_1.txt",
+    "piece_count": 32
+  },
+  "bundle_id": "cc36dbb1-fab4-46e4-8d3b-3e5593dc88e3",
+  "status": "failed",
+  "validation_ok": false,
+  "seed_time_ns": 1793381129343221123,
+  "internal_seeds": {
+    "piece": 4147869062,
+    "position": 3769231970,
+    "kick": 4134923433,
+    "global": 3198902130
+  },
+  "order_seed": 13,
+  "error": "Traceback (most recent call last):\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_v4_20261030_172157_2627816/driver/worker.py\", line 225, in run\n    result=getattr(algorithms,algorithm)(**common,**search)\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_v4_20261030_172157_2627816/runtime/bin_packing/src/radio_bin_priority.py\", line 141, in run\n    result=controller(*bound.args, **bound.kwargs)\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_v4_20261030_172157_2627816/runtime/bin_packing/src/new_ILS_southampton.py\", line 1654, in improved_GRASP\n    current = snapshot(packing_3D_voxel_lookback(\n                       ~~~~~~~~~~~~~~~~~~~~~~~~~^\n        copy.deepcopy(object_info_total), nfv_pool, ifv_pool, orientations,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<4 lines>...\n        rcl_observer=(lambda event: rcl_observer(dict(event, restart=restart)))\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        if rcl_observer is not None else None, **common))\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_v4_20261030_172157_2627816/runtime/bin_packing/src/radio_bin_priority.py\", line 107, in construct\n    return observe('construction',engine.construct(orientations))\n                                  ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_v4_20261030_172157_2627816/runtime/bin_packing/src/improved_GRASP_weight_radio.py\", line 194, in construct\n    _,(orientation,position)=self.pooled_selector(pool)\n                             ~~~~~~~~~~~~~~~~~~~~^^^^^^\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_v4_20261030_172157_2627816/runtime/bin_packing/src/radio_bin_priority.py\", line 77, in orientation_selector\n    return choose_orientation(choices,ctx['tolerance'],ctx['rng'],record,top_k=rcl_top_k)\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_v4_20261030_172157_2627816/runtime/bin_packing/src/orientation_rcl.py\", line 31, in choose_orientation\n    observer(dict(level='orientation',best_pes=float(best),tolerance=float(tolerance),\n    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n                  candidate_count=len(candidates),active_rcl_size=len(rcl),\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n                  candidate_pes=[float(c[0]) for c in candidates],selected_pes=float(selected[0])))\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_v4_20261030_172157_2627816/runtime/bin_packing/src/radio_bin_priority.py\", line 76, in record\n    if ctx['observer']:ctx['observer'](event)\n                       ~~~~~~~~~~~~~~~^^^^^^^\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_v4_20261030_172157_2627816/runtime/bin_packing/src/new_ILS_southampton.py\", line 1660, in <lambda>\n    rcl_observer=(lambda event: rcl_observer(dict(event, restart=restart)))\n                                ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_v4_20261030_172157_2627816/driver/worker.py\", line 190, in rcl_event\n    record_rcl_event(rcl_counts,event)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^\n  File \"/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_v4_20261030_172157_2627816/driver/rcl_statistics.py\", line 8, in record_rcl_event\n    raise ValueError('RCL event lacks orientation statistics; update orientation_rcl.py before freezing')\nValueError: RCL event lacks orientation statistics; update orientation_rcl.py before freezing\n",
+  "host_max_rss_kib": 578640,
+  "total_wall_s": 6.409385334001854
+}
