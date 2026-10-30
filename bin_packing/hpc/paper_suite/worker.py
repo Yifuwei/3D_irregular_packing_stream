@@ -1,5 +1,6 @@
 """GPU worker for one frozen protocol case; no discarded CA warm-up."""
 import hashlib
+from rcl_statistics import record_rcl_event, summarize_rcl
 import json
 import math
 import os
@@ -186,9 +187,7 @@ def run(bundle,stage,index):
             def cache_event(**event):
                 cache_counts[event['event']]+=1
             def rcl_event(event):
-                rcl_counts['pooled'][event['active_rcl_size']]+=1
-                if 'rcl_orientation_count' in event:
-                    rcl_counts['orientation_count'][event['rcl_orientation_count']]+=1
+                record_rcl_event(rcl_counts,event)
             def observe(kind,packed):
                 counts[kind]+=1
                 n,u,us=algorithms.get_final_performance(objects,size,shape,packed[0])
@@ -244,7 +243,9 @@ def run(bundle,stage,index):
             objective=result[0]-result[2],origin_N=result[3],origin_U_star=result[5],
             origin_objective=result[3]-result[5],algorithm_wall_s=algorithm_s,
             reported_algorithm_wall_s=result[-1],counts=dict(counts),cache_counts=dict(cache_counts),
-            rcl_histograms={k:dict(v) for k,v in rcl_counts.items()},history=history,ls_end_events=ls_end_events,
+            rcl_histograms={k:dict(v) for k,v in rcl_counts.items()},
+            rcl_orientation_summary=summarize_rcl(rcl_counts),
+            history=history,ls_end_events=ls_end_events,
             validation=validation,mean_piece_count_without_emptiest=nstar,bin_capacity=capacity,
             max_piece_volume=max(p['volume'] for p in objects),max_piece_radio=max(p['radio'] for p in objects),
             weight_capacity=max_weight,radio_capacity=radio_limit,piece_count=len(objects),
