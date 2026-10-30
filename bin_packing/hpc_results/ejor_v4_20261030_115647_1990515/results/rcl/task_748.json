@@ -1,0 +1,1148 @@
+{
+  "case": {
+    "task_id": 748,
+    "stage": "rcl",
+    "protocol": "ejor-two-level-fixed-pes-v4",
+    "dataset": "engine",
+    "shape": "cylinder",
+    "weight_level": "weak",
+    "radio_level": "strong",
+    "seed": 7,
+    "algorithm": "improved_GRASP",
+    "ls_budget": 0,
+    "config_id": "RCL10",
+    "tolerance": 0.1,
+    "top_k": null,
+    "packing_selection": "fixed_global_by_shape",
+    "instance": "engine_seq7_cylinder_999999_1.txt",
+    "piece_count": 97
+  },
+  "bundle_id": "0e70cdc1-bba1-4e53-9658-452f711e72d5",
+  "status": "success",
+  "validation_ok": true,
+  "seed_time_ns": 1793372006472348776,
+  "internal_seeds": {
+    "piece": 750604525,
+    "position": 2436052002,
+    "kick": 3612813930,
+    "global": 2209506587
+  },
+  "order_seed": 7,
+  "algorithm": "improved_GRASP",
+  "search_settings": {
+    "iter_limit_per_iter": 1,
+    "ls_evaluation_limit": 0,
+    "restart_limit": 1,
+    "rcl_tolerance": 0.1,
+    "rcl_top_k": null,
+    "time_limit": null,
+    "alpha": 1,
+    "ls_policy": "systematic"
+  },
+  "method": {
+    "pes": "minimum_aabb_edges_len",
+    "selection_range": "bottom_top",
+    "parameter_scope": "global_by_shape",
+    "radio_priority": true,
+    "cache": "run_scoped",
+    "rcl": "pooled_orientation_position",
+    "warmup": "none"
+  },
+  "best_N": 14,
+  "best_U": 0.02559237816807879,
+  "best_U_star": 0.02755085979646504,
+  "objective": 13.972449140203535,
+  "origin_N": 14,
+  "origin_U_star": 0.02755085979646504,
+  "origin_objective": 13.972449140203535,
+  "algorithm_wall_s": 64.8290915901307,
+  "reported_algorithm_wall_s": 64.8290140510071,
+  "counts": {
+    "construction": 1
+  },
+  "cache_counts": {
+    "BIN_RANK": 97,
+    "SEARCH": 970,
+    "SEARCH_SUCCEEDED": 962,
+    "POOLED_RCL": 97,
+    "HARD_CONSTRAINT_REJECT": 237,
+    "SEARCH_FAILED": 8,
+    "RUN_END": 1
+  },
+  "rcl_histograms": {
+    "pooled": {
+      "20": 3,
+      "8": 5,
+      "18": 2,
+      "2": 19,
+      "10": 4,
+      "3": 7,
+      "30": 1,
+      "4": 11,
+      "16": 4,
+      "1": 15,
+      "11": 2,
+      "15": 2,
+      "5": 6,
+      "13": 5,
+      "12": 2,
+      "14": 3,
+      "7": 2,
+      "6": 3,
+      "9": 1
+    },
+    "orientation_count": {}
+  },
+  "history": [
+    {
+      "kind": "construction",
+      "time_s": 64.6895214500837,
+      "N": 14,
+      "U": 0.02559237816807879,
+      "U_star": 0.02755085979646504,
+      "objective": 13.972449140203535,
+      "ls_evaluations": 0,
+      "kicks": 0,
+      "constructions": 1,
+      "new_best": true
+    }
+  ],
+  "ls_end_events": [
+    {
+      "restart": 1,
+      "ls_policy": "systematic",
+      "stop_reason": "evaluation_limit",
+      "local_optimum": false,
+      "ls_evaluations": 0,
+      "objective": 13.972449140203535
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "scope": "piece identity, geometry, occupancy and N/U/U*; accessibility enforced by engine, not independently revalidated",
+    "bin_volumes": [
+      60782,
+      66,
+      349,
+      610,
+      7559,
+      47308,
+      23958,
+      30207,
+      512,
+      450,
+      955,
+      205,
+      5417,
+      610
+    ],
+    "bin_filling_rates": [
+      0.12167174904111062,
+      0.00013211699905750553,
+      0.0006986186768343853,
+      0.00122108135492543,
+      0.015131399937510368,
+      0.09469986350624958,
+      0.04795847065787451,
+      0.06046754834136469,
+      0.0010249076290521641,
+      0.0009007977208466286,
+      0.0019116929409078453,
+      0.00041036340616346415,
+      0.010843602786280417,
+      0.00122108135492543
+    ],
+    "placements": [
+      {
+        "bin": 0,
+        "piece_index": 0,
+        "orientation": "x_0",
+        "translation": [
+          34,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 1,
+        "orientation": "x_90",
+        "translation": [
+          1,
+          32,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 2,
+        "orientation": "y_270",
+        "translation": [
+          1,
+          38,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 3,
+        "orientation": "x_180",
+        "translation": [
+          29,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 4,
+        "orientation": "x_180",
+        "translation": [
+          39,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 5,
+        "orientation": "y_270",
+        "translation": [
+          46,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 6,
+        "orientation": "x_180",
+        "translation": [
+          4,
+          13,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 7,
+        "orientation": "x_270",
+        "translation": [
+          3,
+          50,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 8,
+        "orientation": "y_90",
+        "translation": [
+          45,
+          7,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 9,
+        "orientation": "x_90",
+        "translation": [
+          20,
+          7,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 10,
+        "orientation": "y_270",
+        "translation": [
+          48,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 11,
+        "orientation": "x_180",
+        "translation": [
+          41,
+          16,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 12,
+        "orientation": "y_270",
+        "translation": [
+          17,
+          12,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 13,
+        "orientation": "y_90",
+        "translation": [
+          5,
+          55,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 14,
+        "orientation": "y_270",
+        "translation": [
+          52,
+          5,
+          11
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 15,
+        "orientation": "z_270",
+        "translation": [
+          9,
+          17,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 16,
+        "orientation": "z_90",
+        "translation": [
+          25,
+          12,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 20,
+        "orientation": "z_270",
+        "translation": [
+          14,
+          14,
+          38
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 22,
+        "orientation": "x_0",
+        "translation": [
+          31,
+          12,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 23,
+        "orientation": "z_90",
+        "translation": [
+          27,
+          18,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 24,
+        "orientation": "x_270",
+        "translation": [
+          12,
+          14,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 25,
+        "orientation": "y_90",
+        "translation": [
+          11,
+          48,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 26,
+        "orientation": "y_270",
+        "translation": [
+          53,
+          2,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 27,
+        "orientation": "z_270",
+        "translation": [
+          49,
+          30,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 29,
+        "orientation": "y_270",
+        "translation": [
+          5,
+          23,
+          27
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 31,
+        "orientation": "z_270",
+        "translation": [
+          17,
+          69,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 32,
+        "orientation": "x_90",
+        "translation": [
+          25,
+          4,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 34,
+        "orientation": "x_90",
+        "translation": [
+          34,
+          1,
+          34
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 17,
+        "orientation": "x_90",
+        "translation": [
+          1,
+          33,
+          0
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 18,
+        "orientation": "y_90",
+        "translation": [
+          1,
+          27,
+          0
+        ]
+      },
+      {
+        "bin": 3,
+        "piece_index": 19,
+        "orientation": "z_270",
+        "translation": [
+          23,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 21,
+        "orientation": "y_180",
+        "translation": [
+          1,
+          23,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 51,
+        "orientation": "x_180",
+        "translation": [
+          30,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 52,
+        "orientation": "x_90",
+        "translation": [
+          1,
+          42,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 53,
+        "orientation": "z_270",
+        "translation": [
+          1,
+          34,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 55,
+        "orientation": "z_270",
+        "translation": [
+          44,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 56,
+        "orientation": "x_180",
+        "translation": [
+          9,
+          11,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 60,
+        "orientation": "x_90",
+        "translation": [
+          19,
+          6,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 61,
+        "orientation": "x_90",
+        "translation": [
+          23,
+          5,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 28,
+        "orientation": "x_0",
+        "translation": [
+          1,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 30,
+        "orientation": "x_180",
+        "translation": [
+          9,
+          14,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 33,
+        "orientation": "z_90",
+        "translation": [
+          26,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 35,
+        "orientation": "y_270",
+        "translation": [
+          3,
+          25,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 36,
+        "orientation": "z_270",
+        "translation": [
+          45,
+          2,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 38,
+        "orientation": "x_270",
+        "translation": [
+          20,
+          7,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 39,
+        "orientation": "z_270",
+        "translation": [
+          3,
+          49,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 40,
+        "orientation": "y_270",
+        "translation": [
+          9,
+          48,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 41,
+        "orientation": "y_180",
+        "translation": [
+          36,
+          13,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 42,
+        "orientation": "z_90",
+        "translation": [
+          16,
+          11,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 43,
+        "orientation": "z_270",
+        "translation": [
+          41,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 44,
+        "orientation": "x_0",
+        "translation": [
+          9,
+          60,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 45,
+        "orientation": "y_90",
+        "translation": [
+          18,
+          45,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 46,
+        "orientation": "z_90",
+        "translation": [
+          17,
+          16,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 48,
+        "orientation": "y_180",
+        "translation": [
+          9,
+          5,
+          26
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 49,
+        "orientation": "y_90",
+        "translation": [
+          60,
+          7,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 50,
+        "orientation": "x_90",
+        "translation": [
+          25,
+          4,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 54,
+        "orientation": "y_90",
+        "translation": [
+          39,
+          5,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 57,
+        "orientation": "x_0",
+        "translation": [
+          29,
+          49,
+          0
+        ]
+      },
+      {
+        "bin": 6,
+        "piece_index": 37,
+        "orientation": "z_180",
+        "translation": [
+          33,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 6,
+        "piece_index": 58,
+        "orientation": "x_270",
+        "translation": [
+          1,
+          34,
+          0
+        ]
+      },
+      {
+        "bin": 6,
+        "piece_index": 59,
+        "orientation": "z_90",
+        "translation": [
+          1,
+          38,
+          0
+        ]
+      },
+      {
+        "bin": 6,
+        "piece_index": 62,
+        "orientation": "z_270",
+        "translation": [
+          35,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 6,
+        "piece_index": 64,
+        "orientation": "y_180",
+        "translation": [
+          1,
+          15,
+          0
+        ]
+      },
+      {
+        "bin": 6,
+        "piece_index": 65,
+        "orientation": "x_0",
+        "translation": [
+          1,
+          40,
+          0
+        ]
+      },
+      {
+        "bin": 6,
+        "piece_index": 66,
+        "orientation": "y_90",
+        "translation": [
+          44,
+          5,
+          0
+        ]
+      },
+      {
+        "bin": 6,
+        "piece_index": 67,
+        "orientation": "y_180",
+        "translation": [
+          15,
+          11,
+          12
+        ]
+      },
+      {
+        "bin": 6,
+        "piece_index": 68,
+        "orientation": "x_90",
+        "translation": [
+          3,
+          49,
+          0
+        ]
+      },
+      {
+        "bin": 6,
+        "piece_index": 69,
+        "orientation": "x_270",
+        "translation": [
+          37,
+          20,
+          0
+        ]
+      },
+      {
+        "bin": 6,
+        "piece_index": 71,
+        "orientation": "z_90",
+        "translation": [
+          26,
+          4,
+          0
+        ]
+      },
+      {
+        "bin": 6,
+        "piece_index": 72,
+        "orientation": "x_180",
+        "translation": [
+          4,
+          24,
+          0
+        ]
+      },
+      {
+        "bin": 6,
+        "piece_index": 84,
+        "orientation": "x_270",
+        "translation": [
+          36,
+          6,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 47,
+        "orientation": "z_90",
+        "translation": [
+          33,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 70,
+        "orientation": "z_180",
+        "translation": [
+          9,
+          12,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 73,
+        "orientation": "y_270",
+        "translation": [
+          1,
+          31,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 74,
+        "orientation": "z_270",
+        "translation": [
+          39,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 75,
+        "orientation": "y_90",
+        "translation": [
+          1,
+          36,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 76,
+        "orientation": "z_180",
+        "translation": [
+          1,
+          44,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 77,
+        "orientation": "x_270",
+        "translation": [
+          50,
+          3,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 78,
+        "orientation": "y_270",
+        "translation": [
+          9,
+          18,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 79,
+        "orientation": "z_180",
+        "translation": [
+          23,
+          5,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 81,
+        "orientation": "x_270",
+        "translation": [
+          33,
+          7,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 85,
+        "orientation": "x_90",
+        "translation": [
+          6,
+          52,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 87,
+        "orientation": "x_90",
+        "translation": [
+          17,
+          9,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 88,
+        "orientation": "x_270",
+        "translation": [
+          23,
+          10,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 89,
+        "orientation": "x_270",
+        "translation": [
+          16,
+          43,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 90,
+        "orientation": "x_0",
+        "translation": [
+          58,
+          12,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 91,
+        "orientation": "x_90",
+        "translation": [
+          49,
+          21,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 93,
+        "orientation": "z_180",
+        "translation": [
+          14,
+          18,
+          17
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 94,
+        "orientation": "y_90",
+        "translation": [
+          4,
+          25,
+          0
+        ]
+      },
+      {
+        "bin": 8,
+        "piece_index": 63,
+        "orientation": "y_180",
+        "translation": [
+          1,
+          28,
+          0
+        ]
+      },
+      {
+        "bin": 9,
+        "piece_index": 80,
+        "orientation": "z_180",
+        "translation": [
+          1,
+          24,
+          0
+        ]
+      },
+      {
+        "bin": 10,
+        "piece_index": 82,
+        "orientation": "z_90",
+        "translation": [
+          32,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 11,
+        "piece_index": 83,
+        "orientation": "z_270",
+        "translation": [
+          1,
+          31,
+          0
+        ]
+      },
+      {
+        "bin": 12,
+        "piece_index": 86,
+        "orientation": "x_0",
+        "translation": [
+          33,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 12,
+        "piece_index": 92,
+        "orientation": "y_180",
+        "translation": [
+          1,
+          34,
+          0
+        ]
+      },
+      {
+        "bin": 12,
+        "piece_index": 96,
+        "orientation": "x_180",
+        "translation": [
+          17,
+          7,
+          0
+        ]
+      },
+      {
+        "bin": 13,
+        "piece_index": 95,
+        "orientation": "z_270",
+        "translation": [
+          23,
+          1,
+          0
+        ]
+      }
+    ]
+  },
+  "mean_piece_count_without_emptiest": 7.384615384615385,
+  "bin_capacity": 499557.21421792737,
+  "max_piece_volume": 25240,
+  "max_piece_radio": 1060.0798803397327,
+  "weight_capacity": 118442.8,
+  "radio_capacity": 1097.507044505315,
+  "piece_count": 97,
+  "hostname": "gpu015.aire.lee.alces.network",
+  "python": "3.13.2 | packaged by conda-forge | (main, Feb 17 2025, 14:10:22) [GCC 13.3.0]",
+  "resolved_limits": {
+    "piece_count": 97,
+    "kick_failed_repacking_threshold": null,
+    "ls_repacks_per_restart": null,
+    "kick_in_ls_budget": false,
+    "deadline_policy": "finish in-flight call; start no new call after expiry"
+  },
+  "tolerance": 0.1,
+  "top_k": null,
+  "host_max_rss_kib": 3550416,
+  "total_wall_s": 67.04894623998553
+}

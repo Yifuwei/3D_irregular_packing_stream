@@ -1,0 +1,399 @@
+{
+  "case": {
+    "task_id": 560,
+    "stage": "rcl",
+    "protocol": "ejor-two-level-fixed-pes-v4",
+    "dataset": "St_05_Example3_normal",
+    "shape": "cylinder",
+    "weight_level": "weak",
+    "radio_level": "strong",
+    "seed": 13,
+    "algorithm": "improved_GRASP",
+    "ls_budget": 0,
+    "config_id": "RCL10",
+    "tolerance": 0.1,
+    "top_k": null,
+    "packing_selection": "fixed_global_by_shape",
+    "instance": "St_05_Example3_normal_seq13_cylinder_999999_1.txt",
+    "piece_count": 25
+  },
+  "bundle_id": "0e70cdc1-bba1-4e53-9658-452f711e72d5",
+  "status": "success",
+  "validation_ok": true,
+  "seed_time_ns": 1793370717336591034,
+  "internal_seeds": {
+    "piece": 3353895265,
+    "position": 3895701236,
+    "kick": 2410954734,
+    "global": 4288548298
+  },
+  "order_seed": 13,
+  "algorithm": "improved_GRASP",
+  "search_settings": {
+    "iter_limit_per_iter": 1,
+    "ls_evaluation_limit": 0,
+    "restart_limit": 1,
+    "rcl_tolerance": 0.1,
+    "rcl_top_k": null,
+    "time_limit": null,
+    "alpha": 1,
+    "ls_policy": "systematic"
+  },
+  "method": {
+    "pes": "minimum_aabb_edges_len",
+    "selection_range": "bottom_top",
+    "parameter_scope": "global_by_shape",
+    "radio_priority": true,
+    "cache": "run_scoped",
+    "rcl": "pooled_orientation_position",
+    "warmup": "none"
+  },
+  "best_N": 5,
+  "best_U": 0.11562895933100267,
+  "best_U_star": 0.13901969886139942,
+  "objective": 4.860980301138601,
+  "origin_N": 5,
+  "origin_U_star": 0.13901969886139942,
+  "origin_objective": 4.860980301138601,
+  "algorithm_wall_s": 184.8538009680342,
+  "reported_algorithm_wall_s": 184.85372286802158,
+  "counts": {
+    "construction": 1
+  },
+  "cache_counts": {
+    "BIN_RANK": 25,
+    "SEARCH": 250,
+    "SEARCH_SUCCEEDED": 242,
+    "POOLED_RCL": 25,
+    "HARD_CONSTRAINT_REJECT": 35,
+    "SEARCH_FAILED": 8,
+    "RUN_END": 1
+  },
+  "rcl_histograms": {
+    "pooled": {
+      "11": 1,
+      "1": 6,
+      "8": 3,
+      "3": 3,
+      "2": 5,
+      "10": 3,
+      "4": 3,
+      "13": 1
+    },
+    "orientation_count": {}
+  },
+  "history": [
+    {
+      "kind": "construction",
+      "time_s": 184.67248929315247,
+      "N": 5,
+      "U": 0.11562895933100267,
+      "U_star": 0.13901969886139942,
+      "objective": 4.860980301138601,
+      "ls_evaluations": 0,
+      "kicks": 0,
+      "constructions": 1,
+      "new_best": true
+    }
+  ],
+  "ls_end_events": [
+    {
+      "restart": 1,
+      "ls_policy": "systematic",
+      "stop_reason": "evaluation_limit",
+      "local_optimum": false,
+      "ls_evaluations": 0,
+      "objective": 4.860980301138601
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "scope": "piece identity, geometry, occupancy and N/U/U*; accessibility enforced by engine, not independently revalidated",
+    "bin_volumes": [
+      1012144,
+      91298,
+      418090,
+      101560,
+      768980
+    ],
+    "bin_filling_rates": [
+      0.2446271630057924,
+      0.02206600120941569,
+      0.10104903114684446,
+      0.024546245074681346,
+      0.18585635621827945
+    ],
+    "placements": [
+      {
+        "bin": 0,
+        "piece_index": 0,
+        "orientation": "y_90",
+        "translation": [
+          51,
+          8,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 1,
+        "orientation": "y_180",
+        "translation": [
+          14,
+          40,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 3,
+        "orientation": "z_270",
+        "translation": [
+          2,
+          55,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 5,
+        "orientation": "z_270",
+        "translation": [
+          70,
+          2,
+          32
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 6,
+        "orientation": "x_90",
+        "translation": [
+          56,
+          62,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 7,
+        "orientation": "x_0",
+        "translation": [
+          16,
+          101,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 8,
+        "orientation": "x_270",
+        "translation": [
+          93,
+          62,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 9,
+        "orientation": "x_180",
+        "translation": [
+          53,
+          25,
+          50
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 10,
+        "orientation": "x_270",
+        "translation": [
+          45,
+          79,
+          47
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 12,
+        "orientation": "x_90",
+        "translation": [
+          19,
+          33,
+          125
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 14,
+        "orientation": "y_90",
+        "translation": [
+          48,
+          69,
+          47
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 2,
+        "orientation": "y_90",
+        "translation": [
+          17,
+          20,
+          0
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 4,
+        "orientation": "y_270",
+        "translation": [
+          2,
+          35,
+          0
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 21,
+        "orientation": "z_270",
+        "translation": [
+          70,
+          2,
+          0
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 23,
+        "orientation": "z_90",
+        "translation": [
+          6,
+          92,
+          0
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 24,
+        "orientation": "y_90",
+        "translation": [
+          47,
+          30,
+          33
+        ]
+      },
+      {
+        "bin": 3,
+        "piece_index": 11,
+        "orientation": "y_90",
+        "translation": [
+          35,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 13,
+        "orientation": "x_270",
+        "translation": [
+          20,
+          17,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 15,
+        "orientation": "x_270",
+        "translation": [
+          48,
+          3,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 16,
+        "orientation": "y_90",
+        "translation": [
+          17,
+          19,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 17,
+        "orientation": "x_270",
+        "translation": [
+          61,
+          49,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 18,
+        "orientation": "y_180",
+        "translation": [
+          2,
+          70,
+          68
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 19,
+        "orientation": "z_270",
+        "translation": [
+          13,
+          42,
+          68
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 20,
+        "orientation": "x_90",
+        "translation": [
+          90,
+          56,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 22,
+        "orientation": "x_0",
+        "translation": [
+          65,
+          1,
+          85
+        ]
+      }
+    ]
+  },
+  "mean_piece_count_without_emptiest": 6.0,
+  "bin_capacity": 4137496.374333679,
+  "max_piece_volume": 144000,
+  "max_piece_radio": 1097.007190461528,
+  "weight_capacity": 1481207.2,
+  "radio_capacity": 1097.007190461528,
+  "piece_count": 25,
+  "hostname": "gpu001.aire.lee.alces.network",
+  "python": "3.13.2 | packaged by conda-forge | (main, Feb 17 2025, 14:10:22) [GCC 13.3.0]",
+  "resolved_limits": {
+    "piece_count": 25,
+    "kick_failed_repacking_threshold": null,
+    "ls_repacks_per_restart": null,
+    "kick_in_ls_budget": false,
+    "deadline_policy": "finish in-flight call; start no new call after expiry"
+  },
+  "tolerance": 0.1,
+  "top_k": null,
+  "host_max_rss_kib": 6698788,
+  "total_wall_s": 188.18926132004708
+}
