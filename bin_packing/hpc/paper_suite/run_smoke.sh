@@ -18,7 +18,7 @@ reference_args=(--ca-json-dir "$reference_dir")
 printf 'Reusing existing CA references: %s\n' "$reference_dir"
 read -r -a smoke_shapes <<< "${SMOKE_SHAPES:-cube cylinder}"
 dataset="${SMOKE_DATASET:-shapesnew}"
-python "$script_dir/suite.py" prepare --project "$project" --ca-summary "$summary" \
+python "$script_dir/suite.py" prepare --plan v3 --project "$project" --ca-summary "$summary" \
     --output "$bundle" --datasets "$dataset" --tuning-datasets "$dataset" \
     --shapes "${smoke_shapes[@]}" "${reference_args[@]}" \
     --time-limit "${SMOKE_TIME_LIMIT:-30}" --smoke

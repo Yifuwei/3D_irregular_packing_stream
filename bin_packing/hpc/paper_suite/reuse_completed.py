@@ -33,7 +33,7 @@ def _verified_bytes(root,manifest,name,text=False):
     return verified_bytes(root,manifest,name)
 
 
-def import_completed(bundle,source):
+def import_completed(bundle,source,stages=('calibration','sensitivity')):
     """Validate all matching cases before saving; preserve original provenance."""
     bundle,source=Path(bundle).resolve(),Path(source).resolve()
     if bundle==source:raise ValueError('Reuse requires a new bundle; source is read-only')
@@ -41,7 +41,7 @@ def import_completed(bundle,source):
     old=json.loads((source/'manifest.json').read_text())
     capacities=json.loads((source/'results/calibration/selection.json').read_text())
     pending=[];groups=defaultdict(list);checked=set()
-    for stage in ('calibration','sensitivity'):
+    for stage in stages:
         indexed={_identity(c):c for c in old['profile']['plans'][stage]}
         for case in manifest['profile']['plans'][stage]:
             previous=indexed.get(_identity(case))

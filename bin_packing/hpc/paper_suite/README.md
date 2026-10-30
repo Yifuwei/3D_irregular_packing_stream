@@ -1,3 +1,11 @@
+# Current experiment entry point
+
+The 2026-10-30 plan uses fixed best PES, 360 sensitivity cases, 1440 RCL cases, 216 kick cases and 1080 full comparisons. See [WORK_PLAN.md](WORK_PLAN.md).
+
+Run `bash bin_packing/hpc/paper_suite/run_all.sh --dry-run` to prepare a fresh two-level bundle and inspect all submissions. Omit `--dry-run` to submit. Existing frozen v3 packages retain their original protocol.
+
+The instructions below apply only to the older three-level v3 continuation package.
+
 # EJOR experiments: simple independent flows
 
 Current plan: [WORK_PLAN.md](WORK_PLAN.md).

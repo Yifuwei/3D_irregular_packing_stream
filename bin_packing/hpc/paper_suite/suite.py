@@ -14,7 +14,7 @@ import uuid
 from collections import defaultdict
 
 from protocol import make_plan, choose_ca_parameters, calibrate, select_tolerances, select_tuning, STAGES, VERSION, SEQUENCE_SEEDS, REFERENCE_SEEDS, kick_tuning_datasets
-from worker import run, valid_saved, packing_settings
+from worker import run, valid_saved, packing_settings, read_selections
 
 
 
@@ -26,15 +26,21 @@ def save(path,value):
 
 
 def freeze(project,summary,output,datasets=None,tuning=None,time_limit=3600,smoke=False,
-           shapes=('cube','cylinder'),ca_json_dir=None,reuse_bundle=None):
+           shapes=('cube','cylinder'),ca_json_dir=None,reuse_bundle=None,plan='v3'):
     project=project.resolve()
+    if plan not in ('v3','v4'):raise ValueError('Unknown experiment plan')
+    if plan=='v4' and reuse_bundle is None:
+        raise ValueError('The v4 plan preserves existing capacities; provide --reuse-bundle with completed calibration')
     if reuse_bundle is not None and ca_json_dir is not None:
         raise ValueError('Choose either --reuse-bundle or --ca-json-dir')
     with summary.open(encoding='utf-8-sig',newline='') as stream:
         rows=list(csv.DictReader(stream))
     datasets=datasets or sorted({r['dataset'] for r in rows})
     tuning=tuning or kick_tuning_datasets(datasets)
-    profile=make_plan(datasets,tuning,time_limit=time_limit,smoke=smoke,shapes=shapes,
+    builder=make_plan
+    if plan=='v4':
+        from protocol_v4 import make_plan as builder
+    profile=builder(datasets,tuning,time_limit=time_limit,smoke=smoke,shapes=shapes,
                       **(dict(seeds=(3,),reference_seeds=REFERENCE_SEEDS if (ca_json_dir or reuse_bundle) else (3,),
                               full_seeds=(3,)) if smoke else {}))
     geometry_ca=choose_ca_parameters(rows,datasets)
@@ -87,8 +93,8 @@ def freeze(project,summary,output,datasets=None,tuning=None,time_limit=3600,smok
                     if not (output/dest).exists():copy(data,dest)
                     paths.append(dest)
                 geometry[name]=sorted(set(paths))
-        save(output/'parameter_plan.json',dict(protocol=VERSION,profile=profile,ca_parameters=ca,geometry_ca_parameters=geometry_ca,
-            conventions=dict(metaheuristic_packing_scope='fixed per bin shape; historical CA calibration/sensitivity unchanged',
+        save(output/'parameter_plan.json',dict(protocol=profile['protocol'],profile=profile,ca_parameters=ca,geometry_ca_parameters=geometry_ca,
+            conventions=dict(metaheuristic_packing_scope=('fixed overall best PES per shape' if plan=='v4' else 'fixed per bin shape; historical calibration unchanged'),
                 kick_trigger='ceil(n/2) consecutive rejected LS repacking calls; reset on improvement',
                 kick_size='ceil(fraction*n) changed orientation labels',
                 hybrid_budget='n LS repacking calls per construction; never reset on improvement',
@@ -128,9 +134,13 @@ def freeze(project,summary,output,datasets=None,tuning=None,time_limit=3600,smok
         save(output/'manifest.json',manifest)
         if reuse_bundle is not None:
             from reuse_completed import import_completed
-            imported=import_completed(output,reuse_bundle)
+            imported=import_completed(output,reuse_bundle,stages=('calibration',) if plan=='v4' else ('calibration','sensitivity'))
             manifest=json.loads((output/'manifest.json').read_text())
             collect(output,'calibration')
+            if plan=='v4':
+                from reuse_candidates_v4 import import_candidates
+                imported['sensitivity']=import_candidates(output,reuse_bundle)
+                manifest=json.loads((output/'manifest.json').read_text())
             collect(output,'sensitivity')
             print(json.dumps(dict(reused=imported),indent=2))
         print(json.dumps(dict(bundle=str(output),tasks={s:len(profile['plans'][s]) for s in STAGES}),indent=2))
@@ -142,7 +152,9 @@ def freeze(project,summary,output,datasets=None,tuning=None,time_limit=3600,smok
 
 def collect(bundle,stage):
     manifest=json.loads((bundle/'manifest.json').read_text())
-    if manifest['profile']['protocol']!=VERSION:
+    from protocol_v4 import VERSION as V4_VERSION
+    is_v4=manifest['profile']['protocol']==V4_VERSION
+    if manifest['profile']['protocol'] not in (VERSION,V4_VERSION):
         raise ValueError('Use the frozen driver belonging to this bundle; protocol mismatch')
     cases=manifest['profile']['plans'][stage]
     records=[]
@@ -152,7 +164,7 @@ def collect(bundle,stage):
         if valid_saved(path,case,manifest['bundle_id']):
             report=json.loads(path.read_text())
             if stage!='calibration':
-                expected_packing=packing_settings(case,manifest)
+                expected_packing=packing_settings(case,manifest,read_selections(bundle,case))
                 if any(report.get('method',{}).get(k)!=expected_packing[k] for k in ('pes','selection_range')):
                     incomplete.append(case['task_id'])
                     continue
@@ -161,7 +173,7 @@ def collect(bundle,stage):
     root=bundle/'results'/stage
     root.mkdir(parents=True,exist_ok=True)
     fields=['task_id','dataset','shape','seed','algorithm','config_id','weight_level','radio_level',
-            'best_N','best_U','best_U_star','objective','algorithm_wall_s','total_wall_s']
+            'pes','selection_range','best_N','best_U','best_U_star','objective','algorithm_wall_s','total_wall_s']
     with (root/'runs.csv').open('w',encoding='utf-8',newline='') as stream:
         writer=csv.DictWriter(stream,fieldnames=fields,extrasaction='ignore')
         writer.writeheader();writer.writerows(records)
@@ -179,6 +191,12 @@ def collect(bundle,stage):
         groups=defaultdict(list)
         for r in records:groups[f"{r['dataset']}|{r['shape']}"].append(r)
         selection={key:calibrate(values) for key,values in groups.items()}
+    elif stage=='sensitivity' and is_v4:
+        from protocol_v4 import select_sensitivity
+        selection=select_sensitivity(records,manifest['profile'])
+        rows=selection['summary']
+        with (root/'summary.csv').open('w',encoding='utf-8',newline='') as stream:
+            writer=csv.DictWriter(stream,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(rows)
     elif stage=='rcl':selection=select_tolerances(records)
     elif stage=='tuning':selection=select_tuning(records)
     else:
@@ -203,7 +221,10 @@ def collect(bundle,stage):
     save(root/'selection.json',selection)
     print(f'{stage}: {len(records)}/{len(cases)} successful; selection saved')
     if stage=='full' and manifest['profile'].get('smoke'):
-        from smoke import verify_smoke
+        if is_v4:
+            from verify_v4 import verify_bundle as verify_smoke
+        else:
+            from smoke import verify_smoke
         verification=verify_smoke(bundle)
         save(bundle/'smoke_verification.json',verification)
         print('Smoke verification: '+verification['status'])
@@ -221,7 +242,9 @@ def submit(bundle,max_parallel=6,small_memory=16,large_memory=32,walltime='12:00
     bundle=bundle.resolve()
     if ',' in str(bundle) or '\n' in str(bundle):raise ValueError('Bundle path cannot contain commas/newlines')
     manifest=json.loads((bundle/'manifest.json').read_text())
-    if manifest['profile']['protocol']!=VERSION:
+    from protocol_v4 import VERSION as V4_VERSION
+    is_v4=manifest['profile']['protocol']==V4_VERSION
+    if manifest['profile']['protocol'] not in (VERSION,V4_VERSION):
         raise ValueError('Use the frozen driver belonging to this bundle; protocol mismatch')
     if flow not in ('all','sensitivity','heuristics'):raise ValueError('Unknown submission flow')
     requested=STAGES[:STAGES.index(through)+1]
@@ -257,7 +280,10 @@ def submit(bundle,max_parallel=6,small_memory=16,large_memory=32,walltime='12:00
         submissions.append(dict(job_id=job,command=command))
         if not dry_run:save(history_path,submissions)
         return job
-    from submission_graph import PARENTS
+    if is_v4:
+        from protocol_v4 import PARENTS
+    else:
+        from submission_graph import PARENTS
     stages=requested
     grouped={}
     for stage in stages:
@@ -266,8 +292,11 @@ def submit(bundle,max_parallel=6,small_memory=16,large_memory=32,walltime='12:00
             path=bundle/'results'/stage/f"task_{case['task_id']}.json"
             done=valid_saved(path,case,manifest['bundle_id'])
             if done and stage!='calibration':
-                report=json.loads(path.read_text());cfg=packing_settings(case,manifest)
-                done=all(report.get('method',{}).get(k)==cfg[k] for k in ('pes','selection_range'))
+                report=json.loads(path.read_text())
+                try:
+                    cfg=packing_settings(case,manifest,read_selections(bundle,case))
+                    done=all(report.get('method',{}).get(k)==cfg[k] for k in ('pes','selection_range'))
+                except (OSError,ValueError,KeyError):done=False
             if not done:groups[memory_for(case,small_memory,large_memory)].append(case['task_id'])
         grouped[stage]=groups
     collectors={}
@@ -309,6 +338,7 @@ def main():
     prepare.add_argument('--datasets',nargs='+');prepare.add_argument('--tuning-datasets',nargs='+')
     prepare.add_argument('--time-limit',type=float,default=3600)
     prepare.add_argument('--smoke',action='store_true')
+    prepare.add_argument('--plan',choices=('v3','v4'),default='v4')
     prepare.add_argument('--shapes',nargs='+',choices=('cube','cylinder'),default=('cube','cylinder'))
     prepare.add_argument('--ca-json-dir',type=Path,help='Reuse validated historical CA placements; no calibration GPU tasks')
     prepare.add_argument('--reuse-bundle',type=Path,help='Import validated calibration and matching sensitivity results; never rerun completed matching cases')
@@ -328,14 +358,19 @@ def main():
     args=parser.parse_args()
     if args.command=='prepare':
         freeze(args.project,args.ca_summary,args.output,args.datasets,args.tuning_datasets,args.time_limit,args.smoke,
-               args.shapes,args.ca_json_dir,args.reuse_bundle)
+               args.shapes,args.ca_json_dir,args.reuse_bundle,args.plan)
         return 0
     if args.command=='run':
         index=json.loads(args.task_map.read_text())[args.index] if args.task_map else args.index
         return run(args.bundle,args.stage,index)
     if args.command=='collect':return collect(args.bundle,args.stage)
     if args.command=='verify-smoke':
-        from smoke import verify_smoke
+        profile=json.loads((args.bundle/'manifest.json').read_text())['profile']
+        from protocol_v4 import VERSION as V4_VERSION
+        if profile['protocol']==V4_VERSION:
+            from verify_v4 import verify_bundle as verify_smoke
+        else:
+            from smoke import verify_smoke
         verification=verify_smoke(args.bundle)
         save(args.bundle/'smoke_verification.json',verification)
         print(json.dumps(verification,indent=2))

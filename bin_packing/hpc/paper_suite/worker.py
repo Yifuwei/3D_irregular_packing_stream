@@ -59,8 +59,12 @@ def settings_for(case,profile,selections):
     return algorithm,kw
 
 
-def packing_settings(case,manifest):
-    """Fixed per-shape heuristic parameters; retain historical CA baselines."""
+def packing_settings(case,manifest,selections=None):
+    """Resolve explicit sensitivity candidates or the selected shared parameters."""
+    from protocol_v4 import VERSION as V4_VERSION
+    if case.get('protocol')==V4_VERSION:
+        from protocol_v4 import packing_settings as resolve
+        return resolve(case,manifest,selections)
     if case['stage'] in ('sensitivity','rcl','tuning','full','memory'):
         from protocol import SHAPE_PARAMETERS
         selected=manifest['profile'].get('metaheuristic_parameters',SHAPE_PARAMETERS)[case['shape']]
@@ -72,6 +76,7 @@ def packing_settings(case,manifest):
 
 def read_selections(bundle,case):
     selections={}
+    from protocol_v4 import VERSION as V4_VERSION
     if case['stage']=='full':
         selections['rcl']=json.loads((bundle/'results/rcl/selection.json').read_text())
         selections['tuning']=json.loads((bundle/'results/tuning/selection.json').read_text())
@@ -110,7 +115,8 @@ def run(bundle,stage,index):
     manifest=json.loads((bundle/'manifest.json').read_text())
     profile=manifest['profile']
     from protocol import VERSION
-    if profile['protocol'] not in (VERSION,VERSION+'-memory-only'):
+    from protocol_v4 import VERSION as V4_VERSION
+    if profile['protocol'] not in (VERSION,VERSION+'-memory-only',V4_VERSION):
         raise ValueError('Use the frozen driver belonging to this bundle; protocol mismatch')
     case=profile['plans'][stage][index]
     out=bundle/'results'/stage
@@ -150,8 +156,8 @@ def run(bundle,stage,index):
         shape,size,_,_,objects=loader.load_instance(Path(case['instance']).stem)
         restore_radio_precision(objects,project/'instances'/case['instance'])
         if not objects:raise ValueError('Empty instance')
-        cfg=packing_settings(case,manifest)
         selections=read_selections(bundle,case)
+        cfg=packing_settings(case,manifest,selections)
         algorithm,search=settings_for(case,profile,selections)
         capacity=math.prod(size) if shape=='cube' else math.pi*(size[0]/2)**2*size[2]
         radio_limit=sum(o['radio'] for o in objects)+1.
@@ -165,7 +171,7 @@ def run(bundle,stage,index):
         labels=['x_0']+[f'{axis}_{degree}' for degree in (90,180,270) for axis in ('x','y','z')]
         counts=Counter()
         cache_counts=Counter()
-        rcl_counts={'pooled':Counter()}
+        rcl_counts={'pooled':Counter(),'orientation_count':Counter()}
         history=[]
         ls_end_events=[]
         best=[float('inf')]
@@ -181,6 +187,8 @@ def run(bundle,stage,index):
                 cache_counts[event['event']]+=1
             def rcl_event(event):
                 rcl_counts['pooled'][event['active_rcl_size']]+=1
+                if 'rcl_orientation_count' in event:
+                    rcl_counts['orientation_count'][event['rcl_orientation_count']]+=1
             def observe(kind,packed):
                 counts[kind]+=1
                 n,u,us=algorithms.get_final_performance(objects,size,shape,packed[0])

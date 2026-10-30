@@ -30,6 +30,9 @@ def prepare(bundle):
     bundle=Path(bundle).resolve()
     ensure_idle(bundle)
     old=json.loads((bundle/'manifest.json').read_text())
+    from protocol import VERSION as LEGACY_VERSION
+    if old['profile']['protocol']!=LEGACY_VERSION:
+        raise ValueError('In-place rerun is for legacy v3 only; use submit_all.sh --pending for a v4 bundle')
     stamp='before_global_parameters_'+uuid.uuid4().hex[:12]
     backup=bundle/'configuration_history'/stamp
     backup.mkdir(parents=True)
