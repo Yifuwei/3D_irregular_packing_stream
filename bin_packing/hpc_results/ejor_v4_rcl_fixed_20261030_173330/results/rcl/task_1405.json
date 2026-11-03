@@ -1,0 +1,276 @@
+{
+  "case": {
+    "task_id": 1405,
+    "stage": "rcl",
+    "protocol": "ejor-two-level-fixed-pes-v4",
+    "dataset": "st05_e2",
+    "shape": "cylinder",
+    "weight_level": "strong",
+    "radio_level": "weak",
+    "seed": 3,
+    "algorithm": "improved_GRASP",
+    "ls_budget": 0,
+    "config_id": "RCL20",
+    "tolerance": 0.2,
+    "top_k": null,
+    "packing_selection": "fixed_global_by_shape",
+    "instance": "st05_e2_seq3_cylinder_999999_1.txt",
+    "piece_count": 12
+  },
+  "bundle_id": "7fa35c2f-4ee6-4001-85a3-f0f87c832626",
+  "status": "success",
+  "validation_ok": true,
+  "seed_time_ns": 1793405753659885649,
+  "internal_seeds": {
+    "piece": 1533600532,
+    "position": 706483837,
+    "kick": 3133691686,
+    "global": 1301560989
+  },
+  "order_seed": 3,
+  "algorithm": "improved_GRASP",
+  "search_settings": {
+    "iter_limit_per_iter": 1,
+    "ls_evaluation_limit": 0,
+    "restart_limit": 1,
+    "rcl_tolerance": 0.2,
+    "rcl_top_k": null,
+    "time_limit": null,
+    "alpha": 1,
+    "ls_policy": "systematic"
+  },
+  "method": {
+    "pes": "minimum_aabb_edges_len",
+    "selection_range": "bottom_top",
+    "parameter_scope": "global_by_shape",
+    "radio_priority": true,
+    "cache": "run_scoped",
+    "rcl": "pooled_orientation_position",
+    "warmup": "none"
+  },
+  "best_N": 3,
+  "best_U": 0.10586047544364806,
+  "best_U_star": 0.1458587380870367,
+  "objective": 2.854141261912963,
+  "origin_N": 3,
+  "origin_U_star": 0.1458587380870367,
+  "origin_objective": 2.854141261912963,
+  "algorithm_wall_s": 92.67402091692202,
+  "reported_algorithm_wall_s": 92.6739343169611,
+  "counts": {
+    "construction": 1
+  },
+  "cache_counts": {
+    "BIN_RANK": 12,
+    "SEARCH": 120,
+    "SEARCH_SUCCEEDED": 120,
+    "POOLED_RCL": 12,
+    "HARD_CONSTRAINT_REJECT": 8,
+    "RUN_END": 1
+  },
+  "rcl_histograms": {
+    "pooled": {
+      "10": 2,
+      "6": 2,
+      "16": 1,
+      "14": 1,
+      "3": 2,
+      "5": 2,
+      "4": 1,
+      "2": 1
+    },
+    "orientation_count": {
+      "5": 2,
+      "3": 4,
+      "8": 2,
+      "2": 3,
+      "4": 1
+    }
+  },
+  "rcl_orientation_summary": {
+    "events": 12,
+    "mean_distinct_orientations": 4.0,
+    "min_distinct_orientations": 2,
+    "max_distinct_orientations": 8
+  },
+  "history": [
+    {
+      "kind": "construction",
+      "time_s": 92.5857327231206,
+      "N": 3,
+      "U": 0.10586047544364806,
+      "U_star": 0.1458587380870367,
+      "objective": 2.854141261912963,
+      "ls_evaluations": 0,
+      "kicks": 0,
+      "constructions": 1,
+      "new_best": true
+    }
+  ],
+  "ls_end_events": [
+    {
+      "restart": 1,
+      "ls_policy": "systematic",
+      "stop_reason": "evaluation_limit",
+      "local_optimum": false,
+      "ls_evaluations": 0,
+      "objective": 2.854141261912963
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "scope": "piece identity, geometry, occupancy and N/U/U*; accessibility enforced by engine, not independently revalidated",
+    "bin_volumes": [
+      605720,
+      601260,
+      107012
+    ],
+    "bin_filling_rates": [
+      0.1463977113690034,
+      0.14531976480506997,
+      0.02586395015687082
+    ],
+    "placements": [
+      {
+        "bin": 0,
+        "piece_index": 0,
+        "orientation": "z_180",
+        "translation": [
+          2,
+          25,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 1,
+        "orientation": "x_0",
+        "translation": [
+          30,
+          24,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 2,
+        "orientation": "x_0",
+        "translation": [
+          84,
+          4,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 3,
+        "orientation": "x_180",
+        "translation": [
+          45,
+          75,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 4,
+        "orientation": "y_270",
+        "translation": [
+          81,
+          43,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 5,
+        "orientation": "z_180",
+        "translation": [
+          16,
+          4,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 6,
+        "orientation": "x_180",
+        "translation": [
+          1,
+          41,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 7,
+        "orientation": "z_180",
+        "translation": [
+          35,
+          41,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 8,
+        "orientation": "x_0",
+        "translation": [
+          62,
+          39,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 9,
+        "orientation": "y_90",
+        "translation": [
+          65,
+          7,
+          61
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 10,
+        "orientation": "x_90",
+        "translation": [
+          44,
+          4,
+          90
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 11,
+        "orientation": "z_90",
+        "translation": [
+          18,
+          1,
+          0
+        ]
+      }
+    ]
+  },
+  "mean_piece_count_without_emptiest": 5.5,
+  "bin_capacity": 4137496.374333679,
+  "max_piece_volume": 144000,
+  "max_piece_radio": 965.1022917367762,
+  "weight_capacity": 633466.2,
+  "radio_capacity": 2411.632561920667,
+  "piece_count": 12,
+  "hostname": "gpu001.aire.lee.alces.network",
+  "python": "3.13.2 | packaged by conda-forge | (main, Feb 17 2025, 14:10:22) [GCC 13.3.0]",
+  "resolved_limits": {
+    "piece_count": 12,
+    "kick_failed_repacking_threshold": null,
+    "ls_repacks_per_restart": null,
+    "kick_in_ls_budget": false,
+    "deadline_policy": "finish in-flight call; start no new call after expiry"
+  },
+  "tolerance": 0.2,
+  "top_k": null,
+  "host_max_rss_kib": 3925560,
+  "total_wall_s": 94.92605838202871
+}

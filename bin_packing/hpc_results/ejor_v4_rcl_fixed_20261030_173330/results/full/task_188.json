@@ -1,0 +1,917 @@
+{
+  "case": {
+    "task_id": 188,
+    "stage": "full",
+    "protocol": "ejor-two-level-fixed-pes-v4",
+    "dataset": "Merged3_normal",
+    "shape": "cylinder",
+    "weight_level": "strong",
+    "radio_level": "strong",
+    "seed": 13,
+    "algorithm": "improved_GRASP_ILS",
+    "config_id": "improved_GRASP_ILS_Wstrong_Rstrong",
+    "packing_selection": "fixed_global_by_shape",
+    "instance": "Merged3_normal_seq13_cylinder_999999_1.txt",
+    "piece_count": 45
+  },
+  "bundle_id": "7fa35c2f-4ee6-4001-85a3-f0f87c832626",
+  "status": "success",
+  "validation_ok": true,
+  "seed_time_ns": 1793672084648408183,
+  "internal_seeds": {
+    "piece": 2901019228,
+    "position": 1953406913,
+    "kick": 3806574213,
+    "global": 2478284612
+  },
+  "order_seed": 13,
+  "algorithm": "improved_GRASP_ILS",
+  "search_settings": {
+    "time_limit": 3600,
+    "alpha": 1,
+    "restart_limit": null,
+    "rcl_tolerance": 0.0,
+    "rcl_top_k": 10,
+    "iter_limit_per_iter": null,
+    "kick_trigger_time": "auto",
+    "kick_level": "medium"
+  },
+  "method": {
+    "pes": "minimum_aabb_edges_len",
+    "selection_range": "bottom_top",
+    "parameter_scope": "global_by_shape",
+    "radio_priority": true,
+    "cache": "run_scoped",
+    "rcl": "pooled_orientation_position",
+    "warmup": "none"
+  },
+  "best_N": 9,
+  "best_U": 0.0937548303208163,
+  "best_U_star": 0.10513495274089214,
+  "objective": 8.894865047259108,
+  "origin_N": 9,
+  "origin_U_star": 0.10513495274089214,
+  "origin_objective": 8.894865047259108,
+  "algorithm_wall_s": 3600.9104894478805,
+  "reported_algorithm_wall_s": 3600.910406997893,
+  "counts": {
+    "construction": 26,
+    "ls": 1154,
+    "kick": 26
+  },
+  "cache_counts": {
+    "BIN_RANK": 27792,
+    "SEARCH": 16596,
+    "SEARCH_SUCCEEDED": 14985,
+    "POOLED_RCL": 1170,
+    "HARD_CONSTRAINT_REJECT": 108703,
+    "SEARCH_FAILED": 1611,
+    "RESTORE_REFERENCE_SUCCESS": 16358,
+    "RESTORE_CACHED_SUCCESS": 3644,
+    "SKIP_CACHED_FAILURE": 870,
+    "RESTORE_CACHED_CANDIDATES": 3120,
+    "RUN_END": 1
+  },
+  "rcl_histograms": {
+    "pooled": {
+      "10": 1170
+    },
+    "orientation_count": {
+      "8": 190,
+      "10": 77,
+      "7": 165,
+      "5": 191,
+      "6": 232,
+      "4": 206,
+      "3": 39,
+      "9": 30,
+      "2": 39,
+      "1": 1
+    }
+  },
+  "rcl_orientation_summary": {
+    "events": 1170,
+    "mean_distinct_orientations": 6.052991452991453,
+    "min_distinct_orientations": 1,
+    "max_distinct_orientations": 10
+  },
+  "history": [
+    {
+      "kind": "construction",
+      "time_s": 87.06337893288583,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 0,
+      "kicks": 0,
+      "constructions": 1,
+      "new_best": true
+    },
+    {
+      "kind": "ls",
+      "time_s": 106.83173825917765,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 10,
+      "kicks": 0,
+      "constructions": 1
+    },
+    {
+      "kind": "ls",
+      "time_s": 125.54058041004464,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 20,
+      "kicks": 0,
+      "constructions": 1
+    },
+    {
+      "kind": "construction",
+      "time_s": 234.58392928075045,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 45,
+      "kicks": 1,
+      "constructions": 2
+    },
+    {
+      "kind": "ls",
+      "time_s": 243.69997483491898,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 50,
+      "kicks": 1,
+      "constructions": 2
+    },
+    {
+      "kind": "construction",
+      "time_s": 380.6308154631406,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 90,
+      "kicks": 2,
+      "constructions": 3
+    },
+    {
+      "kind": "construction",
+      "time_s": 527.9081977121532,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 135,
+      "kicks": 3,
+      "constructions": 4
+    },
+    {
+      "kind": "construction",
+      "time_s": 667.9451089641079,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 180,
+      "kicks": 4,
+      "constructions": 5
+    },
+    {
+      "kind": "construction",
+      "time_s": 808.7519845957868,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 225,
+      "kicks": 5,
+      "constructions": 6
+    },
+    {
+      "kind": "construction",
+      "time_s": 961.3159252409823,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 270,
+      "kicks": 6,
+      "constructions": 7
+    },
+    {
+      "kind": "construction",
+      "time_s": 1106.3309945589863,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 315,
+      "kicks": 7,
+      "constructions": 8
+    },
+    {
+      "kind": "construction",
+      "time_s": 1243.9162680627778,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 360,
+      "kicks": 8,
+      "constructions": 9
+    },
+    {
+      "kind": "construction",
+      "time_s": 1386.405538787134,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 405,
+      "kicks": 9,
+      "constructions": 10
+    },
+    {
+      "kind": "construction",
+      "time_s": 1525.3012743219733,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 450,
+      "kicks": 10,
+      "constructions": 11
+    },
+    {
+      "kind": "construction",
+      "time_s": 1665.3406090191565,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 495,
+      "kicks": 11,
+      "constructions": 12
+    },
+    {
+      "kind": "construction",
+      "time_s": 1797.4568295949139,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 540,
+      "kicks": 12,
+      "constructions": 13
+    },
+    {
+      "kind": "construction",
+      "time_s": 1937.5241133221425,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 585,
+      "kicks": 13,
+      "constructions": 14
+    },
+    {
+      "kind": "construction",
+      "time_s": 2076.555305235088,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 630,
+      "kicks": 14,
+      "constructions": 15
+    },
+    {
+      "kind": "construction",
+      "time_s": 2205.2452331660315,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 675,
+      "kicks": 15,
+      "constructions": 16
+    },
+    {
+      "kind": "construction",
+      "time_s": 2343.0136626930907,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 720,
+      "kicks": 16,
+      "constructions": 17
+    },
+    {
+      "kind": "construction",
+      "time_s": 2480.3101463480853,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 765,
+      "kicks": 17,
+      "constructions": 18
+    },
+    {
+      "kind": "construction",
+      "time_s": 2612.601838153787,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 810,
+      "kicks": 18,
+      "constructions": 19
+    },
+    {
+      "kind": "construction",
+      "time_s": 2751.302518916782,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 855,
+      "kicks": 19,
+      "constructions": 20
+    },
+    {
+      "kind": "construction",
+      "time_s": 2892.9756092447788,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 900,
+      "kicks": 20,
+      "constructions": 21
+    },
+    {
+      "kind": "construction",
+      "time_s": 3022.7206533458084,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 945,
+      "kicks": 21,
+      "constructions": 22
+    },
+    {
+      "kind": "construction",
+      "time_s": 3151.137116871774,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 990,
+      "kicks": 22,
+      "constructions": 23
+    },
+    {
+      "kind": "construction",
+      "time_s": 3285.219922180753,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 1035,
+      "kicks": 23,
+      "constructions": 24
+    },
+    {
+      "kind": "construction",
+      "time_s": 3417.686988402158,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 1080,
+      "kicks": 24,
+      "constructions": 25
+    },
+    {
+      "kind": "construction",
+      "time_s": 3555.7588114407845,
+      "N": 9,
+      "U": 0.0937548303208163,
+      "U_star": 0.10513495274089214,
+      "objective": 8.894865047259108,
+      "ls_evaluations": 1125,
+      "kicks": 25,
+      "constructions": 26
+    }
+  ],
+  "ls_end_events": [],
+  "validation": {
+    "ok": true,
+    "scope": "piece identity, geometry, occupancy and N/U/U*; accessibility enforced by engine, not independently revalidated",
+    "bin_volumes": [
+      225616,
+      222397,
+      229174,
+      42303,
+      228090,
+      152717,
+      3776,
+      42303,
+      27662
+    ],
+    "bin_filling_rates": [
+      0.1621525948725268,
+      0.15983906567736927,
+      0.16470976693725825,
+      0.030403611538598777,
+      0.16393068472304553,
+      0.10975931596672078,
+      0.002713850960209654,
+      0.030403611538598777,
+      0.01988097067301892
+    ],
+    "placements": [
+      {
+        "bin": 0,
+        "piece_index": 0,
+        "orientation": "z_180",
+        "translation": [
+          37,
+          5,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 1,
+        "orientation": "y_180",
+        "translation": [
+          11,
+          14,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 2,
+        "orientation": "x_270",
+        "translation": [
+          42,
+          14,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 3,
+        "orientation": "x_0",
+        "translation": [
+          7,
+          51,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 4,
+        "orientation": "x_0",
+        "translation": [
+          42,
+          65,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 5,
+        "orientation": "y_270",
+        "translation": [
+          1,
+          50,
+          55
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 6,
+        "orientation": "x_90",
+        "translation": [
+          7,
+          33,
+          79
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 7,
+        "orientation": "y_180",
+        "translation": [
+          42,
+          3,
+          61
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 13,
+        "orientation": "y_90",
+        "translation": [
+          82,
+          20,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 15,
+        "orientation": "y_90",
+        "translation": [
+          82,
+          35,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 21,
+        "orientation": "y_90",
+        "translation": [
+          58,
+          1,
+          55
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 8,
+        "orientation": "x_180",
+        "translation": [
+          42,
+          2,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 9,
+        "orientation": "x_180",
+        "translation": [
+          1,
+          33,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 10,
+        "orientation": "x_90",
+        "translation": [
+          28,
+          44,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 12,
+        "orientation": "z_90",
+        "translation": [
+          36,
+          18,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 14,
+        "orientation": "x_0",
+        "translation": [
+          50,
+          1,
+          49
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 16,
+        "orientation": "y_180",
+        "translation": [
+          54,
+          42,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 22,
+        "orientation": "y_270",
+        "translation": [
+          29,
+          43,
+          39
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 25,
+        "orientation": "z_90",
+        "translation": [
+          85,
+          9,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 34,
+        "orientation": "z_90",
+        "translation": [
+          23,
+          14,
+          0
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 11,
+        "orientation": "y_270",
+        "translation": [
+          25,
+          12,
+          0
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 17,
+        "orientation": "y_270",
+        "translation": [
+          12,
+          25,
+          0
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 18,
+        "orientation": "z_270",
+        "translation": [
+          37,
+          5,
+          61
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 19,
+        "orientation": "z_270",
+        "translation": [
+          61,
+          29,
+          0
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 20,
+        "orientation": "x_180",
+        "translation": [
+          2,
+          52,
+          26
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 23,
+        "orientation": "x_0",
+        "translation": [
+          21,
+          20,
+          73
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 26,
+        "orientation": "x_270",
+        "translation": [
+          20,
+          34,
+          25
+        ]
+      },
+      {
+        "bin": 3,
+        "piece_index": 24,
+        "orientation": "y_180",
+        "translation": [
+          1,
+          29,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 27,
+        "orientation": "y_270",
+        "translation": [
+          19,
+          17,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 28,
+        "orientation": "y_90",
+        "translation": [
+          19,
+          17,
+          25
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 29,
+        "orientation": "z_180",
+        "translation": [
+          23,
+          20,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 30,
+        "orientation": "y_90",
+        "translation": [
+          24,
+          42,
+          27
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 32,
+        "orientation": "x_180",
+        "translation": [
+          43,
+          10,
+          38
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 35,
+        "orientation": "x_180",
+        "translation": [
+          5,
+          14,
+          67
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 36,
+        "orientation": "x_270",
+        "translation": [
+          67,
+          30,
+          37
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 37,
+        "orientation": "x_270",
+        "translation": [
+          46,
+          48,
+          62
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 44,
+        "orientation": "y_270",
+        "translation": [
+          1,
+          50,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 31,
+        "orientation": "y_180",
+        "translation": [
+          28,
+          10,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 38,
+        "orientation": "z_90",
+        "translation": [
+          18,
+          18,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 39,
+        "orientation": "z_270",
+        "translation": [
+          2,
+          52,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 40,
+        "orientation": "x_180",
+        "translation": [
+          67,
+          9,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 41,
+        "orientation": "z_270",
+        "translation": [
+          28,
+          67,
+          0
+        ]
+      },
+      {
+        "bin": 6,
+        "piece_index": 33,
+        "orientation": "x_270",
+        "translation": [
+          8,
+          32,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 42,
+        "orientation": "z_270",
+        "translation": [
+          29,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 8,
+        "piece_index": 43,
+        "orientation": "x_90",
+        "translation": [
+          39,
+          1,
+          0
+        ]
+      }
+    ]
+  },
+  "mean_piece_count_without_emptiest": 5.5,
+  "bin_capacity": 1391380.755746547,
+  "max_piece_volume": 55296,
+  "max_piece_radio": 1090.0369006582423,
+  "weight_capacity": 230616.75,
+  "radio_capacity": 1090.0369006582423,
+  "piece_count": 45,
+  "hostname": "gpu025.aire.lee.alces.network",
+  "python": "3.13.2 | packaged by conda-forge | (main, Feb 17 2025, 14:10:22) [GCC 13.3.0]",
+  "resolved_limits": {
+    "piece_count": 45,
+    "kick_failed_repacking_threshold": 23,
+    "ls_repacks_per_restart": 45,
+    "kick_in_ls_budget": false,
+    "deadline_policy": "finish in-flight call; start no new call after expiry"
+  },
+  "host_max_rss_kib": 8138868,
+  "total_wall_s": 3604.2931897328235
+}

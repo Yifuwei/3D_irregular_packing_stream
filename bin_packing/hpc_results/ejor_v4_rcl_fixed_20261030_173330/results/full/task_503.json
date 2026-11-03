@@ -1,0 +1,3088 @@
+{
+  "case": {
+    "task_id": 503,
+    "stage": "full",
+    "protocol": "ejor-two-level-fixed-pes-v4",
+    "dataset": "chess",
+    "shape": "cylinder",
+    "weight_level": "weak",
+    "radio_level": "weak",
+    "seed": 13,
+    "algorithm": "improved_GRASP_ILS",
+    "config_id": "improved_GRASP_ILS_Wweak_Rweak",
+    "packing_selection": "fixed_global_by_shape",
+    "instance": "chess_seq13_cylinder_999999_1.txt",
+    "piece_count": 32
+  },
+  "bundle_id": "7fa35c2f-4ee6-4001-85a3-f0f87c832626",
+  "status": "success",
+  "validation_ok": true,
+  "seed_time_ns": 1793513379512060513,
+  "internal_seeds": {
+    "piece": 3700287307,
+    "position": 2595311588,
+    "kick": 3279693131,
+    "global": 1902279615
+  },
+  "order_seed": 13,
+  "algorithm": "improved_GRASP_ILS",
+  "search_settings": {
+    "time_limit": 3600,
+    "alpha": 1,
+    "restart_limit": null,
+    "rcl_tolerance": 0.0,
+    "rcl_top_k": 10,
+    "iter_limit_per_iter": null,
+    "kick_trigger_time": "auto",
+    "kick_level": "medium"
+  },
+  "method": {
+    "pes": "minimum_aabb_edges_len",
+    "selection_range": "bottom_top",
+    "parameter_scope": "global_by_shape",
+    "radio_priority": true,
+    "cache": "run_scoped",
+    "rcl": "pooled_orientation_position",
+    "warmup": "none"
+  },
+  "best_N": 3,
+  "best_U": 0.22164836300533547,
+  "best_U_star": 0.246911603583286,
+  "objective": 2.753088396416714,
+  "origin_N": 4,
+  "origin_U_star": 0.21239357420728033,
+  "origin_objective": 3.7876064257927196,
+  "algorithm_wall_s": 3600.0334466379136,
+  "reported_algorithm_wall_s": 3600.033387167845,
+  "counts": {
+    "construction": 230,
+    "ls": 7337,
+    "kick": 215
+  },
+  "cache_counts": {
+    "BIN_RANK": 127114,
+    "SEARCH": 190445,
+    "SEARCH_SUCCEEDED": 111820,
+    "POOLED_RCL": 7360,
+    "HARD_CONSTRAINT_REJECT": 92021,
+    "SEARCH_FAILED": 78625,
+    "RESTORE_REFERENCE_SUCCESS": 11996,
+    "RESTORE_CACHED_SUCCESS": 42774,
+    "SKIP_CACHED_FAILURE": 50888,
+    "RESTORE_CACHED_CANDIDATES": 17025,
+    "RUN_END": 1
+  },
+  "rcl_histograms": {
+    "pooled": {
+      "10": 7109,
+      "8": 39,
+      "5": 19,
+      "9": 19,
+      "1": 26,
+      "4": 39,
+      "2": 28,
+      "7": 20,
+      "6": 39,
+      "3": 22
+    },
+    "orientation_count": {
+      "4": 1629,
+      "7": 993,
+      "6": 1527,
+      "8": 950,
+      "5": 896,
+      "2": 425,
+      "9": 237,
+      "3": 563,
+      "1": 124,
+      "10": 16
+    }
+  },
+  "rcl_orientation_summary": {
+    "events": 7360,
+    "mean_distinct_orientations": 5.389266304347826,
+    "min_distinct_orientations": 1,
+    "max_distinct_orientations": 10
+  },
+  "history": [
+    {
+      "kind": "construction",
+      "time_s": 12.325187073787674,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 0,
+      "kicks": 0,
+      "constructions": 1,
+      "new_best": true
+    },
+    {
+      "kind": "ls",
+      "time_s": 16.10846460191533,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.20002417590224075,
+      "objective": 3.7999758240977592,
+      "ls_evaluations": 10,
+      "kicks": 0,
+      "constructions": 1
+    },
+    {
+      "kind": "ls",
+      "time_s": 19.62675405689515,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.18902955091875173,
+      "objective": 3.8109704490812484,
+      "ls_evaluations": 20,
+      "kicks": 1,
+      "constructions": 1
+    },
+    {
+      "kind": "construction",
+      "time_s": 29.75250615295954,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 32,
+      "kicks": 1,
+      "constructions": 2
+    },
+    {
+      "kind": "ls",
+      "time_s": 37.232701922999695,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 50,
+      "kicks": 2,
+      "constructions": 2
+    },
+    {
+      "kind": "construction",
+      "time_s": 47.95244119083509,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 64,
+      "kicks": 2,
+      "constructions": 3
+    },
+    {
+      "kind": "construction",
+      "time_s": 66.11146509996615,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 96,
+      "kicks": 3,
+      "constructions": 4
+    },
+    {
+      "kind": "ls",
+      "time_s": 75.1408968528267,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2221817109454966,
+      "objective": 2.7778182890545033,
+      "ls_evaluations": 123,
+      "kicks": 4,
+      "constructions": 4,
+      "new_best": true
+    },
+    {
+      "kind": "construction",
+      "time_s": 81.22687805490568,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 128,
+      "kicks": 4,
+      "constructions": 5
+    },
+    {
+      "kind": "ls",
+      "time_s": 89.79941320186481,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 149,
+      "kicks": 5,
+      "constructions": 5,
+      "new_best": true
+    },
+    {
+      "kind": "construction",
+      "time_s": 98.89360563084483,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 160,
+      "kicks": 5,
+      "constructions": 6
+    },
+    {
+      "kind": "construction",
+      "time_s": 115.81230685883202,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 192,
+      "kicks": 6,
+      "constructions": 7
+    },
+    {
+      "kind": "construction",
+      "time_s": 132.19843739597127,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 224,
+      "kicks": 7,
+      "constructions": 8
+    },
+    {
+      "kind": "construction",
+      "time_s": 149.563578694826,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 256,
+      "kicks": 8,
+      "constructions": 9
+    },
+    {
+      "kind": "construction",
+      "time_s": 168.01807980285957,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.20313878540922523,
+      "objective": 3.7968612145907747,
+      "ls_evaluations": 288,
+      "kicks": 9,
+      "constructions": 10
+    },
+    {
+      "kind": "construction",
+      "time_s": 183.55309298285283,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 320,
+      "kicks": 10,
+      "constructions": 11
+    },
+    {
+      "kind": "construction",
+      "time_s": 199.00760463485494,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 352,
+      "kicks": 11,
+      "constructions": 12
+    },
+    {
+      "kind": "ls",
+      "time_s": 200.6481438819319,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.23950438903537175,
+      "objective": 2.7604956109646284,
+      "ls_evaluations": 356,
+      "kicks": 11,
+      "constructions": 12,
+      "new_best": true
+    },
+    {
+      "kind": "construction",
+      "time_s": 216.6545870229602,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 384,
+      "kicks": 12,
+      "constructions": 13
+    },
+    {
+      "kind": "construction",
+      "time_s": 235.46091712079942,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 416,
+      "kicks": 13,
+      "constructions": 14
+    },
+    {
+      "kind": "construction",
+      "time_s": 253.43997909198515,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 448,
+      "kicks": 14,
+      "constructions": 15
+    },
+    {
+      "kind": "construction",
+      "time_s": 269.6339293308556,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 480,
+      "kicks": 15,
+      "constructions": 16
+    },
+    {
+      "kind": "construction",
+      "time_s": 286.9757235869765,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.20313878540922523,
+      "objective": 3.7968612145907747,
+      "ls_evaluations": 512,
+      "kicks": 16,
+      "constructions": 17
+    },
+    {
+      "kind": "construction",
+      "time_s": 303.41589892981574,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 544,
+      "kicks": 17,
+      "constructions": 18
+    },
+    {
+      "kind": "ls",
+      "time_s": 308.5792819049675,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.24558669250655846,
+      "objective": 2.7544133074934414,
+      "ls_evaluations": 562,
+      "kicks": 17,
+      "constructions": 18,
+      "new_best": true
+    },
+    {
+      "kind": "construction",
+      "time_s": 318.74977518594824,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 576,
+      "kicks": 17,
+      "constructions": 19
+    },
+    {
+      "kind": "construction",
+      "time_s": 335.0059580008965,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 608,
+      "kicks": 18,
+      "constructions": 20
+    },
+    {
+      "kind": "construction",
+      "time_s": 352.32161722285673,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21153701207299816,
+      "objective": 3.788462987927002,
+      "ls_evaluations": 640,
+      "kicks": 19,
+      "constructions": 21
+    },
+    {
+      "kind": "construction",
+      "time_s": 368.59153936593793,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.20313878540922523,
+      "objective": 3.7968612145907747,
+      "ls_evaluations": 672,
+      "kicks": 20,
+      "constructions": 22
+    },
+    {
+      "kind": "construction",
+      "time_s": 385.760593094863,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.19302743447688794,
+      "objective": 3.806972565523112,
+      "ls_evaluations": 704,
+      "kicks": 21,
+      "constructions": 23
+    },
+    {
+      "kind": "construction",
+      "time_s": 403.5407186958473,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 736,
+      "kicks": 22,
+      "constructions": 24
+    },
+    {
+      "kind": "construction",
+      "time_s": 419.6190466620028,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 768,
+      "kicks": 23,
+      "constructions": 25
+    },
+    {
+      "kind": "construction",
+      "time_s": 436.6111414828338,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 800,
+      "kicks": 24,
+      "constructions": 26
+    },
+    {
+      "kind": "construction",
+      "time_s": 452.13904184498824,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.23641649144525678,
+      "objective": 2.7635835085547433,
+      "ls_evaluations": 832,
+      "kicks": 25,
+      "constructions": 27
+    },
+    {
+      "kind": "construction",
+      "time_s": 468.01335161179304,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.23641649144525678,
+      "objective": 2.7635835085547433,
+      "ls_evaluations": 864,
+      "kicks": 26,
+      "constructions": 28
+    },
+    {
+      "kind": "construction",
+      "time_s": 485.0625707039144,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 896,
+      "kicks": 27,
+      "constructions": 29
+    },
+    {
+      "kind": "construction",
+      "time_s": 501.36803335300647,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.20313878540922523,
+      "objective": 3.7968612145907747,
+      "ls_evaluations": 928,
+      "kicks": 28,
+      "constructions": 30
+    },
+    {
+      "kind": "construction",
+      "time_s": 517.8595647099428,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.18877311651680448,
+      "objective": 3.8112268834831955,
+      "ls_evaluations": 960,
+      "kicks": 29,
+      "constructions": 31
+    },
+    {
+      "kind": "construction",
+      "time_s": 532.8754517049529,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.24558669250655846,
+      "objective": 2.7544133074934414,
+      "ls_evaluations": 992,
+      "kicks": 30,
+      "constructions": 32
+    },
+    {
+      "kind": "construction",
+      "time_s": 549.2388171949424,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 1024,
+      "kicks": 31,
+      "constructions": 33
+    },
+    {
+      "kind": "construction",
+      "time_s": 565.5670849748421,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2275107383609632,
+      "objective": 2.772489261639037,
+      "ls_evaluations": 1056,
+      "kicks": 32,
+      "constructions": 34
+    },
+    {
+      "kind": "construction",
+      "time_s": 581.2522561207879,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 1088,
+      "kicks": 33,
+      "constructions": 35
+    },
+    {
+      "kind": "construction",
+      "time_s": 598.3064051649999,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 1120,
+      "kicks": 34,
+      "constructions": 36
+    },
+    {
+      "kind": "construction",
+      "time_s": 613.5025007408112,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 1152,
+      "kicks": 35,
+      "constructions": 37
+    },
+    {
+      "kind": "construction",
+      "time_s": 629.4923661579378,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 1184,
+      "kicks": 36,
+      "constructions": 38
+    },
+    {
+      "kind": "construction",
+      "time_s": 645.3931077388115,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 1216,
+      "kicks": 37,
+      "constructions": 39
+    },
+    {
+      "kind": "construction",
+      "time_s": 660.6290050440002,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 1248,
+      "kicks": 38,
+      "constructions": 40
+    },
+    {
+      "kind": "construction",
+      "time_s": 676.7058637409937,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 1280,
+      "kicks": 39,
+      "constructions": 41
+    },
+    {
+      "kind": "construction",
+      "time_s": 692.7831330159679,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 1312,
+      "kicks": 40,
+      "constructions": 42
+    },
+    {
+      "kind": "construction",
+      "time_s": 708.4009821908548,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 1344,
+      "kicks": 41,
+      "constructions": 43
+    },
+    {
+      "kind": "construction",
+      "time_s": 724.7762086358853,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 1376,
+      "kicks": 42,
+      "constructions": 44
+    },
+    {
+      "kind": "construction",
+      "time_s": 740.1049316530116,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.20313878540922523,
+      "objective": 3.7968612145907747,
+      "ls_evaluations": 1408,
+      "kicks": 43,
+      "constructions": 45
+    },
+    {
+      "kind": "construction",
+      "time_s": 753.2204227619804,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.24558669250655846,
+      "objective": 2.7544133074934414,
+      "ls_evaluations": 1440,
+      "kicks": 43,
+      "constructions": 46
+    },
+    {
+      "kind": "construction",
+      "time_s": 768.1003907178529,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 1472,
+      "kicks": 44,
+      "constructions": 47
+    },
+    {
+      "kind": "construction",
+      "time_s": 783.9205137428362,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 1504,
+      "kicks": 45,
+      "constructions": 48
+    },
+    {
+      "kind": "construction",
+      "time_s": 798.6603345989715,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 1536,
+      "kicks": 45,
+      "constructions": 49
+    },
+    {
+      "kind": "construction",
+      "time_s": 814.9891022718512,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 1568,
+      "kicks": 46,
+      "constructions": 50
+    },
+    {
+      "kind": "construction",
+      "time_s": 833.1542325208429,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 1600,
+      "kicks": 47,
+      "constructions": 51
+    },
+    {
+      "kind": "construction",
+      "time_s": 847.1283459619153,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.19302743447688794,
+      "objective": 3.806972565523112,
+      "ls_evaluations": 1632,
+      "kicks": 48,
+      "constructions": 52
+    },
+    {
+      "kind": "construction",
+      "time_s": 863.0416676118039,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 1664,
+      "kicks": 49,
+      "constructions": 53
+    },
+    {
+      "kind": "construction",
+      "time_s": 879.707323546987,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 1696,
+      "kicks": 50,
+      "constructions": 54
+    },
+    {
+      "kind": "construction",
+      "time_s": 897.0869180418085,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.20313878540922523,
+      "objective": 3.7968612145907747,
+      "ls_evaluations": 1728,
+      "kicks": 51,
+      "constructions": 55
+    },
+    {
+      "kind": "construction",
+      "time_s": 912.0677080859896,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.23641649144525678,
+      "objective": 2.7635835085547433,
+      "ls_evaluations": 1760,
+      "kicks": 52,
+      "constructions": 56
+    },
+    {
+      "kind": "construction",
+      "time_s": 930.3115928377956,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21153701207299816,
+      "objective": 3.788462987927002,
+      "ls_evaluations": 1792,
+      "kicks": 53,
+      "constructions": 57
+    },
+    {
+      "kind": "construction",
+      "time_s": 945.9923592119012,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.19302743447688794,
+      "objective": 3.806972565523112,
+      "ls_evaluations": 1824,
+      "kicks": 54,
+      "constructions": 58
+    },
+    {
+      "kind": "construction",
+      "time_s": 960.1076707330067,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 1856,
+      "kicks": 55,
+      "constructions": 59
+    },
+    {
+      "kind": "construction",
+      "time_s": 976.4804286309518,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.20313878540922523,
+      "objective": 3.7968612145907747,
+      "ls_evaluations": 1888,
+      "kicks": 56,
+      "constructions": 60
+    },
+    {
+      "kind": "construction",
+      "time_s": 991.3321095658466,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 1920,
+      "kicks": 57,
+      "constructions": 61
+    },
+    {
+      "kind": "construction",
+      "time_s": 1004.0705214189366,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 1952,
+      "kicks": 58,
+      "constructions": 62
+    },
+    {
+      "kind": "construction",
+      "time_s": 1020.6650036498904,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 1984,
+      "kicks": 59,
+      "constructions": 63
+    },
+    {
+      "kind": "construction",
+      "time_s": 1036.0607649940066,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2016,
+      "kicks": 60,
+      "constructions": 64
+    },
+    {
+      "kind": "construction",
+      "time_s": 1051.831895048963,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2048,
+      "kicks": 61,
+      "constructions": 65
+    },
+    {
+      "kind": "construction",
+      "time_s": 1068.8299212278798,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2080,
+      "kicks": 62,
+      "constructions": 66
+    },
+    {
+      "kind": "construction",
+      "time_s": 1084.8637665819842,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2112,
+      "kicks": 63,
+      "constructions": 67
+    },
+    {
+      "kind": "construction",
+      "time_s": 1101.304268854903,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.20313878540922523,
+      "objective": 3.7968612145907747,
+      "ls_evaluations": 2144,
+      "kicks": 64,
+      "constructions": 68
+    },
+    {
+      "kind": "construction",
+      "time_s": 1119.378228870919,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.20313878540922523,
+      "objective": 3.7968612145907747,
+      "ls_evaluations": 2176,
+      "kicks": 65,
+      "constructions": 69
+    },
+    {
+      "kind": "construction",
+      "time_s": 1134.603179342812,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 2208,
+      "kicks": 66,
+      "constructions": 70
+    },
+    {
+      "kind": "construction",
+      "time_s": 1150.2525354339741,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.23641649144525678,
+      "objective": 2.7635835085547433,
+      "ls_evaluations": 2240,
+      "kicks": 67,
+      "constructions": 71
+    },
+    {
+      "kind": "construction",
+      "time_s": 1164.6528421239927,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.23641649144525678,
+      "objective": 2.7635835085547433,
+      "ls_evaluations": 2272,
+      "kicks": 68,
+      "constructions": 72
+    },
+    {
+      "kind": "construction",
+      "time_s": 1179.256132468814,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2304,
+      "kicks": 69,
+      "constructions": 73
+    },
+    {
+      "kind": "construction",
+      "time_s": 1195.8854143088683,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728036,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2336,
+      "kicks": 70,
+      "constructions": 74
+    },
+    {
+      "kind": "construction",
+      "time_s": 1212.950852543814,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2368,
+      "kicks": 71,
+      "constructions": 75
+    },
+    {
+      "kind": "construction",
+      "time_s": 1230.2455439749174,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2400,
+      "kicks": 72,
+      "constructions": 76
+    },
+    {
+      "kind": "construction",
+      "time_s": 1246.692059746012,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2432,
+      "kicks": 73,
+      "constructions": 77
+    },
+    {
+      "kind": "construction",
+      "time_s": 1262.222077399958,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.20228222327494305,
+      "objective": 3.797717776725057,
+      "ls_evaluations": 2464,
+      "kicks": 74,
+      "constructions": 78
+    },
+    {
+      "kind": "construction",
+      "time_s": 1276.3759787268937,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2496,
+      "kicks": 74,
+      "constructions": 79
+    },
+    {
+      "kind": "construction",
+      "time_s": 1292.2324310508557,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 2528,
+      "kicks": 75,
+      "constructions": 80
+    },
+    {
+      "kind": "construction",
+      "time_s": 1310.0597878817935,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2560,
+      "kicks": 76,
+      "constructions": 81
+    },
+    {
+      "kind": "construction",
+      "time_s": 1326.4678366179578,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2592,
+      "kicks": 77,
+      "constructions": 82
+    },
+    {
+      "kind": "construction",
+      "time_s": 1343.0611614789814,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2624,
+      "kicks": 78,
+      "constructions": 83
+    },
+    {
+      "kind": "construction",
+      "time_s": 1359.927375182975,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.20313878540922523,
+      "objective": 3.7968612145907747,
+      "ls_evaluations": 2656,
+      "kicks": 79,
+      "constructions": 84
+    },
+    {
+      "kind": "construction",
+      "time_s": 1376.4774672149215,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2688,
+      "kicks": 80,
+      "constructions": 85
+    },
+    {
+      "kind": "construction",
+      "time_s": 1392.7887491178699,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2720,
+      "kicks": 81,
+      "constructions": 86
+    },
+    {
+      "kind": "construction",
+      "time_s": 1409.6250238039065,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2752,
+      "kicks": 82,
+      "constructions": 87
+    },
+    {
+      "kind": "ls",
+      "time_s": 1416.025242931908,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.246911603583286,
+      "objective": 2.753088396416714,
+      "ls_evaluations": 2769,
+      "kicks": 83,
+      "constructions": 87,
+      "new_best": true
+    },
+    {
+      "kind": "construction",
+      "time_s": 1425.1014531299006,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2784,
+      "kicks": 83,
+      "constructions": 88
+    },
+    {
+      "kind": "construction",
+      "time_s": 1441.2572851940058,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2816,
+      "kicks": 84,
+      "constructions": 89
+    },
+    {
+      "kind": "construction",
+      "time_s": 1456.9634638449643,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2848,
+      "kicks": 85,
+      "constructions": 90
+    },
+    {
+      "kind": "construction",
+      "time_s": 1474.0713140529115,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2880,
+      "kicks": 86,
+      "constructions": 91
+    },
+    {
+      "kind": "construction",
+      "time_s": 1489.9616573418025,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2912,
+      "kicks": 87,
+      "constructions": 92
+    },
+    {
+      "kind": "construction",
+      "time_s": 1506.0182643018197,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 2944,
+      "kicks": 88,
+      "constructions": 93
+    },
+    {
+      "kind": "construction",
+      "time_s": 1519.801578560844,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 2976,
+      "kicks": 89,
+      "constructions": 94
+    },
+    {
+      "kind": "construction",
+      "time_s": 1532.9318050779402,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 3008,
+      "kicks": 90,
+      "constructions": 95
+    },
+    {
+      "kind": "construction",
+      "time_s": 1549.202209960902,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2221817109454966,
+      "objective": 2.7778182890545033,
+      "ls_evaluations": 3040,
+      "kicks": 91,
+      "constructions": 96
+    },
+    {
+      "kind": "construction",
+      "time_s": 1564.1490557938814,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.20228222327494305,
+      "objective": 3.797717776725057,
+      "ls_evaluations": 3072,
+      "kicks": 92,
+      "constructions": 97
+    },
+    {
+      "kind": "construction",
+      "time_s": 1577.0425705059897,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 3104,
+      "kicks": 92,
+      "constructions": 98
+    },
+    {
+      "kind": "construction",
+      "time_s": 1593.0322089798283,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2281785362827009,
+      "objective": 2.7718214637172993,
+      "ls_evaluations": 3136,
+      "kicks": 93,
+      "constructions": 99
+    },
+    {
+      "kind": "construction",
+      "time_s": 1608.6852419618517,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 3168,
+      "kicks": 94,
+      "constructions": 100
+    },
+    {
+      "kind": "construction",
+      "time_s": 1623.9779886140022,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 3200,
+      "kicks": 95,
+      "constructions": 101
+    },
+    {
+      "kind": "construction",
+      "time_s": 1639.2288756999187,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 3232,
+      "kicks": 96,
+      "constructions": 102
+    },
+    {
+      "kind": "construction",
+      "time_s": 1655.493294985965,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 3264,
+      "kicks": 97,
+      "constructions": 103
+    },
+    {
+      "kind": "construction",
+      "time_s": 1671.1831348389387,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 3296,
+      "kicks": 98,
+      "constructions": 104
+    },
+    {
+      "kind": "construction",
+      "time_s": 1686.1513433619402,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 3328,
+      "kicks": 99,
+      "constructions": 105
+    },
+    {
+      "kind": "construction",
+      "time_s": 1702.1642335609067,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.23641649144525678,
+      "objective": 2.7635835085547433,
+      "ls_evaluations": 3360,
+      "kicks": 100,
+      "constructions": 106
+    },
+    {
+      "kind": "construction",
+      "time_s": 1716.664078624919,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 3392,
+      "kicks": 101,
+      "constructions": 107
+    },
+    {
+      "kind": "construction",
+      "time_s": 1732.1831129959319,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 3424,
+      "kicks": 102,
+      "constructions": 108
+    },
+    {
+      "kind": "construction",
+      "time_s": 1749.0644896028098,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 3456,
+      "kicks": 103,
+      "constructions": 109
+    },
+    {
+      "kind": "construction",
+      "time_s": 1765.0714949308895,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.19302743447688794,
+      "objective": 3.806972565523112,
+      "ls_evaluations": 3488,
+      "kicks": 104,
+      "constructions": 110
+    },
+    {
+      "kind": "construction",
+      "time_s": 1779.799107674975,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.23641649144525678,
+      "objective": 2.7635835085547433,
+      "ls_evaluations": 3520,
+      "kicks": 105,
+      "constructions": 111
+    },
+    {
+      "kind": "construction",
+      "time_s": 1794.9132980320137,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 3552,
+      "kicks": 106,
+      "constructions": 112
+    },
+    {
+      "kind": "construction",
+      "time_s": 1811.7618486178108,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 3584,
+      "kicks": 107,
+      "constructions": 113
+    },
+    {
+      "kind": "construction",
+      "time_s": 1826.6030397068243,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 3616,
+      "kicks": 108,
+      "constructions": 114
+    },
+    {
+      "kind": "construction",
+      "time_s": 1841.0076536538545,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 3648,
+      "kicks": 109,
+      "constructions": 115
+    },
+    {
+      "kind": "construction",
+      "time_s": 1857.1463330769911,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 3680,
+      "kicks": 110,
+      "constructions": 116
+    },
+    {
+      "kind": "construction",
+      "time_s": 1871.9662206568755,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.24558669250655846,
+      "objective": 2.7544133074934414,
+      "ls_evaluations": 3712,
+      "kicks": 111,
+      "constructions": 117
+    },
+    {
+      "kind": "construction",
+      "time_s": 1887.3599155109841,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.23641649144525678,
+      "objective": 2.7635835085547433,
+      "ls_evaluations": 3744,
+      "kicks": 112,
+      "constructions": 118
+    },
+    {
+      "kind": "construction",
+      "time_s": 1902.4972295628395,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 3776,
+      "kicks": 113,
+      "constructions": 119
+    },
+    {
+      "kind": "construction",
+      "time_s": 1919.0163066328969,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 3808,
+      "kicks": 114,
+      "constructions": 120
+    },
+    {
+      "kind": "construction",
+      "time_s": 1932.8640860128216,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.24558669250655846,
+      "objective": 2.7544133074934414,
+      "ls_evaluations": 3840,
+      "kicks": 115,
+      "constructions": 121
+    },
+    {
+      "kind": "construction",
+      "time_s": 1949.1067899058107,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 3872,
+      "kicks": 116,
+      "constructions": 122
+    },
+    {
+      "kind": "construction",
+      "time_s": 1965.9694496409502,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.20313878540922523,
+      "objective": 3.7968612145907747,
+      "ls_evaluations": 3904,
+      "kicks": 117,
+      "constructions": 123
+    },
+    {
+      "kind": "construction",
+      "time_s": 1980.4568333069328,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 3936,
+      "kicks": 118,
+      "constructions": 124
+    },
+    {
+      "kind": "construction",
+      "time_s": 1995.1803652299568,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.24558669250655846,
+      "objective": 2.7544133074934414,
+      "ls_evaluations": 3968,
+      "kicks": 119,
+      "constructions": 125
+    },
+    {
+      "kind": "construction",
+      "time_s": 2010.7500852008816,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4000,
+      "kicks": 120,
+      "constructions": 126
+    },
+    {
+      "kind": "construction",
+      "time_s": 2026.0696365239564,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4032,
+      "kicks": 121,
+      "constructions": 127
+    },
+    {
+      "kind": "construction",
+      "time_s": 2040.2919689558912,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 4064,
+      "kicks": 122,
+      "constructions": 128
+    },
+    {
+      "kind": "construction",
+      "time_s": 2055.4671001259703,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2335075636981675,
+      "objective": 2.7664924363018324,
+      "ls_evaluations": 4096,
+      "kicks": 123,
+      "constructions": 129
+    },
+    {
+      "kind": "construction",
+      "time_s": 2072.6599235858303,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4128,
+      "kicks": 124,
+      "constructions": 130
+    },
+    {
+      "kind": "construction",
+      "time_s": 2087.3035947538447,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4160,
+      "kicks": 125,
+      "constructions": 131
+    },
+    {
+      "kind": "construction",
+      "time_s": 2102.11457075784,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4192,
+      "kicks": 126,
+      "constructions": 132
+    },
+    {
+      "kind": "construction",
+      "time_s": 2116.775909504853,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.20228222327494305,
+      "objective": 3.797717776725057,
+      "ls_evaluations": 4224,
+      "kicks": 127,
+      "constructions": 133
+    },
+    {
+      "kind": "construction",
+      "time_s": 2132.0389195398893,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4256,
+      "kicks": 128,
+      "constructions": 134
+    },
+    {
+      "kind": "construction",
+      "time_s": 2145.381738767959,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4288,
+      "kicks": 128,
+      "constructions": 135
+    },
+    {
+      "kind": "construction",
+      "time_s": 2162.434236736968,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4320,
+      "kicks": 129,
+      "constructions": 136
+    },
+    {
+      "kind": "construction",
+      "time_s": 2178.0295379089657,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4352,
+      "kicks": 130,
+      "constructions": 137
+    },
+    {
+      "kind": "construction",
+      "time_s": 2193.177287562983,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4384,
+      "kicks": 131,
+      "constructions": 138
+    },
+    {
+      "kind": "construction",
+      "time_s": 2207.5814251617994,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4416,
+      "kicks": 132,
+      "constructions": 139
+    },
+    {
+      "kind": "construction",
+      "time_s": 2223.861073193839,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4448,
+      "kicks": 133,
+      "constructions": 140
+    },
+    {
+      "kind": "construction",
+      "time_s": 2238.5162675138563,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4480,
+      "kicks": 134,
+      "constructions": 141
+    },
+    {
+      "kind": "construction",
+      "time_s": 2253.8180967608932,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 4512,
+      "kicks": 135,
+      "constructions": 142
+    },
+    {
+      "kind": "construction",
+      "time_s": 2269.308779110899,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.23641649144525678,
+      "objective": 2.7635835085547433,
+      "ls_evaluations": 4544,
+      "kicks": 136,
+      "constructions": 143
+    },
+    {
+      "kind": "construction",
+      "time_s": 2285.046140144812,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4576,
+      "kicks": 137,
+      "constructions": 144
+    },
+    {
+      "kind": "construction",
+      "time_s": 2300.8836151349824,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4608,
+      "kicks": 138,
+      "constructions": 145
+    },
+    {
+      "kind": "construction",
+      "time_s": 2316.2466459418647,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4640,
+      "kicks": 139,
+      "constructions": 146
+    },
+    {
+      "kind": "construction",
+      "time_s": 2329.5015058969148,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4672,
+      "kicks": 139,
+      "constructions": 147
+    },
+    {
+      "kind": "construction",
+      "time_s": 2342.5286927509587,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4704,
+      "kicks": 139,
+      "constructions": 148
+    },
+    {
+      "kind": "construction",
+      "time_s": 2357.294266582001,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 4736,
+      "kicks": 140,
+      "constructions": 149
+    },
+    {
+      "kind": "construction",
+      "time_s": 2372.805808788864,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2221817109454966,
+      "objective": 2.7778182890545033,
+      "ls_evaluations": 4768,
+      "kicks": 141,
+      "constructions": 150
+    },
+    {
+      "kind": "construction",
+      "time_s": 2389.0985546309967,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.20313878540922523,
+      "objective": 3.7968612145907747,
+      "ls_evaluations": 4800,
+      "kicks": 142,
+      "constructions": 151
+    },
+    {
+      "kind": "construction",
+      "time_s": 2406.905481148977,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21153701207299816,
+      "objective": 3.788462987927002,
+      "ls_evaluations": 4832,
+      "kicks": 143,
+      "constructions": 152
+    },
+    {
+      "kind": "construction",
+      "time_s": 2419.402595944004,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4864,
+      "kicks": 144,
+      "constructions": 153
+    },
+    {
+      "kind": "construction",
+      "time_s": 2434.349210515851,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4896,
+      "kicks": 145,
+      "constructions": 154
+    },
+    {
+      "kind": "construction",
+      "time_s": 2450.11691581388,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 4928,
+      "kicks": 146,
+      "constructions": 155
+    },
+    {
+      "kind": "construction",
+      "time_s": 2466.745801976882,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.19302743447688794,
+      "objective": 3.806972565523112,
+      "ls_evaluations": 4960,
+      "kicks": 147,
+      "constructions": 156
+    },
+    {
+      "kind": "construction",
+      "time_s": 2481.2075540958904,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 4992,
+      "kicks": 148,
+      "constructions": 157
+    },
+    {
+      "kind": "construction",
+      "time_s": 2496.391529635992,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5024,
+      "kicks": 149,
+      "constructions": 158
+    },
+    {
+      "kind": "construction",
+      "time_s": 2513.9268091688864,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5056,
+      "kicks": 150,
+      "constructions": 159
+    },
+    {
+      "kind": "construction",
+      "time_s": 2529.0917737018317,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5088,
+      "kicks": 151,
+      "constructions": 160
+    },
+    {
+      "kind": "construction",
+      "time_s": 2543.6208692218643,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5120,
+      "kicks": 151,
+      "constructions": 161
+    },
+    {
+      "kind": "construction",
+      "time_s": 2560.021341391839,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5152,
+      "kicks": 152,
+      "constructions": 162
+    },
+    {
+      "kind": "construction",
+      "time_s": 2575.233278774889,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5184,
+      "kicks": 153,
+      "constructions": 163
+    },
+    {
+      "kind": "construction",
+      "time_s": 2590.4525894788094,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5216,
+      "kicks": 154,
+      "constructions": 164
+    },
+    {
+      "kind": "construction",
+      "time_s": 2606.6588816198055,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5248,
+      "kicks": 155,
+      "constructions": 165
+    },
+    {
+      "kind": "construction",
+      "time_s": 2623.34862867184,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5280,
+      "kicks": 156,
+      "constructions": 166
+    },
+    {
+      "kind": "construction",
+      "time_s": 2638.9070005659014,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 5312,
+      "kicks": 157,
+      "constructions": 167
+    },
+    {
+      "kind": "construction",
+      "time_s": 2654.950373414904,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5344,
+      "kicks": 158,
+      "constructions": 168
+    },
+    {
+      "kind": "construction",
+      "time_s": 2670.3493712868076,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 5376,
+      "kicks": 159,
+      "constructions": 169
+    },
+    {
+      "kind": "construction",
+      "time_s": 2686.206008448964,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5408,
+      "kicks": 160,
+      "constructions": 170
+    },
+    {
+      "kind": "construction",
+      "time_s": 2702.905268746894,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5440,
+      "kicks": 161,
+      "constructions": 171
+    },
+    {
+      "kind": "construction",
+      "time_s": 2716.5295489570126,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5472,
+      "kicks": 162,
+      "constructions": 172
+    },
+    {
+      "kind": "construction",
+      "time_s": 2733.1384174749255,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5504,
+      "kicks": 163,
+      "constructions": 173
+    },
+    {
+      "kind": "construction",
+      "time_s": 2749.3880412660073,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.20313878540922523,
+      "objective": 3.7968612145907747,
+      "ls_evaluations": 5536,
+      "kicks": 164,
+      "constructions": 174
+    },
+    {
+      "kind": "construction",
+      "time_s": 2766.5960028839763,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5568,
+      "kicks": 165,
+      "constructions": 175
+    },
+    {
+      "kind": "construction",
+      "time_s": 2781.3759279299993,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5600,
+      "kicks": 166,
+      "constructions": 176
+    },
+    {
+      "kind": "construction",
+      "time_s": 2797.8269570088014,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5632,
+      "kicks": 167,
+      "constructions": 177
+    },
+    {
+      "kind": "construction",
+      "time_s": 2813.591903975932,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 5664,
+      "kicks": 168,
+      "constructions": 178
+    },
+    {
+      "kind": "construction",
+      "time_s": 2828.813236475922,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5696,
+      "kicks": 169,
+      "constructions": 179
+    },
+    {
+      "kind": "construction",
+      "time_s": 2843.1470543940086,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5728,
+      "kicks": 170,
+      "constructions": 180
+    },
+    {
+      "kind": "construction",
+      "time_s": 2858.3583227058407,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5760,
+      "kicks": 171,
+      "constructions": 181
+    },
+    {
+      "kind": "construction",
+      "time_s": 2872.986241909908,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 5792,
+      "kicks": 172,
+      "constructions": 182
+    },
+    {
+      "kind": "construction",
+      "time_s": 2888.4865772128105,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5824,
+      "kicks": 173,
+      "constructions": 183
+    },
+    {
+      "kind": "construction",
+      "time_s": 2903.5244084238075,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5856,
+      "kicks": 174,
+      "constructions": 184
+    },
+    {
+      "kind": "construction",
+      "time_s": 2918.620760626858,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5888,
+      "kicks": 175,
+      "constructions": 185
+    },
+    {
+      "kind": "construction",
+      "time_s": 2935.402305722935,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5920,
+      "kicks": 176,
+      "constructions": 186
+    },
+    {
+      "kind": "construction",
+      "time_s": 2950.3993128309958,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 5952,
+      "kicks": 177,
+      "constructions": 187
+    },
+    {
+      "kind": "construction",
+      "time_s": 2966.4107278608717,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 5984,
+      "kicks": 178,
+      "constructions": 188
+    },
+    {
+      "kind": "construction",
+      "time_s": 2980.1259591539856,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6016,
+      "kicks": 179,
+      "constructions": 189
+    },
+    {
+      "kind": "construction",
+      "time_s": 2995.5032626159955,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6048,
+      "kicks": 180,
+      "constructions": 190
+    },
+    {
+      "kind": "construction",
+      "time_s": 3011.1509979879484,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6080,
+      "kicks": 181,
+      "constructions": 191
+    },
+    {
+      "kind": "construction",
+      "time_s": 3025.8090440789238,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.24558669250655846,
+      "objective": 2.7544133074934414,
+      "ls_evaluations": 6112,
+      "kicks": 182,
+      "constructions": 192
+    },
+    {
+      "kind": "construction",
+      "time_s": 3040.912272597896,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.23641649144525678,
+      "objective": 2.7635835085547433,
+      "ls_evaluations": 6144,
+      "kicks": 183,
+      "constructions": 193
+    },
+    {
+      "kind": "construction",
+      "time_s": 3056.8227702518925,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6176,
+      "kicks": 184,
+      "constructions": 194
+    },
+    {
+      "kind": "construction",
+      "time_s": 3071.677211510949,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 6208,
+      "kicks": 185,
+      "constructions": 195
+    },
+    {
+      "kind": "construction",
+      "time_s": 3087.4450662399177,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6240,
+      "kicks": 186,
+      "constructions": 196
+    },
+    {
+      "kind": "construction",
+      "time_s": 3103.232736883918,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.20313878540922523,
+      "objective": 3.7968612145907747,
+      "ls_evaluations": 6272,
+      "kicks": 187,
+      "constructions": 197
+    },
+    {
+      "kind": "construction",
+      "time_s": 3120.272184734931,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6304,
+      "kicks": 188,
+      "constructions": 198
+    },
+    {
+      "kind": "construction",
+      "time_s": 3135.4282895489596,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.24558669250655846,
+      "objective": 2.7544133074934414,
+      "ls_evaluations": 6336,
+      "kicks": 189,
+      "constructions": 199
+    },
+    {
+      "kind": "construction",
+      "time_s": 3150.3534705748316,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 6368,
+      "kicks": 190,
+      "constructions": 200
+    },
+    {
+      "kind": "construction",
+      "time_s": 3165.5763705438003,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6400,
+      "kicks": 191,
+      "constructions": 201
+    },
+    {
+      "kind": "construction",
+      "time_s": 3177.8041151289362,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6432,
+      "kicks": 191,
+      "constructions": 202
+    },
+    {
+      "kind": "construction",
+      "time_s": 3192.5985125319567,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6464,
+      "kicks": 192,
+      "constructions": 203
+    },
+    {
+      "kind": "construction",
+      "time_s": 3206.29657283891,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2275107383609632,
+      "objective": 2.772489261639037,
+      "ls_evaluations": 6496,
+      "kicks": 193,
+      "constructions": 204
+    },
+    {
+      "kind": "construction",
+      "time_s": 3219.2591387289576,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6528,
+      "kicks": 194,
+      "constructions": 205
+    },
+    {
+      "kind": "construction",
+      "time_s": 3235.4762569519226,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6560,
+      "kicks": 195,
+      "constructions": 206
+    },
+    {
+      "kind": "construction",
+      "time_s": 3251.331778223859,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6592,
+      "kicks": 196,
+      "constructions": 207
+    },
+    {
+      "kind": "construction",
+      "time_s": 3265.7277841838077,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6624,
+      "kicks": 196,
+      "constructions": 208
+    },
+    {
+      "kind": "construction",
+      "time_s": 3282.1189109589905,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6656,
+      "kicks": 197,
+      "constructions": 209
+    },
+    {
+      "kind": "construction",
+      "time_s": 3298.0008097440004,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6688,
+      "kicks": 198,
+      "constructions": 210
+    },
+    {
+      "kind": "construction",
+      "time_s": 3311.7295100148767,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6720,
+      "kicks": 199,
+      "constructions": 211
+    },
+    {
+      "kind": "construction",
+      "time_s": 3327.138368869899,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6752,
+      "kicks": 200,
+      "constructions": 212
+    },
+    {
+      "kind": "construction",
+      "time_s": 3343.9128804169595,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6784,
+      "kicks": 201,
+      "constructions": 213
+    },
+    {
+      "kind": "construction",
+      "time_s": 3358.2575574249495,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.23641649144525678,
+      "objective": 2.7635835085547433,
+      "ls_evaluations": 6816,
+      "kicks": 202,
+      "constructions": 214
+    },
+    {
+      "kind": "construction",
+      "time_s": 3372.5053550438024,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.24558669250655846,
+      "objective": 2.7544133074934414,
+      "ls_evaluations": 6848,
+      "kicks": 202,
+      "constructions": 215
+    },
+    {
+      "kind": "construction",
+      "time_s": 3387.747566906968,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6880,
+      "kicks": 203,
+      "constructions": 216
+    },
+    {
+      "kind": "construction",
+      "time_s": 3402.804744007997,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2256222058382891,
+      "objective": 2.774377794161711,
+      "ls_evaluations": 6912,
+      "kicks": 204,
+      "constructions": 217
+    },
+    {
+      "kind": "construction",
+      "time_s": 3416.449267245829,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6944,
+      "kicks": 205,
+      "constructions": 218
+    },
+    {
+      "kind": "construction",
+      "time_s": 3431.2437042898964,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 6976,
+      "kicks": 205,
+      "constructions": 219
+    },
+    {
+      "kind": "construction",
+      "time_s": 3446.990231718868,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 7008,
+      "kicks": 206,
+      "constructions": 220
+    },
+    {
+      "kind": "construction",
+      "time_s": 3463.4132985328324,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.2304196661080525,
+      "objective": 2.7695803338919474,
+      "ls_evaluations": 7040,
+      "kicks": 207,
+      "constructions": 221
+    },
+    {
+      "kind": "construction",
+      "time_s": 3478.789909788873,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.23641649144525678,
+      "objective": 2.7635835085547433,
+      "ls_evaluations": 7072,
+      "kicks": 208,
+      "constructions": 222
+    },
+    {
+      "kind": "construction",
+      "time_s": 3494.8431571179535,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 7104,
+      "kicks": 209,
+      "constructions": 223
+    },
+    {
+      "kind": "construction",
+      "time_s": 3509.26609705179,
+      "N": 3,
+      "U": 0.22164836300533547,
+      "U_star": 0.24558669250655846,
+      "objective": 2.7544133074934414,
+      "ls_evaluations": 7136,
+      "kicks": 210,
+      "constructions": 224
+    },
+    {
+      "kind": "construction",
+      "time_s": 3523.9662361138035,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 7168,
+      "kicks": 211,
+      "constructions": 225
+    },
+    {
+      "kind": "construction",
+      "time_s": 3539.156505328836,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 7200,
+      "kicks": 211,
+      "constructions": 226
+    },
+    {
+      "kind": "construction",
+      "time_s": 3554.2463749088347,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 7232,
+      "kicks": 212,
+      "constructions": 227
+    },
+    {
+      "kind": "construction",
+      "time_s": 3567.9258496100083,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 7264,
+      "kicks": 213,
+      "constructions": 228
+    },
+    {
+      "kind": "construction",
+      "time_s": 3582.132995280903,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 7296,
+      "kicks": 214,
+      "constructions": 229
+    },
+    {
+      "kind": "construction",
+      "time_s": 3596.8099983739667,
+      "N": 4,
+      "U": 0.1662362722540016,
+      "U_star": 0.21239357420728033,
+      "objective": 3.7876064257927196,
+      "ls_evaluations": 7328,
+      "kicks": 215,
+      "constructions": 230
+    }
+  ],
+  "ls_end_events": [],
+  "validation": {
+    "ok": true,
+    "scope": "piece identity, geometry, occupancy and N/U/U*; accessibility enforced by engine, not independently revalidated",
+    "bin_volumes": [
+      46033,
+      46402,
+      32031
+    ],
+    "bin_filling_rates": [
+      0.2459259338508012,
+      0.2478972733157708,
+      0.1711218818494344
+    ],
+    "placements": [
+      {
+        "bin": 0,
+        "piece_index": 0,
+        "orientation": "x_90",
+        "translation": [
+          2,
+          13,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 1,
+        "orientation": "z_180",
+        "translation": [
+          18,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 2,
+        "orientation": "x_180",
+        "translation": [
+          10,
+          16,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 3,
+        "orientation": "x_0",
+        "translation": [
+          39,
+          10,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 4,
+        "orientation": "y_270",
+        "translation": [
+          27,
+          24,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 5,
+        "orientation": "z_90",
+        "translation": [
+          13,
+          40,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 6,
+        "orientation": "z_180",
+        "translation": [
+          33,
+          36,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 7,
+        "orientation": "x_180",
+        "translation": [
+          30,
+          22,
+          13
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 9,
+        "orientation": "z_180",
+        "translation": [
+          46,
+          25,
+          14
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 11,
+        "orientation": "z_270",
+        "translation": [
+          30,
+          35,
+          28
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 12,
+        "orientation": "x_180",
+        "translation": [
+          3,
+          32,
+          17
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 13,
+        "orientation": "y_180",
+        "translation": [
+          11,
+          5,
+          35
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 14,
+        "orientation": "y_180",
+        "translation": [
+          32,
+          3,
+          30
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 15,
+        "orientation": "y_270",
+        "translation": [
+          7,
+          15,
+          38
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 20,
+        "orientation": "x_90",
+        "translation": [
+          18,
+          32,
+          37
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 8,
+        "orientation": "x_90",
+        "translation": [
+          2,
+          13,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 10,
+        "orientation": "x_180",
+        "translation": [
+          19,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 16,
+        "orientation": "x_0",
+        "translation": [
+          16,
+          16,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 17,
+        "orientation": "x_180",
+        "translation": [
+          34,
+          4,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 19,
+        "orientation": "x_0",
+        "translation": [
+          8,
+          36,
+          31
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 21,
+        "orientation": "x_270",
+        "translation": [
+          38,
+          19,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 22,
+        "orientation": "z_270",
+        "translation": [
+          36,
+          24,
+          21
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 23,
+        "orientation": "x_90",
+        "translation": [
+          4,
+          10,
+          37
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 25,
+        "orientation": "z_180",
+        "translation": [
+          10,
+          41,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 26,
+        "orientation": "x_180",
+        "translation": [
+          24,
+          40,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 28,
+        "orientation": "x_270",
+        "translation": [
+          12,
+          7,
+          46
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 31,
+        "orientation": "x_180",
+        "translation": [
+          35,
+          6,
+          28
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 18,
+        "orientation": "y_90",
+        "translation": [
+          1,
+          13,
+          0
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 24,
+        "orientation": "z_180",
+        "translation": [
+          5,
+          30,
+          0
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 27,
+        "orientation": "y_270",
+        "translation": [
+          12,
+          8,
+          20
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 29,
+        "orientation": "x_90",
+        "translation": [
+          21,
+          30,
+          12
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 30,
+        "orientation": "z_90",
+        "translation": [
+          38,
+          29,
+          27
+        ]
+      }
+    ]
+  },
+  "mean_piece_count_without_emptiest": 13.5,
+  "bin_capacity": 187182.37348618705,
+  "max_piece_volume": 7105,
+  "max_piece_radio": 1060.1350761650497,
+  "weight_capacity": 47125.299999999996,
+  "radio_capacity": 2673.297939629797,
+  "piece_count": 32,
+  "hostname": "gpu027.aire.lee.alces.network",
+  "python": "3.13.2 | packaged by conda-forge | (main, Feb 17 2025, 14:10:22) [GCC 13.3.0]",
+  "resolved_limits": {
+    "piece_count": 32,
+    "kick_failed_repacking_threshold": 16,
+    "ls_repacks_per_restart": 32,
+    "kick_in_ls_budget": false,
+    "deadline_policy": "finish in-flight call; start no new call after expiry"
+  },
+  "host_max_rss_kib": 1385704,
+  "total_wall_s": 3601.5138842270244
+}

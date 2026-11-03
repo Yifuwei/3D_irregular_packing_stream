@@ -1,0 +1,39 @@
+{
+  "improved_ILS": {
+    "config_id": "I_S50",
+    "algorithm": "improved_ILS",
+    "kick": "auto",
+    "kick_level": "medium",
+    "kick_fraction": 0.5,
+    "scope": "global",
+    "metric": "mean_N_minus_U_star",
+    "mean_objective": 9.795979780671956,
+    "mean_objectives": {
+      "I_S25": 9.809979494649161,
+      "I_S50": 9.795979780671956,
+      "I_S75": 9.796202886102549
+    },
+    "tied_configs": [
+      "I_S50"
+    ],
+    "matched_cells": 72,
+    "datasets": [
+      "Merged4_normal",
+      "shapesnew",
+      "st04_Example5_normal"
+    ],
+    "dataset_count": 3
+  },
+  "improved_GRASP": {
+    "algorithm": "improved_GRASP",
+    "ls_policy": "systematic"
+  },
+  "improved_GRASP_ILS": {
+    "algorithm": "improved_GRASP_ILS",
+    "ls_budget": "n",
+    "kick": "auto",
+    "kick_level": "medium",
+    "kick_fraction": 0.5,
+    "inherited_from": "improved_ILS"
+  }
+}
