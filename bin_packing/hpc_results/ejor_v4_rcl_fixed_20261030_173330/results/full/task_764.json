@@ -1,0 +1,620 @@
+{
+  "case": {
+    "task_id": 764,
+    "stage": "full",
+    "protocol": "ejor-two-level-fixed-pes-v4",
+    "dataset": "st04_Example2_normal",
+    "shape": "cylinder",
+    "weight_level": "strong",
+    "radio_level": "strong",
+    "seed": 13,
+    "algorithm": "improved_GRASP_ILS",
+    "config_id": "improved_GRASP_ILS_Wstrong_Rstrong",
+    "packing_selection": "fixed_global_by_shape",
+    "instance": "st04_Example2_normal_seq13_cylinder_999999_1.txt",
+    "piece_count": 20
+  },
+  "bundle_id": "7fa35c2f-4ee6-4001-85a3-f0f87c832626",
+  "status": "success",
+  "validation_ok": true,
+  "seed_time_ns": 1793935910286100397,
+  "internal_seeds": {
+    "piece": 1719821090,
+    "position": 3787653343,
+    "kick": 835024868,
+    "global": 1455411901
+  },
+  "order_seed": 13,
+  "algorithm": "improved_GRASP_ILS",
+  "search_settings": {
+    "time_limit": 3600,
+    "alpha": 1,
+    "restart_limit": null,
+    "rcl_tolerance": 0.0,
+    "rcl_top_k": 10,
+    "iter_limit_per_iter": null,
+    "kick_trigger_time": "auto",
+    "kick_level": "medium"
+  },
+  "method": {
+    "pes": "minimum_aabb_edges_len",
+    "selection_range": "bottom_top",
+    "parameter_scope": "global_by_shape",
+    "radio_priority": true,
+    "cache": "run_scoped",
+    "rcl": "pooled_orientation_position",
+    "warmup": "none"
+  },
+  "best_N": 8,
+  "best_U": 0.019000513118648796,
+  "best_U_star": 0.02152861438130805,
+  "objective": 7.9784713856186915,
+  "origin_N": 8,
+  "origin_U_star": 0.02152861438130805,
+  "origin_objective": 7.9784713856186915,
+  "algorithm_wall_s": 3602.8918934529647,
+  "reported_algorithm_wall_s": 3602.8918132530525,
+  "counts": {
+    "construction": 22,
+    "ls": 430,
+    "kick": 22
+  },
+  "cache_counts": {
+    "BIN_RANK": 8319,
+    "SEARCH": 4634,
+    "SEARCH_SUCCEEDED": 4569,
+    "POOLED_RCL": 440,
+    "SEARCH_FAILED": 65,
+    "HARD_CONSTRAINT_REJECT": 14136,
+    "RESTORE_REFERENCE_SUCCESS": 4269,
+    "RESTORE_CACHED_SUCCESS": 1433,
+    "RESTORE_CACHED_CANDIDATES": 1936,
+    "SKIP_CACHED_FAILURE": 116,
+    "RUN_END": 1
+  },
+  "rcl_histograms": {
+    "pooled": {
+      "10": 440
+    },
+    "orientation_count": {
+      "8": 123,
+      "6": 69,
+      "5": 96,
+      "10": 11,
+      "7": 56,
+      "9": 26,
+      "3": 9,
+      "4": 37,
+      "2": 13
+    }
+  },
+  "rcl_orientation_summary": {
+    "events": 440,
+    "mean_distinct_orientations": 6.3977272727272725,
+    "min_distinct_orientations": 2,
+    "max_distinct_orientations": 10
+  },
+  "history": [
+    {
+      "kind": "construction",
+      "time_s": 119.42187151871622,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 0,
+      "kicks": 0,
+      "constructions": 1,
+      "new_best": true
+    },
+    {
+      "kind": "ls",
+      "time_s": 166.13978458894417,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 10,
+      "kicks": 0,
+      "constructions": 1
+    },
+    {
+      "kind": "ls",
+      "time_s": 220.46771950880066,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 20,
+      "kicks": 1,
+      "constructions": 1
+    },
+    {
+      "kind": "construction",
+      "time_s": 302.1124254288152,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 20,
+      "kicks": 1,
+      "constructions": 2
+    },
+    {
+      "kind": "construction",
+      "time_s": 478.2109858430922,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 40,
+      "kicks": 2,
+      "constructions": 3
+    },
+    {
+      "kind": "ls",
+      "time_s": 521.6436747531407,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 50,
+      "kicks": 2,
+      "constructions": 3
+    },
+    {
+      "kind": "construction",
+      "time_s": 661.822142362129,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 60,
+      "kicks": 3,
+      "constructions": 4
+    },
+    {
+      "kind": "construction",
+      "time_s": 843.3255674359389,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 80,
+      "kicks": 4,
+      "constructions": 5
+    },
+    {
+      "kind": "construction",
+      "time_s": 1016.5060911141336,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 100,
+      "kicks": 5,
+      "constructions": 6
+    },
+    {
+      "kind": "construction",
+      "time_s": 1183.4875917048194,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 120,
+      "kicks": 6,
+      "constructions": 7
+    },
+    {
+      "kind": "construction",
+      "time_s": 1335.0709600560367,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 140,
+      "kicks": 7,
+      "constructions": 8
+    },
+    {
+      "kind": "construction",
+      "time_s": 1510.2691733301617,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 160,
+      "kicks": 8,
+      "constructions": 9
+    },
+    {
+      "kind": "construction",
+      "time_s": 1681.563090775162,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 180,
+      "kicks": 9,
+      "constructions": 10
+    },
+    {
+      "kind": "construction",
+      "time_s": 1852.5619550147094,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 200,
+      "kicks": 10,
+      "constructions": 11
+    },
+    {
+      "kind": "construction",
+      "time_s": 2017.186050659977,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 220,
+      "kicks": 11,
+      "constructions": 12
+    },
+    {
+      "kind": "construction",
+      "time_s": 2160.4483026927337,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 240,
+      "kicks": 12,
+      "constructions": 13
+    },
+    {
+      "kind": "construction",
+      "time_s": 2329.230213313829,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 260,
+      "kicks": 13,
+      "constructions": 14
+    },
+    {
+      "kind": "construction",
+      "time_s": 2486.2103822957724,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 280,
+      "kicks": 14,
+      "constructions": 15
+    },
+    {
+      "kind": "construction",
+      "time_s": 2657.015387977939,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 300,
+      "kicks": 15,
+      "constructions": 16
+    },
+    {
+      "kind": "construction",
+      "time_s": 2802.541619068943,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 320,
+      "kicks": 16,
+      "constructions": 17
+    },
+    {
+      "kind": "construction",
+      "time_s": 2960.994404027704,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 340,
+      "kicks": 17,
+      "constructions": 18
+    },
+    {
+      "kind": "construction",
+      "time_s": 3117.469452467747,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 360,
+      "kicks": 18,
+      "constructions": 19
+    },
+    {
+      "kind": "construction",
+      "time_s": 3253.788419047836,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 380,
+      "kicks": 19,
+      "constructions": 20
+    },
+    {
+      "kind": "construction",
+      "time_s": 3410.250068454072,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 400,
+      "kicks": 20,
+      "constructions": 21
+    },
+    {
+      "kind": "construction",
+      "time_s": 3556.3699333458208,
+      "N": 8,
+      "U": 0.019000513118648796,
+      "U_star": 0.02152861438130805,
+      "objective": 7.9784713856186915,
+      "ls_evaluations": 420,
+      "kicks": 21,
+      "constructions": 22
+    }
+  ],
+  "ls_end_events": [],
+  "validation": {
+    "ok": true,
+    "scope": "piece identity, geometry, occupancy and N/U/U*; accessibility enforced by engine, not independently revalidated",
+    "bin_volumes": [
+      210255,
+      337692,
+      41610,
+      35455,
+      41610,
+      5972,
+      17680,
+      5972
+    ],
+    "bin_filling_rates": [
+      0.0459027744304341,
+      0.07372476137529263,
+      0.009084275969895427,
+      0.007740519214435048,
+      0.009084275969895427,
+      0.001303804280034018,
+      0.0038598894291696985,
+      0.001303804280034018
+    ],
+    "placements": [
+      {
+        "bin": 0,
+        "piece_index": 0,
+        "orientation": "z_180",
+        "translation": [
+          1,
+          66,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 1,
+        "orientation": "x_270",
+        "translation": [
+          23,
+          23,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 10,
+        "orientation": "z_270",
+        "translation": [
+          13,
+          52,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 12,
+        "orientation": "y_270",
+        "translation": [
+          32,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 17,
+        "orientation": "y_180",
+        "translation": [
+          9,
+          51,
+          113
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 18,
+        "orientation": "x_270",
+        "translation": [
+          40,
+          2,
+          15
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 2,
+        "orientation": "x_90",
+        "translation": [
+          11,
+          50,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 3,
+        "orientation": "x_90",
+        "translation": [
+          46,
+          12,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 5,
+        "orientation": "x_180",
+        "translation": [
+          81,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 6,
+        "orientation": "x_180",
+        "translation": [
+          82,
+          28,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 7,
+        "orientation": "x_270",
+        "translation": [
+          46,
+          102,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 9,
+        "orientation": "x_180",
+        "translation": [
+          6,
+          58,
+          87
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 11,
+        "orientation": "x_270",
+        "translation": [
+          31,
+          72,
+          68
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 15,
+        "orientation": "x_0",
+        "translation": [
+          64,
+          97,
+          0
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 4,
+        "orientation": "x_270",
+        "translation": [
+          1,
+          45,
+          0
+        ]
+      },
+      {
+        "bin": 3,
+        "piece_index": 8,
+        "orientation": "y_270",
+        "translation": [
+          39,
+          4,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 13,
+        "orientation": "z_180",
+        "translation": [
+          20,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 14,
+        "orientation": "z_180",
+        "translation": [
+          1,
+          61,
+          0
+        ]
+      },
+      {
+        "bin": 6,
+        "piece_index": 16,
+        "orientation": "y_270",
+        "translation": [
+          49,
+          2,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 19,
+        "orientation": "y_90",
+        "translation": [
+          60,
+          1,
+          0
+        ]
+      }
+    ]
+  },
+  "mean_piece_count_without_emptiest": 2.7142857142857144,
+  "bin_capacity": 4580442.088933918,
+  "max_piece_volume": 91920,
+  "max_piece_radio": 1093.224380466397,
+  "weight_capacity": 348123.0,
+  "radio_capacity": 1093.224380466397,
+  "piece_count": 20,
+  "hostname": "gpu009.aire.lee.alces.network",
+  "python": "3.13.2 | packaged by conda-forge | (main, Feb 17 2025, 14:10:22) [GCC 13.3.0]",
+  "resolved_limits": {
+    "piece_count": 20,
+    "kick_failed_repacking_threshold": 10,
+    "ls_repacks_per_restart": 20,
+    "kick_in_ls_budget": false,
+    "deadline_policy": "finish in-flight call; start no new call after expiry"
+  },
+  "host_max_rss_kib": 12344128,
+  "total_wall_s": 3605.3653927664272
+}

@@ -1,0 +1,829 @@
+{
+  "case": {
+    "task_id": 755,
+    "stage": "full",
+    "protocol": "ejor-two-level-fixed-pes-v4",
+    "dataset": "st04_Example2_normal",
+    "shape": "cube",
+    "weight_level": "weak",
+    "radio_level": "weak",
+    "seed": 13,
+    "algorithm": "improved_GRASP_ILS",
+    "config_id": "improved_GRASP_ILS_Wweak_Rweak",
+    "packing_selection": "fixed_global_by_shape",
+    "instance": "st04_Example2_normal_seq13_cube_999999_1.txt",
+    "piece_count": 20
+  },
+  "bundle_id": "7fa35c2f-4ee6-4001-85a3-f0f87c832626",
+  "status": "success",
+  "validation_ok": true,
+  "seed_time_ns": 1793929397772698431,
+  "internal_seeds": {
+    "piece": 2768550876,
+    "position": 3330310417,
+    "kick": 1704148362,
+    "global": 218122677
+  },
+  "order_seed": 13,
+  "algorithm": "improved_GRASP_ILS",
+  "search_settings": {
+    "time_limit": 3600,
+    "alpha": 1,
+    "restart_limit": null,
+    "rcl_tolerance": 0.0,
+    "rcl_top_k": 10,
+    "iter_limit_per_iter": null,
+    "kick_trigger_time": "auto",
+    "kick_level": "medium"
+  },
+  "method": {
+    "pes": "maximal_residual_box",
+    "selection_range": "bottom",
+    "parameter_scope": "global_by_shape",
+    "radio_priority": true,
+    "cache": "run_scoped",
+    "rcl": "pooled_orientation_position",
+    "warmup": "none"
+  },
+  "best_N": 2,
+  "best_U": 0.10738597664501609,
+  "best_U_star": 0.2050285767871597,
+  "objective": 1.7949714232128402,
+  "origin_N": 2,
+  "origin_U_star": 0.1922890179258879,
+  "origin_objective": 1.8077109820741122,
+  "algorithm_wall_s": 3618.9691880042665,
+  "reported_algorithm_wall_s": 3618.9691093037836,
+  "counts": {
+    "construction": 40,
+    "ls": 780,
+    "kick": 36
+  },
+  "cache_counts": {
+    "BIN_RANK": 15456,
+    "SEARCH": 11403,
+    "SEARCH_SUCCEEDED": 9154,
+    "POOLED_RCL": 800,
+    "SEARCH_FAILED": 2249,
+    "RESTORE_REFERENCE_SUCCESS": 4997,
+    "SKIP_CACHED_FAILURE": 2235,
+    "RESTORE_CACHED_SUCCESS": 6339,
+    "RESTORE_CACHED_CANDIDATES": 1023,
+    "HARD_CONSTRAINT_REJECT": 16,
+    "RUN_END": 1
+  },
+  "rcl_histograms": {
+    "pooled": {
+      "10": 763,
+      "9": 20,
+      "5": 3,
+      "6": 2,
+      "4": 3,
+      "3": 1,
+      "7": 4,
+      "8": 3,
+      "2": 1
+    },
+    "orientation_count": {
+      "10": 90,
+      "6": 168,
+      "3": 68,
+      "7": 48,
+      "8": 59,
+      "5": 78,
+      "4": 165,
+      "2": 84,
+      "1": 26,
+      "9": 14
+    }
+  },
+  "rcl_orientation_summary": {
+    "events": 800,
+    "mean_distinct_orientations": 5.3625,
+    "min_distinct_orientations": 1,
+    "max_distinct_orientations": 10
+  },
+  "history": [
+    {
+      "kind": "construction",
+      "time_s": 59.69784478517249,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.1922890179258879,
+      "objective": 1.8077109820741122,
+      "ls_evaluations": 0,
+      "kicks": 0,
+      "constructions": 1,
+      "new_best": true
+    },
+    {
+      "kind": "ls",
+      "time_s": 66.72997993510216,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.1922890179258879,
+      "objective": 1.8077109820741122,
+      "ls_evaluations": 10,
+      "kicks": 0,
+      "constructions": 1
+    },
+    {
+      "kind": "ls",
+      "time_s": 97.85396891832352,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.1586502156831777,
+      "objective": 1.8413497843168223,
+      "ls_evaluations": 20,
+      "kicks": 1,
+      "constructions": 1
+    },
+    {
+      "kind": "construction",
+      "time_s": 155.2282274882309,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.19634819260458414,
+      "objective": 1.8036518073954158,
+      "ls_evaluations": 20,
+      "kicks": 1,
+      "constructions": 2,
+      "new_best": true
+    },
+    {
+      "kind": "construction",
+      "time_s": 259.7143582860008,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.1994403095571832,
+      "objective": 1.8005596904428167,
+      "ls_evaluations": 40,
+      "kicks": 2,
+      "constructions": 3,
+      "new_best": true
+    },
+    {
+      "kind": "ls",
+      "time_s": 275.75569615513086,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.1994403095571832,
+      "objective": 1.8005596904428167,
+      "ls_evaluations": 50,
+      "kicks": 2,
+      "constructions": 3
+    },
+    {
+      "kind": "construction",
+      "time_s": 364.2742979582399,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.17945352447041638,
+      "objective": 1.8205464755295837,
+      "ls_evaluations": 60,
+      "kicks": 3,
+      "constructions": 4
+    },
+    {
+      "kind": "construction",
+      "time_s": 458.9820067663677,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.1922890179258879,
+      "objective": 1.8077109820741122,
+      "ls_evaluations": 80,
+      "kicks": 4,
+      "constructions": 5
+    },
+    {
+      "kind": "construction",
+      "time_s": 566.9444840401411,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.19634819260458414,
+      "objective": 1.8036518073954158,
+      "ls_evaluations": 100,
+      "kicks": 5,
+      "constructions": 6
+    },
+    {
+      "kind": "construction",
+      "time_s": 652.7333809440024,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.19787728515586442,
+      "objective": 1.8021227148441357,
+      "ls_evaluations": 120,
+      "kicks": 6,
+      "constructions": 7
+    },
+    {
+      "kind": "construction",
+      "time_s": 738.6449730652384,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.17945352447041638,
+      "objective": 1.8205464755295837,
+      "ls_evaluations": 140,
+      "kicks": 7,
+      "constructions": 8
+    },
+    {
+      "kind": "construction",
+      "time_s": 842.5528114680201,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.19075992537460762,
+      "objective": 1.8092400746253925,
+      "ls_evaluations": 160,
+      "kicks": 8,
+      "constructions": 9
+    },
+    {
+      "kind": "ls",
+      "time_s": 872.3140916973352,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.2050285767871597,
+      "objective": 1.7949714232128402,
+      "ls_evaluations": 171,
+      "kicks": 8,
+      "constructions": 9,
+      "new_best": true
+    },
+    {
+      "kind": "construction",
+      "time_s": 929.6310731233098,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.1994403095571832,
+      "objective": 1.8005596904428167,
+      "ls_evaluations": 180,
+      "kicks": 8,
+      "constructions": 10
+    },
+    {
+      "kind": "construction",
+      "time_s": 1029.3310114052147,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.20193645983456063,
+      "objective": 1.7980635401654395,
+      "ls_evaluations": 200,
+      "kicks": 9,
+      "constructions": 11
+    },
+    {
+      "kind": "construction",
+      "time_s": 1116.3280159011483,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.19787728515586442,
+      "objective": 1.8021227148441357,
+      "ls_evaluations": 220,
+      "kicks": 10,
+      "constructions": 12
+    },
+    {
+      "kind": "construction",
+      "time_s": 1197.9870182271115,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.16971014796754388,
+      "objective": 1.8302898520324562,
+      "ls_evaluations": 240,
+      "kicks": 11,
+      "constructions": 13
+    },
+    {
+      "kind": "construction",
+      "time_s": 1273.846870883368,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.2050285767871597,
+      "objective": 1.7949714232128402,
+      "ls_evaluations": 260,
+      "kicks": 11,
+      "constructions": 14
+    },
+    {
+      "kind": "construction",
+      "time_s": 1376.4501892630942,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.1825456414230154,
+      "objective": 1.8174543585769847,
+      "ls_evaluations": 280,
+      "kicks": 12,
+      "constructions": 15
+    },
+    {
+      "kind": "construction",
+      "time_s": 1464.3771332260221,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.16971014796754388,
+      "objective": 1.8302898520324562,
+      "ls_evaluations": 300,
+      "kicks": 13,
+      "constructions": 16
+    },
+    {
+      "kind": "construction",
+      "time_s": 1554.5555802732706,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.18660481610171165,
+      "objective": 1.8133951838982885,
+      "ls_evaluations": 320,
+      "kicks": 14,
+      "constructions": 17
+    },
+    {
+      "kind": "construction",
+      "time_s": 1639.946827661246,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.19634819260458414,
+      "objective": 1.8036518073954158,
+      "ls_evaluations": 340,
+      "kicks": 15,
+      "constructions": 18
+    },
+    {
+      "kind": "construction",
+      "time_s": 1739.0910733211786,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.20359541883007917,
+      "objective": 1.7964045811699207,
+      "ls_evaluations": 360,
+      "kicks": 16,
+      "constructions": 19
+    },
+    {
+      "kind": "construction",
+      "time_s": 1837.0386948520318,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.1867007506959114,
+      "objective": 1.8132992493040887,
+      "ls_evaluations": 380,
+      "kicks": 17,
+      "constructions": 20
+    },
+    {
+      "kind": "construction",
+      "time_s": 1937.0644218022935,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.19634819260458414,
+      "objective": 1.8036518073954158,
+      "ls_evaluations": 400,
+      "kicks": 18,
+      "constructions": 21
+    },
+    {
+      "kind": "construction",
+      "time_s": 2046.8708767453209,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.16971014796754388,
+      "objective": 1.8302898520324562,
+      "ls_evaluations": 420,
+      "kicks": 19,
+      "constructions": 22
+    },
+    {
+      "kind": "construction",
+      "time_s": 2142.4453038983047,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.1994403095571832,
+      "objective": 1.8005596904428167,
+      "ls_evaluations": 440,
+      "kicks": 20,
+      "constructions": 23
+    },
+    {
+      "kind": "construction",
+      "time_s": 2231.377261132002,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.1994403095571832,
+      "objective": 1.8005596904428167,
+      "ls_evaluations": 460,
+      "kicks": 21,
+      "constructions": 24
+    },
+    {
+      "kind": "construction",
+      "time_s": 2321.6124038980342,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.19634819260458414,
+      "objective": 1.8036518073954158,
+      "ls_evaluations": 480,
+      "kicks": 22,
+      "constructions": 25
+    },
+    {
+      "kind": "construction",
+      "time_s": 2429.474122887943,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.17945352447041638,
+      "objective": 1.8205464755295837,
+      "ls_evaluations": 500,
+      "kicks": 23,
+      "constructions": 26
+    },
+    {
+      "kind": "construction",
+      "time_s": 2518.099655539263,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.17945352447041638,
+      "objective": 1.8205464755295837,
+      "ls_evaluations": 520,
+      "kicks": 23,
+      "constructions": 27
+    },
+    {
+      "kind": "construction",
+      "time_s": 2610.5656808391213,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.16255885633624859,
+      "objective": 1.8374411436637514,
+      "ls_evaluations": 540,
+      "kicks": 24,
+      "constructions": 28
+    },
+    {
+      "kind": "construction",
+      "time_s": 2686.744439946022,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.2050285767871597,
+      "objective": 1.7949714232128402,
+      "ls_evaluations": 560,
+      "kicks": 25,
+      "constructions": 29
+    },
+    {
+      "kind": "construction",
+      "time_s": 2785.9150658072904,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.2050285767871597,
+      "objective": 1.7949714232128402,
+      "ls_evaluations": 580,
+      "kicks": 26,
+      "constructions": 30
+    },
+    {
+      "kind": "construction",
+      "time_s": 2872.1888561020605,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.1994403095571832,
+      "objective": 1.8005596904428167,
+      "ls_evaluations": 600,
+      "kicks": 27,
+      "constructions": 31
+    },
+    {
+      "kind": "construction",
+      "time_s": 2967.8694851761684,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.16255885633624859,
+      "objective": 1.8374411436637514,
+      "ls_evaluations": 620,
+      "kicks": 28,
+      "constructions": 32
+    },
+    {
+      "kind": "construction",
+      "time_s": 3034.518918941263,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.19634819260458414,
+      "objective": 1.8036518073954158,
+      "ls_evaluations": 640,
+      "kicks": 29,
+      "constructions": 33
+    },
+    {
+      "kind": "construction",
+      "time_s": 3128.2188045703806,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.19787728515586442,
+      "objective": 1.8021227148441357,
+      "ls_evaluations": 660,
+      "kicks": 30,
+      "constructions": 34
+    },
+    {
+      "kind": "construction",
+      "time_s": 3197.1884820223786,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.17539434979172014,
+      "objective": 1.82460565020828,
+      "ls_evaluations": 680,
+      "kicks": 31,
+      "constructions": 35
+    },
+    {
+      "kind": "construction",
+      "time_s": 3270.433117548935,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.1994403095571832,
+      "objective": 1.8005596904428167,
+      "ls_evaluations": 700,
+      "kicks": 32,
+      "constructions": 36
+    },
+    {
+      "kind": "construction",
+      "time_s": 3362.1166783943772,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.1825456414230154,
+      "objective": 1.8174543585769847,
+      "ls_evaluations": 720,
+      "kicks": 33,
+      "constructions": 37
+    },
+    {
+      "kind": "construction",
+      "time_s": 3454.023310728371,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.19787728515586442,
+      "objective": 1.8021227148441357,
+      "ls_evaluations": 740,
+      "kicks": 34,
+      "constructions": 38
+    },
+    {
+      "kind": "construction",
+      "time_s": 3536.7370626730844,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.17539434979172014,
+      "objective": 1.82460565020828,
+      "ls_evaluations": 760,
+      "kicks": 35,
+      "constructions": 39
+    },
+    {
+      "kind": "construction",
+      "time_s": 3618.923760900274,
+      "N": 2,
+      "U": 0.10738597664501609,
+      "U_star": 0.1994403095571832,
+      "objective": 1.8005596904428167,
+      "ls_evaluations": 780,
+      "kicks": 36,
+      "constructions": 40
+    }
+  ],
+  "ls_end_events": [],
+  "validation": {
+    "ok": true,
+    "scope": "piece identity, geometry, occupancy and N/U/U*; accessibility enforced by engine, not independently revalidated",
+    "bin_volumes": [
+      664660,
+      31586
+    ],
+    "bin_filling_rates": [
+      0.2050285767871597,
+      0.009743376502872485
+    ],
+    "placements": [
+      {
+        "bin": 0,
+        "piece_index": 0,
+        "orientation": "z_180",
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 1,
+        "orientation": "x_90",
+        "translation": [
+          0,
+          16,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 2,
+        "orientation": "x_0",
+        "translation": [
+          18,
+          28,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 3,
+        "orientation": "y_270",
+        "translation": [
+          53,
+          0,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 4,
+        "orientation": "y_270",
+        "translation": [
+          44,
+          81,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 5,
+        "orientation": "z_180",
+        "translation": [
+          16,
+          106,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 6,
+        "orientation": "z_90",
+        "translation": [
+          75,
+          64,
+          32
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 7,
+        "orientation": "y_180",
+        "translation": [
+          53,
+          0,
+          35
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 8,
+        "orientation": "z_270",
+        "translation": [
+          70,
+          6,
+          35
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 9,
+        "orientation": "x_0",
+        "translation": [
+          24,
+          34,
+          6
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 10,
+        "orientation": "y_270",
+        "translation": [
+          71,
+          16,
+          35
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 11,
+        "orientation": "x_0",
+        "translation": [
+          0,
+          98,
+          62
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 12,
+        "orientation": "x_180",
+        "translation": [
+          131,
+          37,
+          15
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 13,
+        "orientation": "x_270",
+        "translation": [
+          0,
+          6,
+          81
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 14,
+        "orientation": "x_0",
+        "translation": [
+          81,
+          113,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 15,
+        "orientation": "z_270",
+        "translation": [
+          110,
+          127,
+          58
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 16,
+        "orientation": "z_270",
+        "translation": [
+          22,
+          131,
+          31
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 18,
+        "orientation": "x_0",
+        "translation": [
+          0,
+          77,
+          79
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 19,
+        "orientation": "z_90",
+        "translation": [
+          15,
+          0,
+          24
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 17,
+        "orientation": "x_0",
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "mean_piece_count_without_emptiest": 19.0,
+  "bin_capacity": 3241792,
+  "max_piece_volume": 91920,
+  "max_piece_radio": 1018.5735088484655,
+  "weight_capacity": 671728.6,
+  "radio_capacity": 3933.8044807116185,
+  "piece_count": 20,
+  "hostname": "gpu004.aire.lee.alces.network",
+  "python": "3.13.2 | packaged by conda-forge | (main, Feb 17 2025, 14:10:22) [GCC 13.3.0]",
+  "resolved_limits": {
+    "piece_count": 20,
+    "kick_failed_repacking_threshold": 10,
+    "ls_repacks_per_restart": 20,
+    "kick_in_ls_budget": false,
+    "deadline_policy": "finish in-flight call; start no new call after expiry"
+  },
+  "host_max_rss_kib": 6706440,
+  "total_wall_s": 3621.176717166323
+}
