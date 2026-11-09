@@ -257,6 +257,10 @@ def submit(bundle,max_parallel=6,small_memory=16,large_memory=32,walltime='12:00
             valid_saved(bundle/'results/calibration'/f"task_{c['task_id']}.json",c,manifest['bundle_id']) for c in cases):
             raise ValueError('Complete calibration before submitting separate flows')
         requested=tuple(s for s in requested if s!='calibration')
+    if manifest['profile'].get('constraint_mode') == 'geometry_only':
+        if through != 'full' or flow == 'sensitivity':
+            raise ValueError('Geometry-only comparison submits the full stage')
+        requested=('full',)
     if not requested:raise ValueError('No stages selected for this flow/through combination')
     if not dry_run:
         from submission_graph import active_job_ids

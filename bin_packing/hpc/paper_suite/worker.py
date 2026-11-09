@@ -163,7 +163,8 @@ def run(bundle,stage,index):
         capacity=math.prod(size) if shape=='cube' else math.pi*(size[0]/2)**2*size[2]
         radio_limit=sum(o['radio'] for o in objects)+1.
         max_weight=capacity
-        constrained=stage in ('sensitivity','rcl','tuning','full')
+        constrained=(stage in ('sensitivity','rcl','tuning','full')
+                     and profile.get('constraint_mode') != 'geometry_only')
         if constrained:
             calibrated=selections['calibration'][f"{case['dataset']}|{shape}"]
             max_weight=calibrated['weight_capacity'][case['weight_level']]
@@ -238,7 +239,8 @@ def run(bundle,stage,index):
         emptiest=min(range(len(volumes)),key=lambda b:volumes[b])
         nstar=(len(objects)-len(result[9][emptiest]))/(len(volumes)-1) if len(volumes)>1 else len(objects)
         report.update(status='success',validation_ok=True,algorithm=algorithm,search_settings=search,
-            method=dict(cfg,radio_priority=constrained,cache='run_scoped',rcl='pooled_orientation_position',
+            method=dict(cfg,radio_priority=constrained,bin_priority='radio' if constrained else 'first_fit',
+                        constraint_mode='weight_radiation' if constrained else 'geometry_only',cache='run_scoped',rcl='pooled_orientation_position',
                         warmup='none'),best_N=result[0],best_U=result[1],best_U_star=result[2],
             objective=result[0]-result[2],origin_N=result[3],origin_U_star=result[5],
             origin_objective=result[3]-result[5],algorithm_wall_s=algorithm_s,
