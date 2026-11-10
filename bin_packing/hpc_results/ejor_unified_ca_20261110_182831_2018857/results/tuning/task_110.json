@@ -1,0 +1,594 @@
+{
+  "case": {
+    "task_id": 110,
+    "stage": "tuning",
+    "protocol": "ejor-two-level-fixed-pes-v4",
+    "dataset": "shapesnew",
+    "shape": "cylinder",
+    "weight_level": "strong",
+    "radio_level": "strong",
+    "seed": 3,
+    "config_id": "I_S75",
+    "algorithm": "improved_ILS",
+    "kick": "auto",
+    "kick_level": "large",
+    "kick_fraction": 0.75,
+    "packing_selection": "fixed_global_by_shape",
+    "instance": "shapesnew_seq3_cylinder_999999_1.txt",
+    "piece_count": 43
+  },
+  "bundle_id": "04870416-1be1-4153-aeaa-69666776e15d",
+  "status": "success",
+  "validation_ok": true,
+  "seed_time_ns": 1793417244199282800,
+  "internal_seeds": {
+    "piece": 4174065585,
+    "position": 2475778173,
+    "kick": 1109639504,
+    "global": 2170900740
+  },
+  "order_seed": 3,
+  "algorithm": "improved_ILS",
+  "search_settings": {
+    "time_limit": 1800.0,
+    "ALG": "ILS",
+    "iteration_limit": null,
+    "kick_trigger_time": "auto",
+    "kick_level": "large"
+  },
+  "method": {
+    "pes": "minimum_aabb_edges_len",
+    "selection_range": "bottom_top",
+    "parameter_scope": "global_by_shape",
+    "radio_priority": true,
+    "cache": "run_scoped",
+    "rcl": "pooled_orientation_position",
+    "warmup": "none"
+  },
+  "best_N": 15,
+  "best_U": 0.11172480546113671,
+  "best_U_star": 0.11334067469639653,
+  "objective": 14.886659325303604,
+  "origin_N": 16,
+  "origin_U_star": 0.10875471758888673,
+  "origin_objective": 15.891245282411113,
+  "algorithm_wall_s": 1800.0011128340848,
+  "reported_algorithm_wall_s": 1800.0010593740735,
+  "counts": {
+    "construction": 1,
+    "ls": 594946,
+    "kick": 27042
+  },
+  "cache_counts": {
+    "BIN_RANK": 18416283,
+    "SEARCH": 75313,
+    "SEARCH_SUCCEEDED": 74705,
+    "HARD_CONSTRAINT_REJECT": 151398458,
+    "RESTORE_REFERENCE_SUCCESS": 16406146,
+    "RESTORE_CACHED_SUCCESS": 1935819,
+    "SEARCH_FAILED": 608,
+    "SKIP_CACHED_FAILURE": 89786,
+    "RUN_END": 1
+  },
+  "rcl_histograms": {
+    "pooled": {},
+    "orientation_count": {}
+  },
+  "rcl_orientation_summary": {
+    "events": 0,
+    "mean_distinct_orientations": null,
+    "min_distinct_orientations": null,
+    "max_distinct_orientations": null
+  },
+  "validation": {
+    "ok": true,
+    "scope": "piece identity, geometry, occupancy and N/U/U*; accessibility enforced by engine, not independently revalidated",
+    "bin_volumes": [
+      592,
+      592,
+      628,
+      592,
+      628,
+      628,
+      592,
+      628,
+      592,
+      628,
+      600,
+      628,
+      592,
+      480,
+      628
+    ],
+    "bin_filling_rates": [
+      0.10989325127324923,
+      0.10989325127324923,
+      0.11657594898581168,
+      0.10989325127324923,
+      0.11657594898581168,
+      0.11657594898581168,
+      0.10989325127324923,
+      0.11657594898581168,
+      0.10989325127324923,
+      0.11657594898581168,
+      0.11137829520937421,
+      0.11657594898581168,
+      0.10989325127324923,
+      0.08910263616749937,
+      0.11657594898581168
+    ],
+    "placements": [
+      {
+        "bin": 0,
+        "piece_index": 0,
+        "orientation": "x_90",
+        "translation": [
+          1,
+          4,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 1,
+        "orientation": "z_180",
+        "translation": [
+          8,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 3,
+        "orientation": "x_270",
+        "translation": [
+          6,
+          4,
+          5
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 4,
+        "orientation": "x_0",
+        "translation": [
+          13,
+          4,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 2,
+        "orientation": "y_270",
+        "translation": [
+          3,
+          3,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 6,
+        "orientation": "x_270",
+        "translation": [
+          6,
+          6,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 10,
+        "orientation": "z_270",
+        "translation": [
+          7,
+          10,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 12,
+        "orientation": "x_0",
+        "translation": [
+          13,
+          4,
+          0
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 5,
+        "orientation": "x_0",
+        "translation": [
+          2,
+          4,
+          0
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 7,
+        "orientation": "y_90",
+        "translation": [
+          7,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 3,
+        "piece_index": 8,
+        "orientation": "y_90",
+        "translation": [
+          3,
+          3,
+          0
+        ]
+      },
+      {
+        "bin": 3,
+        "piece_index": 13,
+        "orientation": "z_270",
+        "translation": [
+          3,
+          3,
+          7
+        ]
+      },
+      {
+        "bin": 3,
+        "piece_index": 24,
+        "orientation": "x_0",
+        "translation": [
+          9,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 3,
+        "piece_index": 31,
+        "orientation": "x_0",
+        "translation": [
+          9,
+          8,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 9,
+        "orientation": "y_90",
+        "translation": [
+          1,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 4,
+        "piece_index": 11,
+        "orientation": "x_270",
+        "translation": [
+          4,
+          12,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 14,
+        "orientation": "y_270",
+        "translation": [
+          1,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 5,
+        "piece_index": 27,
+        "orientation": "y_90",
+        "translation": [
+          12,
+          4,
+          0
+        ]
+      },
+      {
+        "bin": 6,
+        "piece_index": 15,
+        "orientation": "y_90",
+        "translation": [
+          3,
+          3,
+          0
+        ]
+      },
+      {
+        "bin": 6,
+        "piece_index": 16,
+        "orientation": "z_90",
+        "translation": [
+          9,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 6,
+        "piece_index": 18,
+        "orientation": "z_180",
+        "translation": [
+          3,
+          3,
+          7
+        ]
+      },
+      {
+        "bin": 6,
+        "piece_index": 19,
+        "orientation": "z_270",
+        "translation": [
+          9,
+          8,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 17,
+        "orientation": "y_90",
+        "translation": [
+          1,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 7,
+        "piece_index": 21,
+        "orientation": "x_180",
+        "translation": [
+          2,
+          4,
+          13
+        ]
+      },
+      {
+        "bin": 8,
+        "piece_index": 20,
+        "orientation": "x_90",
+        "translation": [
+          1,
+          6,
+          0
+        ]
+      },
+      {
+        "bin": 8,
+        "piece_index": 26,
+        "orientation": "x_0",
+        "translation": [
+          8,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 8,
+        "piece_index": 28,
+        "orientation": "x_270",
+        "translation": [
+          13,
+          4,
+          0
+        ]
+      },
+      {
+        "bin": 8,
+        "piece_index": 34,
+        "orientation": "x_0",
+        "translation": [
+          2,
+          2,
+          3
+        ]
+      },
+      {
+        "bin": 9,
+        "piece_index": 22,
+        "orientation": "x_0",
+        "translation": [
+          1,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 9,
+        "piece_index": 23,
+        "orientation": "y_270",
+        "translation": [
+          12,
+          2,
+          0
+        ]
+      },
+      {
+        "bin": 10,
+        "piece_index": 25,
+        "orientation": "z_90",
+        "translation": [
+          1,
+          6,
+          0
+        ]
+      },
+      {
+        "bin": 10,
+        "piece_index": 29,
+        "orientation": "y_90",
+        "translation": [
+          4,
+          1,
+          3
+        ]
+      },
+      {
+        "bin": 10,
+        "piece_index": 30,
+        "orientation": "y_270",
+        "translation": [
+          8,
+          5,
+          6
+        ]
+      },
+      {
+        "bin": 11,
+        "piece_index": 32,
+        "orientation": "x_270",
+        "translation": [
+          1,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 11,
+        "piece_index": 38,
+        "orientation": "z_270",
+        "translation": [
+          2,
+          10,
+          9
+        ]
+      },
+      {
+        "bin": 12,
+        "piece_index": 33,
+        "orientation": "z_180",
+        "translation": [
+          3,
+          3,
+          0
+        ]
+      },
+      {
+        "bin": 12,
+        "piece_index": 35,
+        "orientation": "x_270",
+        "translation": [
+          1,
+          6,
+          5
+        ]
+      },
+      {
+        "bin": 12,
+        "piece_index": 37,
+        "orientation": "z_270",
+        "translation": [
+          8,
+          4,
+          0
+        ]
+      },
+      {
+        "bin": 12,
+        "piece_index": 42,
+        "orientation": "x_90",
+        "translation": [
+          11,
+          9,
+          0
+        ]
+      },
+      {
+        "bin": 13,
+        "piece_index": 36,
+        "orientation": "y_270",
+        "translation": [
+          3,
+          3,
+          0
+        ]
+      },
+      {
+        "bin": 13,
+        "piece_index": 39,
+        "orientation": "z_90",
+        "translation": [
+          3,
+          3,
+          7
+        ]
+      },
+      {
+        "bin": 14,
+        "piece_index": 40,
+        "orientation": "x_0",
+        "translation": [
+          2,
+          4,
+          0
+        ]
+      },
+      {
+        "bin": 14,
+        "piece_index": 41,
+        "orientation": "x_180",
+        "translation": [
+          7,
+          1,
+          0
+        ]
+      }
+    ]
+  },
+  "mean_piece_count_without_emptiest": 2.9285714285714284,
+  "bin_capacity": 5387.046002743097,
+  "max_piece_volume": 448,
+  "max_piece_radio": 1049.9691025787101,
+  "weight_capacity": 647.7142857142857,
+  "radio_capacity": 1085.2001164921712,
+  "piece_count": 43,
+  "hostname": "gpu007.aire.lee.alces.network",
+  "python": "3.13.2 | packaged by conda-forge | (main, Feb 17 2025, 14:10:22) [GCC 13.3.0]",
+  "resolved_limits": {
+    "piece_count": 43,
+    "kick_failed_repacking_threshold": 22,
+    "ls_repacks_per_restart": null,
+    "kick_in_ls_budget": false,
+    "deadline_policy": "finish in-flight call; start no new call after expiry"
+  },
+  "host_max_rss_kib": 516036,
+  "total_wall_s": 1801.5780555789825,
+  "reused_from": {
+    "bundle_id": "7fa35c2f-4ee6-4001-85a3-f0f87c832626",
+    "case": {
+      "task_id": 110,
+      "stage": "tuning",
+      "protocol": "ejor-two-level-fixed-pes-v4",
+      "dataset": "shapesnew",
+      "shape": "cylinder",
+      "weight_level": "strong",
+      "radio_level": "strong",
+      "seed": 3,
+      "config_id": "I_S75",
+      "algorithm": "improved_ILS",
+      "kick": "auto",
+      "kick_level": "large",
+      "kick_fraction": 0.75,
+      "packing_selection": "fixed_global_by_shape",
+      "instance": "shapesnew_seq3_cylinder_999999_1.txt",
+      "piece_count": 43
+    },
+    "source_report": "inputs/conditional_reuse/tuning/task_110.json",
+    "validation": "Input, executable algorithm, PES, limits and effective search parameters matched"
+  }
+}
