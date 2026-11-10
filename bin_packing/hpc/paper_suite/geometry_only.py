@@ -5,17 +5,13 @@ import json
 from pathlib import Path
 from suite import freeze, save
 
-def prepare(source, project, output):
+def prepare(source, project, output, geometry_source=None):
     source=source.resolve()
     prior=json.loads((source/'manifest.json').read_text())
     selections={}
     for stage in ('rcl','tuning'):
         path=source/'results'/stage/'selection.json'
         selections[stage]=json.loads(path.read_text())
-    if selections['rcl']['global_rcl']['top_k'] != 10:
-        raise ValueError('Expected the confirmed Top10 RCL')
-    if selections['tuning']['improved_ILS']['kick_fraction'] != .5:
-        raise ValueError('Expected the confirmed 50% kick strength')
     freeze(project,source/'inputs/ca_reference_summary.csv',output,
            datasets=prior['profile']['datasets'],
            tuning=prior['profile']['tuning_datasets'],reuse_bundle=source,plan='v4')
@@ -45,10 +41,16 @@ def prepare(source, project, output):
     plan['profile']=profile
     plan['conventions'].update(metaheuristic_packing_scope='fixed per shape',
                                bin_priority='first_fit',constraints='geometry_only',
-                               parameter_selection='inherit Top10 and 50% from constrained experiments')
+                               parameter_selection='inherit globally selected RCL and kick from source experiments')
     save(output/'parameter_plan.json',plan)
     print(json.dumps(dict(bundle=str(output.resolve()),full_tasks=len(cases),
                           constraint_mode='geometry_only',bin_priority='first_fit'),indent=2))
+    if geometry_source is not None:
+        from conditional_reuse import stage_candidates, try_reuse
+        stage_candidates(output,geometry_source,stages=('full',))
+        manifest=json.loads((output/'manifest.json').read_text())
+        for case in cases:
+            try_reuse(output,case,manifest)
     return manifest
 
 if __name__=='__main__':
@@ -56,5 +58,6 @@ if __name__=='__main__':
     parser.add_argument('--source',type=Path,required=True)
     parser.add_argument('--project',type=Path,required=True)
     parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--reuse-geometry-bundle',type=Path)
     args=parser.parse_args()
-    prepare(args.source,args.project,args.output)
+    prepare(args.source,args.project,args.output,args.reuse_geometry_bundle)

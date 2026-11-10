@@ -53,7 +53,7 @@ def geometry_path(project, reference):
 
 
 def prepare(project, datasets, shapes, seeds, time_limit=3600,
-            pes='minimum_aabb_volume', selection_range='bottom_top'):
+            pes='minimum_aabb_edges_len', selection_range='bottom_top'):
     if not math.isfinite(time_limit) or time_limit <= 0:
         raise ValueError('time-limit must be finite and positive')
     for name, values in [('datasets', datasets), ('shapes', shapes), ('seeds', seeds)]:
@@ -361,7 +361,7 @@ def main():
     parser.add_argument('--shapes', nargs='+', choices=['cube','cylinder'], default=['cube','cylinder'])
     parser.add_argument('--seeds', nargs='+', type=int, default=[3,7,13])
     parser.add_argument('--time-limit', type=float, default=3600)
-    parser.add_argument('--pes', default='minimum_aabb_volume', choices=['minimum_aabb_volume','minimum_aabb_edges_len','maximal_residual_box','overlap_distance'])
+    parser.add_argument('--pes', default='minimum_aabb_edges_len', choices=['minimum_aabb_volume','minimum_aabb_edges_len','maximal_residual_box','overlap_distance'])
     parser.add_argument('--range', default='bottom_top', choices=['bottom','bottom_top','all'])
     parser.add_argument('--task-index', type=int)
     parser.add_argument('--output', type=Path)

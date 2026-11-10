@@ -126,6 +126,10 @@ def run(bundle,stage,index):
     if valid_saved(path,case,manifest['bundle_id']):
         print('Already completed; skipped',stage,index)
         return 0
+    from conditional_reuse import try_reuse
+    if try_reuse(bundle,case,manifest):
+        print('Compatible result reused',stage,index)
+        return 0
     lock=out/f'task_{index}.lock'
     fd=os.open(lock,os.O_CREAT|os.O_EXCL|os.O_WRONLY)
     os.write(fd,json.dumps(dict(pid=os.getpid(),host=socket.gethostname(),job=os.environ.get('SLURM_JOB_ID'))).encode())
@@ -174,58 +178,44 @@ def run(bundle,stage,index):
         counts=Counter()
         cache_counts=Counter()
         rcl_counts={'pooled':Counter(),'orientation_count':Counter()}
-        history=[]
-        ls_end_events=[]
+        ls_stop_counts=Counter()
         best=[float('inf')]
         clock=[time.perf_counter()]
-        event_path=out/f'task_{index}_events.jsonl'
-        # Preserve interrupted events as well as failure reports.
-        if event_path.exists():
-            archive=out/'archive'/str(stamp)
-            archive.mkdir(parents=True,exist_ok=True)
-            event_path.rename(archive/event_path.name)
-        with event_path.open('x',encoding='utf-8',buffering=1) as event_file:
-            def cache_event(**event):
-                cache_counts[event['event']]+=1
-            def rcl_event(event):
-                record_rcl_event(rcl_counts,event)
-            def observe(kind,packed):
-                counts[kind]+=1
-                n,u,us=algorithms.get_final_performance(objects,size,shape,packed[0])
-                us=u if us is None else us
-                score=n-us
-                event=dict(kind=kind,time_s=time.perf_counter()-clock[0],N=n,U=u,U_star=us,
-                           objective=score,ls_evaluations=counts['ls'],kicks=counts['kick'],
-                           constructions=counts['construction'])
-                if kind=='construction' or score<best[0] or (kind=='ls' and counts['ls'] in (10,20,50)):
-                    history.append(event)
-                if score<best[0]:
-                    best[0]=score
-                    event['new_best']=True
-                event_file.write(json.dumps(event)+'\n')
-            random.seed(seeds['global'])
-            np.random.seed(seeds['kick'])
-            common=dict(object_info_total=objects,nfv_pool=NFV_POOL(),ifv_pool=IFV_POOL(),
-                max_radio=radio_limit,rho=1.,orientations=orientations,ils_orientations=orientations,
-                orientations_list=labels,packing_alg='SCH',selection_type='bounding_box',
-                selection_range=cfg['selection_range'],accessible_check=True,
-                SCH_nesting_strategy=cfg['pes'],orien_evaluation=cfg['pes'],
-                container_size=size,container_shape=shape,flag_NFV_POOL=False,visualisation=False,
-                _TRACE=False,piece_seed=seeds['piece'],position_seed=seeds['position'],
-                radio_priority=constrained,cache_first_fit=True,max_weight=max_weight,weight_factor=1.,
-                packing_observer=observe,cache_observer=cache_event)
-            if algorithm=='improved_GRASP_ILS':common['kick_seed']=seeds['kick']
-            if algorithm!='improved_ILS':common['rcl_observer']=rcl_event
-            if algorithm=='improved_GRASP':
-                def ls_end(event):
-                    ls_end_events.append(dict(event))
-                    event_file.write(json.dumps(dict(event,kind='ls_end',time_s=time.perf_counter()-clock[0]))+'\n')
-                common['ls_observer']=ls_end
-            cuda.synchronize()
-            clock[0]=time.perf_counter()
-            result=getattr(algorithms,algorithm)(**common,**search)
-            cuda.synchronize()
-            algorithm_s=time.perf_counter()-clock[0]
+        # Keep bounded result statistics only; no per-event files or histories.
+        def cache_event(**event):
+            cache_counts[event['event']]+=1
+        def rcl_event(event):
+            record_rcl_event(rcl_counts,event)
+        def observe(kind,packed):
+            counts[kind]+=1
+            n,u,us=algorithms.get_final_performance(objects,size,shape,packed[0])
+            us=u if us is None else us
+            score=n-us
+            if score<best[0]:
+                best[0]=score
+
+        random.seed(seeds['global'])
+        np.random.seed(seeds['kick'])
+        common=dict(object_info_total=objects,nfv_pool=NFV_POOL(),ifv_pool=IFV_POOL(),
+            max_radio=radio_limit,rho=1.,orientations=orientations,ils_orientations=orientations,
+            orientations_list=labels,packing_alg='SCH',selection_type='bounding_box',
+            selection_range=cfg['selection_range'],accessible_check=True,
+            SCH_nesting_strategy=cfg['pes'],orien_evaluation=cfg['pes'],
+            container_size=size,container_shape=shape,flag_NFV_POOL=False,visualisation=False,
+            _TRACE=False,piece_seed=seeds['piece'],position_seed=seeds['position'],
+            radio_priority=constrained,cache_first_fit=True,max_weight=max_weight,weight_factor=1.,
+            packing_observer=observe,cache_observer=cache_event)
+        if algorithm=='improved_GRASP_ILS':common['kick_seed']=seeds['kick']
+        if algorithm!='improved_ILS':common['rcl_observer']=rcl_event
+        if algorithm=='improved_GRASP':
+            def ls_end(event):
+                ls_stop_counts[event['stop_reason']]+=1
+            common['ls_observer']=ls_end
+        cuda.synchronize()
+        clock[0]=time.perf_counter()
+        result=getattr(algorithms,algorithm)(**common,**search)
+        cuda.synchronize()
+        algorithm_s=time.perf_counter()-clock[0]
         validation=validate_result(result,objects,size,shape)
         for group in result[6]:
             if sum(p['radio'] for p in group)>radio_limit+1e-8 or sum(p['volume'] for p in group)>max_weight+1e-8:
@@ -247,7 +237,7 @@ def run(bundle,stage,index):
             reported_algorithm_wall_s=result[-1],counts=dict(counts),cache_counts=dict(cache_counts),
             rcl_histograms={k:dict(v) for k,v in rcl_counts.items()},
             rcl_orientation_summary=summarize_rcl(rcl_counts),
-            history=history,ls_end_events=ls_end_events,
+            ls_stop_counts=dict(ls_stop_counts),
             validation=validation,mean_piece_count_without_emptiest=nstar,bin_capacity=capacity,
             max_piece_volume=max(p['volume'] for p in objects),max_piece_radio=max(p['radio'] for p in objects),
             weight_capacity=max_weight,radio_capacity=radio_limit,piece_count=len(objects),

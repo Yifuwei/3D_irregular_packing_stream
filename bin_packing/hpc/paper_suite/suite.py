@@ -43,6 +43,7 @@ def freeze(project,summary,output,datasets=None,tuning=None,time_limit=3600,smok
     profile=builder(datasets,tuning,time_limit=time_limit,smoke=smoke,shapes=shapes,
                       **(dict(seeds=(3,),reference_seeds=REFERENCE_SEEDS if (ca_json_dir or reuse_bundle) else (3,),
                               full_seeds=(3,)) if smoke else {}))
+    profile['result_logging']='final_results_and_aggregate_counters_only'
     geometry_ca=choose_ca_parameters(rows,datasets)
     geometry_ca={key:value for key,value in geometry_ca.items() if key.split('|')[-1] in shapes}
     ca=dict(geometry_ca)
@@ -141,6 +142,14 @@ def freeze(project,summary,output,datasets=None,tuning=None,time_limit=3600,smok
                 from reuse_candidates_v4 import import_candidates
                 imported['sensitivity']=import_candidates(output,reuse_bundle)
                 manifest=json.loads((output/'manifest.json').read_text())
+            if plan=='v4':
+                from conditional_reuse import stage_candidates, try_reuse
+                staged=stage_candidates(output,reuse_bundle)
+                manifest=json.loads((output/'manifest.json').read_text())
+                for stage in ('rcl','tuning'):
+                    for case in profile['plans'][stage]:
+                        try_reuse(output,case,manifest)
+                imported['conditional_candidates']=staged
             collect(output,'sensitivity')
             print(json.dumps(dict(reused=imported),indent=2))
         print(json.dumps(dict(bundle=str(output),tasks={s:len(profile['plans'][s]) for s in STAGES}),indent=2))

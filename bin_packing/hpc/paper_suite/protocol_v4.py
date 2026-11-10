@@ -7,7 +7,7 @@ VERSION='ejor-two-level-fixed-pes-v4'
 LEVELS=('strong','weak')
 PES=('minimum_aabb_volume','minimum_aabb_edges_len','maximal_residual_box','overlap_distance')
 RANGES=('all','bottom','bottom_top')
-BEST_PES={'cube':dict(pes='maximal_residual_box',selection_range='bottom'),
+BEST_PES={'cube':dict(pes='minimum_aabb_edges_len',selection_range='bottom_top'),
           'cylinder':dict(pes='minimum_aabb_edges_len',selection_range='bottom_top')}
 PARENTS={'calibration':(),'sensitivity':('calibration',),'rcl':('calibration',),
          'tuning':('rcl',),'full':('tuning',)}

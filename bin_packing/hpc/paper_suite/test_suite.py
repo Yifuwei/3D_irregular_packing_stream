@@ -50,7 +50,7 @@ class ProtocolTests(unittest.TestCase):
         historical={f'{dataset}|{shape}':dict(pes='historical_PES',selection_range='all')
                     for dataset in profile['datasets'] for shape in SHAPES}
         manifest=dict(profile=profile,ca_parameters=historical)
-        expected={'cube':dict(pes='maximal_residual_box',selection_range='bottom'),
+        expected={'cube':dict(pes='minimum_aabb_edges_len',selection_range='bottom_top'),
                   'cylinder':dict(pes='minimum_aabb_edges_len',selection_range='bottom_top')}
         for stage,cases in profile['plans'].items():
             for case in cases:

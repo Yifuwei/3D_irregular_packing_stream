@@ -15,7 +15,7 @@ def kick_tuning_datasets(datasets):
 LEVELS=('strong','medium','weak')
 SHAPES=('cube','cylinder')
 SHAPE_PARAMETERS={
-    'cube':dict(pes='maximal_residual_box',selection_range='bottom'),
+    'cube':dict(pes='minimum_aabb_edges_len',selection_range='bottom_top'),
     'cylinder':dict(pes='minimum_aabb_edges_len',selection_range='bottom_top'),
 }
 STAGES=('calibration','sensitivity','rcl','tuning','full')
