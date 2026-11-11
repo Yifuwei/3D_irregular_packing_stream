@@ -1,0 +1,277 @@
+{
+  "case": {
+    "task_id": 1408,
+    "stage": "rcl",
+    "protocol": "ejor-two-level-fixed-pes-v4",
+    "dataset": "st05_e2",
+    "shape": "cylinder",
+    "weight_level": "strong",
+    "radio_level": "weak",
+    "seed": 7,
+    "algorithm": "improved_GRASP",
+    "ls_budget": 0,
+    "config_id": "RCL10",
+    "tolerance": 0.1,
+    "top_k": null,
+    "packing_selection": "fixed_global_by_shape",
+    "instance": "st05_e2_seq7_cylinder_999999_1.txt",
+    "piece_count": 12
+  },
+  "bundle_id": "959d55bf-e8b5-49a5-a179-8785b965eca8",
+  "status": "success",
+  "validation_ok": true,
+  "seed_time_ns": 1793405775815421076,
+  "internal_seeds": {
+    "piece": 3920081538,
+    "position": 1345910642,
+    "kick": 483812065,
+    "global": 3983717038
+  },
+  "order_seed": 7,
+  "algorithm": "improved_GRASP",
+  "search_settings": {
+    "iter_limit_per_iter": 1,
+    "ls_evaluation_limit": 0,
+    "restart_limit": 1,
+    "rcl_tolerance": 0.1,
+    "rcl_top_k": null,
+    "time_limit": null,
+    "alpha": 1,
+    "ls_policy": "systematic"
+  },
+  "method": {
+    "pes": "minimum_aabb_edges_len",
+    "selection_range": "bottom_top",
+    "parameter_scope": "global_by_shape",
+    "radio_priority": true,
+    "cache": "run_scoped",
+    "rcl": "pooled_orientation_position",
+    "warmup": "none"
+  },
+  "best_N": 3,
+  "best_U": 0.10586047544364806,
+  "best_U_star": 0.14138888522753335,
+  "objective": 2.858611114772467,
+  "origin_N": 3,
+  "origin_U_star": 0.14138888522753335,
+  "origin_objective": 2.858611114772467,
+  "algorithm_wall_s": 83.60244181798771,
+  "reported_algorithm_wall_s": 83.6023668081034,
+  "counts": {
+    "construction": 1
+  },
+  "cache_counts": {
+    "BIN_RANK": 12,
+    "SEARCH": 120,
+    "SEARCH_SUCCEEDED": 120,
+    "POOLED_RCL": 12,
+    "HARD_CONSTRAINT_REJECT": 7,
+    "RUN_END": 1
+  },
+  "rcl_histograms": {
+    "pooled": {
+      "3": 2,
+      "1": 3,
+      "5": 1,
+      "8": 1,
+      "2": 1,
+      "4": 1,
+      "13": 1,
+      "16": 1,
+      "6": 1
+    },
+    "orientation_count": {
+      "3": 1,
+      "1": 3,
+      "4": 3,
+      "2": 2,
+      "7": 2,
+      "5": 1
+    }
+  },
+  "rcl_orientation_summary": {
+    "events": 12,
+    "mean_distinct_orientations": 3.4166666666666665,
+    "min_distinct_orientations": 1,
+    "max_distinct_orientations": 7
+  },
+  "validation": {
+    "ok": true,
+    "scope": "piece identity, geometry, occupancy and N/U/U*; accessibility enforced by engine, not independently revalidated",
+    "bin_volumes": [
+      624143,
+      545849,
+      144000
+    ],
+    "bin_filling_rates": [
+      0.15085040409262346,
+      0.13192736636244326,
+      0.03480365587587745
+    ],
+    "placements": [
+      {
+        "bin": 0,
+        "piece_index": 0,
+        "orientation": "y_90",
+        "translation": [
+          35,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 1,
+        "orientation": "x_180",
+        "translation": [
+          3,
+          32,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 2,
+        "orientation": "x_180",
+        "translation": [
+          27,
+          62,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 3,
+        "orientation": "z_270",
+        "translation": [
+          76,
+          73,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 4,
+        "orientation": "x_180",
+        "translation": [
+          61,
+          4,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 5,
+        "orientation": "x_0",
+        "translation": [
+          40,
+          25,
+          32
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 6,
+        "orientation": "z_90",
+        "translation": [
+          18,
+          1,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 7,
+        "orientation": "z_180",
+        "translation": [
+          1,
+          39,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 8,
+        "orientation": "x_270",
+        "translation": [
+          55,
+          55,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 9,
+        "orientation": "x_180",
+        "translation": [
+          81,
+          5,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 10,
+        "orientation": "x_90",
+        "translation": [
+          2,
+          44,
+          85
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 11,
+        "orientation": "z_90",
+        "translation": [
+          22,
+          4,
+          0
+        ]
+      }
+    ]
+  },
+  "mean_piece_count_without_emptiest": 5.5,
+  "bin_capacity": 4137496.374333679,
+  "max_piece_volume": 144000,
+  "max_piece_radio": 979.7156791066442,
+  "weight_capacity": 633466.2,
+  "radio_capacity": 2411.632561920667,
+  "piece_count": 12,
+  "hostname": "gpu002.aire.lee.alces.network",
+  "python": "3.13.2 | packaged by conda-forge | (main, Feb 17 2025, 14:10:22) [GCC 13.3.0]",
+  "resolved_limits": {
+    "piece_count": 12,
+    "kick_failed_repacking_threshold": null,
+    "ls_repacks_per_restart": null,
+    "kick_in_ls_budget": false,
+    "deadline_policy": "finish in-flight call; start no new call after expiry"
+  },
+  "tolerance": 0.1,
+  "top_k": null,
+  "host_max_rss_kib": 4027920,
+  "total_wall_s": 85.98488520784304,
+  "reused_from": {
+    "bundle_id": "04870416-1be1-4153-aeaa-69666776e15d",
+    "case": {
+      "task_id": 1408,
+      "stage": "rcl",
+      "protocol": "ejor-two-level-fixed-pes-v4",
+      "dataset": "st05_e2",
+      "shape": "cylinder",
+      "weight_level": "strong",
+      "radio_level": "weak",
+      "seed": 7,
+      "algorithm": "improved_GRASP",
+      "ls_budget": 0,
+      "config_id": "RCL10",
+      "tolerance": 0.1,
+      "top_k": null,
+      "packing_selection": "fixed_global_by_shape",
+      "instance": "st05_e2_seq7_cylinder_999999_1.txt",
+      "piece_count": 12
+    },
+    "source_report": "inputs/conditional_reuse/rcl/task_1408.json",
+    "validation": "Input, executable algorithm, PES, limits and effective search parameters matched"
+  }
+}
