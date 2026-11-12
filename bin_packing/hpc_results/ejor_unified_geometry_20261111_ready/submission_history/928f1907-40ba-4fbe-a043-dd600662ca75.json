@@ -1,0 +1,52 @@
+[
+  {
+    "job_id": "9421256",
+    "command": [
+      "sbatch",
+      "--parsable",
+      "--partition=gpu",
+      "--gres=gpu:1",
+      "--cpus-per-task=4",
+      "--mem=16G",
+      "--time=12:00:00",
+      "--array=0-35%6",
+      "--job-name=ejor_full",
+      "--output=/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_unified_geometry_20261111_ready/logs/full_%A_%a.out",
+      "--export=ALL,EJOR_BUNDLE=/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_unified_geometry_20261111_ready,EJOR_STAGE=full,EJOR_TASK_MAP=/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_unified_geometry_20261111_ready/submission_history/full_8ccf4cfd-6f80-466a-ac78-930d04346d15.json",
+      "/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_unified_geometry_20261111_ready/driver/run_array.slurm"
+    ]
+  },
+  {
+    "job_id": "9421257",
+    "command": [
+      "sbatch",
+      "--parsable",
+      "--partition=gpu",
+      "--gres=gpu:1",
+      "--cpus-per-task=4",
+      "--mem=32G",
+      "--time=12:00:00",
+      "--array=0-233%6",
+      "--job-name=ejor_full",
+      "--output=/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_unified_geometry_20261111_ready/logs/full_%A_%a.out",
+      "--export=ALL,EJOR_BUNDLE=/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_unified_geometry_20261111_ready,EJOR_STAGE=full,EJOR_TASK_MAP=/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_unified_geometry_20261111_ready/submission_history/full_817c27a5-9051-4b13-92f7-7e31b903d3c9.json",
+      "--dependency=afterany:9421256",
+      "/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_unified_geometry_20261111_ready/driver/run_array.slurm"
+    ]
+  },
+  {
+    "job_id": "9421258",
+    "command": [
+      "sbatch",
+      "--parsable",
+      "--cpus-per-task=1",
+      "--mem=2G",
+      "--time=00:30:00",
+      "--job-name=ejor_collect_full",
+      "--output=/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_unified_geometry_20261111_ready/logs/collect_full_%j.out",
+      "--export=ALL,EJOR_BUNDLE=/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_unified_geometry_20261111_ready,EJOR_STAGE=full",
+      "--dependency=afterany:9421256:9421257",
+      "/mnt/scratch/pmywe/GPU/3D_irregular_packing_stream/bin_packing/hpc_results/ejor_unified_geometry_20261111_ready/driver/run_collect.slurm"
+    ]
+  }
+]
