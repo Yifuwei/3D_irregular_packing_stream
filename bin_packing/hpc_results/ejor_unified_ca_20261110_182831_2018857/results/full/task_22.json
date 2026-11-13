@@ -1,0 +1,304 @@
+{
+  "case": {
+    "task_id": 22,
+    "stage": "full",
+    "protocol": "ejor-two-level-fixed-pes-v4",
+    "dataset": "Merged1_normal",
+    "shape": "cube",
+    "weight_level": "weak",
+    "radio_level": "strong",
+    "seed": 7,
+    "algorithm": "improved_GRASP",
+    "config_id": "improved_GRASP_Wweak_Rstrong",
+    "packing_selection": "fixed_global_by_shape",
+    "instance": "Merged1_normal_seq7_cube_999999_1.txt",
+    "piece_count": 15
+  },
+  "bundle_id": "04870416-1be1-4153-aeaa-69666776e15d",
+  "status": "success",
+  "validation_ok": true,
+  "seed_time_ns": 1794520124504558097,
+  "internal_seeds": {
+    "piece": 1219498619,
+    "position": 3931200810,
+    "kick": 1748705864,
+    "global": 3497953938
+  },
+  "order_seed": 7,
+  "algorithm": "improved_GRASP",
+  "search_settings": {
+    "time_limit": 3600,
+    "alpha": 1,
+    "restart_limit": null,
+    "rcl_tolerance": 0.1,
+    "rcl_top_k": null,
+    "iter_limit_per_iter": 1,
+    "ls_evaluation_limit": null,
+    "ls_policy": "systematic"
+  },
+  "method": {
+    "pes": "minimum_aabb_edges_len",
+    "selection_range": "bottom_top",
+    "parameter_scope": "global_by_shape",
+    "radio_priority": true,
+    "bin_priority": "radio",
+    "constraint_mode": "weight_radiation",
+    "cache": "run_scoped",
+    "rcl": "pooled_orientation_position",
+    "warmup": "none"
+  },
+  "best_N": 3,
+  "best_U": 0.11268646294496634,
+  "best_U_star": 0.1673987690314221,
+  "objective": 2.832601230968578,
+  "origin_N": 3,
+  "origin_U_star": 0.1673987690314221,
+  "origin_objective": 2.832601230968578,
+  "algorithm_wall_s": 3601.099690481089,
+  "reported_algorithm_wall_s": 3601.099612241145,
+  "counts": {
+    "construction": 33,
+    "ls": 4359
+  },
+  "cache_counts": {
+    "BIN_RANK": 35574,
+    "SEARCH": 27690,
+    "SEARCH_SUCCEEDED": 24544,
+    "POOLED_RCL": 495,
+    "SEARCH_FAILED": 3146,
+    "HARD_CONSTRAINT_REJECT": 8280,
+    "RESTORE_REFERENCE_SUCCESS": 9727,
+    "RESTORE_CACHED_SUCCESS": 4043,
+    "SKIP_CACHED_FAILURE": 376,
+    "RESTORE_CACHED_CANDIDATES": 1519,
+    "RUN_END": 1
+  },
+  "rcl_histograms": {
+    "pooled": {
+      "10": 114,
+      "3": 58,
+      "5": 25,
+      "1": 59,
+      "2": 94,
+      "9": 12,
+      "11": 8,
+      "6": 31,
+      "12": 6,
+      "14": 2,
+      "7": 17,
+      "8": 26,
+      "4": 33,
+      "15": 3,
+      "13": 1,
+      "20": 2,
+      "16": 2,
+      "18": 1,
+      "27": 1
+    },
+    "orientation_count": {
+      "10": 109,
+      "3": 54,
+      "1": 103,
+      "2": 118,
+      "4": 23,
+      "8": 26,
+      "5": 21,
+      "6": 33,
+      "7": 8
+    }
+  },
+  "rcl_orientation_summary": {
+    "events": 495,
+    "mean_distinct_orientations": 4.545454545454546,
+    "min_distinct_orientations": 1,
+    "max_distinct_orientations": 10
+  },
+  "ls_stop_counts": {
+    "local_optimum": 32,
+    "time_limit": 1
+  },
+  "validation": {
+    "ok": true,
+    "scope": "piece identity, geometry, occupancy and N/U/U*; accessibility enforced by engine, not independently revalidated",
+    "bin_volumes": [
+      309402,
+      78168,
+      3776
+    ],
+    "bin_filling_rates": [
+      0.26727308066083577,
+      0.06752445740200842,
+      0.003261850772054854
+    ],
+    "placements": [
+      {
+        "bin": 0,
+        "piece_index": 0,
+        "orientation": "x_0",
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 1,
+        "orientation": "x_270",
+        "translation": [
+          18,
+          0,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 2,
+        "orientation": "x_270",
+        "translation": [
+          47,
+          0,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 3,
+        "orientation": "y_180",
+        "translation": [
+          0,
+          44,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 4,
+        "orientation": "y_180",
+        "translation": [
+          21,
+          44,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 5,
+        "orientation": "y_90",
+        "translation": [
+          0,
+          25,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 6,
+        "orientation": "x_180",
+        "translation": [
+          19,
+          0,
+          57
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 8,
+        "orientation": "z_90",
+        "translation": [
+          32,
+          61,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 11,
+        "orientation": "x_0",
+        "translation": [
+          84,
+          0,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 12,
+        "orientation": "x_270",
+        "translation": [
+          40,
+          0,
+          63
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 13,
+        "orientation": "z_90",
+        "translation": [
+          0,
+          35,
+          0
+        ]
+      },
+      {
+        "bin": 0,
+        "piece_index": 14,
+        "orientation": "y_270",
+        "translation": [
+          0,
+          34,
+          39
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 7,
+        "orientation": "y_270",
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "bin": 1,
+        "piece_index": 10,
+        "orientation": "y_90",
+        "translation": [
+          0,
+          0,
+          25
+        ]
+      },
+      {
+        "bin": 2,
+        "piece_index": 9,
+        "orientation": "y_90",
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "mean_piece_count_without_emptiest": 7.0,
+  "bin_capacity": 1157625,
+  "max_piece_volume": 55296,
+  "max_piece_radio": 1037.9880908714358,
+  "weight_capacity": 362621.6,
+  "radio_capacity": 1094.9132716833337,
+  "piece_count": 15,
+  "hostname": "gpu027.aire.lee.alces.network",
+  "python": "3.13.2 | packaged by conda-forge | (main, Feb 17 2025, 14:10:22) [GCC 13.3.0]",
+  "resolved_limits": {
+    "piece_count": 15,
+    "kick_failed_repacking_threshold": null,
+    "ls_repacks_per_restart": null,
+    "kick_in_ls_budget": false,
+    "deadline_policy": "finish in-flight call; start no new call after expiry"
+  },
+  "host_max_rss_kib": 2214240,
+  "total_wall_s": 3603.207489546854
+}
