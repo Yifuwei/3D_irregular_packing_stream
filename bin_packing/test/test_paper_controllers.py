@@ -113,7 +113,7 @@ class SharedControllerTests(unittest.TestCase):
                     self.assertEqual(sorted(i for ids in result[9] for i in ids),[0,1,2])
                     self.assertEqual(calls.count('construction'),1)
                     self.assertGreater(calls.count('ls'),0)
-                    if name!='improved_ILS':self.assertTrue(any(e['event']=='ORIENTATION_RCL' for e in events))
+                    if name!='improved_ILS':self.assertTrue(any(e['event']=='POOLED_RCL' for e in events))
                     if name!='improved_GRASP':self.assertGreater(calls.count('kick'),0)
 
     def test_fixed_work_exactly_50_with_actual_controller(self):
@@ -127,7 +127,7 @@ class SharedControllerTests(unittest.TestCase):
             result=with_radio_bin_priority(alg.improved_GRASP)(objects,None,None,10,1,
                 ([0,90],['x']),([0,90],['x']),['x_0','x_90'],'SCH','bounding_box','bottom_top',False,
                 'minimum_aabb_volume',None,(4,1,1),'cube',50,float('inf'),1,False,False,False,
-                no_improvement_limit=50,ls_evaluation_limit=50,restart_limit=1,radio_priority=False,
+                no_improvement_limit=50,ls_evaluation_limit=50,restart_limit=1,ls_policy='legacy_stochastic',radio_priority=False,
                 max_weight=2,packing_observer=lambda k,v:calls.append(k))
         self.assertEqual(calls.count('construction'),1)
         self.assertEqual(calls.count('ls'),50)

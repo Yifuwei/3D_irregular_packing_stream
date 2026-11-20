@@ -65,7 +65,7 @@ class ImprovedGraspTests(unittest.TestCase):
             orientations or ['x_0', 'x_90'], 'SCH', 'bounding_box', 1,
             True, 'minimum_aabb_volume', None, (1, 1, 1), 'cube', iterations,
             budget, 1, False, False, False, restart_limit=restarts,
-            no_improvement_limit=stall_limit, ls_evaluation_limit=total_cap)
+            no_improvement_limit=stall_limit, ls_evaluation_limit=total_cap,ls_policy='legacy_stochastic')
         return output, baselines
 
     def test_accepts_local_improvement_below_global_threshold(self):

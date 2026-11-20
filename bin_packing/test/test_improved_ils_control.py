@@ -132,9 +132,9 @@ class ILSControlTests(unittest.TestCase):
         for level, expected in [('small', 1), ('medium', 2), ('large', 3)]:
             with self.subTest(level=level):
                 self.run_ils(
-                    plans=[([[0, 3], [1, 2]], ['x_90'] * 4, 0)],
+                    plans=[([[0, 3], [1, 2]], ['x_90'] * 4, 0)]*2,
                     kicks=[([[0, 2], [1, 3]], ['x_180'] * 4)],
-                    iteration_limit=2, kick_trigger_time=1, kick_level=level)
+                    iteration_limit=3, kick_trigger_time=1, kick_level=level)
                 self.assertEqual(sum(value != 'x_0' for value in self.kick_inputs[0]), expected)
 
     def test_expired_time_still_records_completed_improvement(self):
@@ -155,6 +155,15 @@ class ILSControlTests(unittest.TestCase):
         result = self.run_ils(iteration_limit=0)
         self.assertEqual(self.trials, [])
         self.assertEqual(result[0], 2)
+
+    def test_auto_kick_after_n_over_two_repacking_failures(self):
+        original = [[0,3],[1,2]]
+        result = self.run_ils(plans=[(original,['x_0']*4,0)]*3,
+                              kicks=[(original,['x_0']*4)],
+                              iteration_limit=4,kick_trigger_time='auto',kick_level='small')
+        self.assertEqual(len(self.trials),3)
+        self.assertEqual(self.kick_count,1)
+        self.assertEqual(result[13],[3])  # Two LS repacks, then the kick.
 
     def test_invalid_limits(self):
         for options in (dict(iteration_limit=-1), dict(time_limit=-1),

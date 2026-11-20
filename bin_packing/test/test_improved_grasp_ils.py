@@ -15,17 +15,16 @@ SOURCE = Path(__file__).resolve().parents[1] / 'src' / 'new_ILS_southampton.py'
 class ImprovedGraspIlsTests(unittest.TestCase):
     def run_search(self, constructions, moves=(), kicks=(), iterations=4,
                    trigger=1, restarts=1, budget=100, **options):
+        piece_count = options.pop('piece_count', 2)
         clock = [0]
         constructions, moves, kicks = map(iter, (constructions, moves, kicks))
         self.events = []
         self.kick_orientations = []
 
         def result(score, orientations):
-            layout = [[dict(score=score, orientation=orientations[0], bin_position=0,
-                            array=np.ones((1, 1, 1)))],
-                      [dict(orientation=orientations[1], bin_position=1,
-                            array=np.ones((1, 1, 1)))]]
-            return layout, [np.ones((1, 1, 1)) for _ in range(2)], [], [[0], [1]]
+            pieces = [dict(score=score, orientation=o, bin_position=0 if i==0 else 1,
+                           array=np.ones((1,1,1))) for i,o in enumerate(orientations)]
+            return [pieces[:1], pieces[1:]], [np.ones((1,1,1)) for _ in range(2)], [], [[0], list(range(1,piece_count))]
 
         def construct(*args, **kwargs):
             self.assertTrue(kwargs['random_CA'])
@@ -35,7 +34,7 @@ class ImprovedGraspIlsTests(unittest.TestCase):
             clock[0] += 1
             score = next(constructions)
             self.events.append(('construct', score))
-            return result(score, ['x_0', 'x_0'])
+            return result(score, ['x_0'] * piece_count)
 
         def select(info, iteration, stage, bins, **kwargs):
             self.assertGreaterEqual(stage, 0)
@@ -73,8 +72,9 @@ class ImprovedGraspIlsTests(unittest.TestCase):
                      get_final_performance=lambda o, c, s, layout:
                          (2, 0, 2 - layout[0][0]['score']))
         exec(compile(tree, str(SOURCE), 'exec'), scope)
+        orientation_labels = options.pop('orientation_labels', ['x_0', 'x_90'])
         output = scope['improved_GRASP_ILS'](
-            [{}, {}], None, None, 0, 0, None, None, ['x_0', 'x_90'],
+            [{} for _ in range(piece_count)], None, None, 0, 0, None, None, orientation_labels,
             'SCH', 'bounding_box', 1, True, 'minimum_aabb_volume', None,
             (1, 1, 1), 'cube', iterations, trigger, 'small', budget, 1,
             False, False, False, restart_limit=restarts, kick_seed=7, **options)
@@ -94,17 +94,17 @@ class ImprovedGraspIlsTests(unittest.TestCase):
     def test_kicks_do_not_count_towards_restart_budget(self):
         self.run_search([.5, .6], [.7, .8, .9, 1.0], [.5, .5, .6, .6], iterations=2, restarts=2)
         operations = [event[0] for event in self.events if event[0] != 'select']
-        self.assertEqual(operations, ['construct', 'move', 'kick', 'move', 'kick'] * 2)
+        self.assertEqual(operations, ['construct', 'move', 'kick', 'move'] * 2)
         selections = [event for event in self.events if event[0] == 'select']
         self.assertEqual([event[1] for event in selections], [True, False, True, False])
 
-    def test_kick_at_threshold_after_last_ls_evaluation(self):
-        output = self.run_search([.5], [.6], [.3], iterations=1)
-        self.assertEqual(len(self.kick_orientations), 1)
-        self.assertAlmostEqual(output[2], 1.7)
+    def test_budget_end_reconstructs_without_extra_kick(self):
+        output=self.run_search([.5],[.6],iterations=1)
+        self.assertEqual(self.kick_orientations,[])
+        self.assertAlmostEqual(output[2],1.5)
 
     def test_kick_uses_restart_best_and_changes_selected_orientation(self):
-        self.run_search([.5], [.6, .9], [.8, 1.0], iterations=2)
+        self.run_search([.5], [.6, .9, 1.1], [.8, 1.0], iterations=3)
         # Both kicks must perturb the retained .5 solution (all x_0).
         self.assertEqual([sum(o != 'x_0' for o in os) for os in self.kick_orientations], [1, 1])
 
@@ -128,12 +128,43 @@ class ImprovedGraspIlsTests(unittest.TestCase):
         self.assertEqual(self.kick_orientations, [])
         self.assertEqual(sum(event[0] == 'move' for event in self.events), 3)
 
+    def test_default_n_budget_counts_repacking_not_piece_selection(self):
+        self.run_search([.5], [.6, .6], iterations=None, trigger=None,
+                        orientation_labels=['x_0', 'x_90', 'x_180', 'y_90'])
+        self.assertEqual(sum(e[0]=='move' for e in self.events), 2)
+        self.assertEqual(sum(e[0]=='select' for e in self.events), 1)
+        self.assertEqual(self.kick_orientations, [])
+
+    def test_auto_kick_counts_failed_repackings_mid_piece(self):
+        self.run_search([.5], [.6, .7], [.8], iterations=None, trigger='auto',
+                        orientation_labels=['x_0', 'x_90', 'x_180'])
+        self.assertEqual([e[0] for e in self.events],
+                         ['construct','select','move','kick','select','move'])
+        self.assertEqual(len(self.kick_orientations), 1)
+
+    def test_improvements_do_not_reset_n_repacking_budget(self):
+        self.run_search([.5], [.4, .3], iterations=None, trigger='auto')
+        self.assertEqual(sum(e[0]=='move' for e in self.events), 2)
+        self.assertEqual(self.kick_orientations, [])
+
+    def test_odd_n_rounds_up_kick_threshold_and_preserves_n_budget(self):
+        self.run_search([.5], [.6]*5, [.8], iterations=None, trigger='auto',
+                        piece_count=5, orientation_labels=['x_0','x_90','x_180'])
+        operations=[e[0] for e in self.events if e[0]!='select']
+        self.assertEqual(operations, ['construct','move','move','move','kick','move','move'])
+
+    def test_improvement_resets_repacking_failure_counter(self):
+        self.run_search([.5], [.6,.4,.5,.6,.7], iterations=None,
+                        trigger='auto', piece_count=5)
+        self.assertEqual(sum(e[0]=='move' for e in self.events),5)
+        self.assertEqual(self.kick_orientations,[])
+
     def test_invalid_iteration_budget(self):
         with self.assertRaises(ValueError):
             self.run_search([.5], iterations=0)
 
-    def test_hpc_thresholds_with_300_ls_evaluations(self):
-        for threshold, expected_kicks in ((100, 3), (125, 2), (150, 2)):
+    def test_explicit_budgets_still_stop_exactly_at_ls_boundary(self):
+        for threshold, expected_kicks in ((100, 2), (125, 2), (150, 1)):
             with self.subTest(threshold=threshold):
                 self.run_search([.5], [.6] * 300, [.5] * expected_kicks,
                                 iterations=300, trigger=threshold, budget=1000)

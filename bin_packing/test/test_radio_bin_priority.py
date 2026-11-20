@@ -20,11 +20,15 @@ def geometry(info,state,b,mode,i):
 class MetricTests(unittest.TestCase):
     def test_post_placement_can_reverse_old_order(self):
         # Old: A=.6*.3=.18 > B=.2*.8=.16; new: A=.24 < B=.32.
-        self.assertAlmostEqual(post_placement_score(60,20,100,60,10,100),.24)
-        self.assertAlmostEqual(post_placement_score(20,20,100,10,10,100),.32)
+        self.assertAlmostEqual(post_placement_score(60,20,100,60,10,100),1.5)
+        self.assertAlmostEqual(post_placement_score(20,20,100,10,10,100),.6)
 
     def test_empty_bin_has_positive_post_fill_score(self):
-        self.assertAlmostEqual(post_placement_score(0,20,100,0,10,100),.18)
+        self.assertAlmostEqual(post_placement_score(0,20,100,0,10,100),.3)
+
+    def test_full_resources_score_two_and_weight_normalization(self):
+        self.assertEqual(post_placement_score(80,20,100,90,10,100),2.)
+        self.assertEqual(post_placement_score(30,20,100,90,10,100,.5),2.)
 
     def test_both_ranked_engines_use_same_formula(self):
         from improved_ILS_weight_radio import RankedRepacker,Solution
@@ -38,8 +42,8 @@ class MetricTests(unittest.TestCase):
             lambda **event:events.append(event))
         state=e.empty_state(2)
         for i in [0,1]:e.place(state,i,i,dict(objects[i],translation=(0,0,0)))
-        self.assertEqual(e.ranked_bins(state,2),[1,0])
-        self.assertAlmostEqual(events[-1]['ranked'][0][1],.32)
+        self.assertEqual(e.ranked_bins(state,2),[0,1])
+        self.assertAlmostEqual(events[-1]['ranked'][0][1],1.5)
         ref=Solution([state['layout'][0],state['layout'][1],
                       [dict(objects[2],translation=(0,0,0),bin_position=2)]],
                      [state['occupancy'][0],state['occupancy'][1],objects[2]['array'].copy()],
@@ -51,9 +55,9 @@ class MetricTests(unittest.TestCase):
             event=lambda **event:events.append(event))
         r.repack(ref,2,['x_0','x_0','x_90'])
         rank=next(x for x in events if x['event']=='BIN_RANK')
-        self.assertEqual(rank['ranked'][0][0],1)
-        self.assertAlmostEqual(rank['ranked'][0][1],.32)
-        self.assertAlmostEqual(rank['details'][0]['filling_rate_after'],.4)
+        self.assertEqual(rank['ranked'][0][0],0)
+        self.assertAlmostEqual(rank['ranked'][0][1],1.5)
+        self.assertAlmostEqual(rank['details'][0]['filling_rate_after'],.8)
 
 
 class ControllerIntegrationTests(unittest.TestCase):
@@ -71,7 +75,7 @@ class ControllerIntegrationTests(unittest.TestCase):
             flag_NFV_POOL=False,visualisation=False,_TRACE=False)
         options={
             'improved_ILS':dict(ALG='ILS',iteration_limit=4,time_limit=1000,kick_trigger_time=1,kick_level='small'),
-            'improved_GRASP':dict(iter_limit_per_iter=3,time_limit=1000,alpha=1,restart_limit=1),
+            'improved_GRASP':dict(iter_limit_per_iter=3,time_limit=1000,alpha=1,restart_limit=1,ls_policy='legacy_stochastic'),
             'improved_GRASP_ILS':dict(iter_limit_per_iter=2,time_limit=1000,alpha=1,restart_limit=1,
                                      kick_trigger_time=1,kick_level='small',kick_seed=303)}
         for name,extra in options.items():
@@ -94,7 +98,7 @@ class ControllerIntegrationTests(unittest.TestCase):
                 self.assertTrue(any(x['event']=='SEARCH' and x['mode']=='LS' for x in events))
                 self.assertTrue(selector_flags and not any(selector_flags))
                 self.assertEqual(events[-1]['algorithm'],name)
-                self.assertEqual(events[-1]['metric'],'post_placement_fill_times_radio_left')
+                self.assertEqual(events[-1]['metric'],'used_radio_plus_used_utilization')
 
     def test_optional_legacy_path_does_not_create_a_ranked_engine(self):
         called=[]
